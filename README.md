@@ -46,14 +46,14 @@ conda install enda
 #### Building this package
 
 Go into a python >=3.7.3 venv:
-
+```
 pip install --upgrade pip
 pip install twine
 python setup.py sdist bdist_wheel
  
 twine check dist/*     # or:  tar tzf enda-0.1.0.tar.gz
 twine upload --repository-url https://test.pypi.org/legacy/ dist/*
-
+```
 
 
 
