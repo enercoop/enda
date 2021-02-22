@@ -127,3 +127,20 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# Temporary data
+data/
+
+# PyCharm project meta-data
+*.idea
+
+# Mac OSX file system:
+*.DS_STORE
+*.DS_Store
+
+# Libre Office temporary files
+.~*
+
+
+
