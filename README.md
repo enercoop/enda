@@ -24,14 +24,16 @@ Binary installers for the latest released version are available at the [Python
 Package Index (PyPI)](https://pypi.org/project/enda) and on [Conda](https://docs.conda.io/en/latest/).
 
 ```sh
-# conda
-conda install pandas
+# PyPI
+pip install enda
 ```
 
+
 ```sh
-# or PyPI
-pip install pandas
+# or conda
+conda install enda
 ```
+
 
 ## Dependencies
 - [Pandas - the main dataframe manipulation tool for python, advanced timeseries management included.](https://pandas.pydata.org/)
