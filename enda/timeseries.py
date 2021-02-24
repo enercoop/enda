@@ -85,6 +85,7 @@ class TimeSeries:
         if expected_freq is not None:
             if not isinstance(expected_freq, str) and not isinstance(expected_freq, pd.Timedelta):
                 raise TypeError("expected_freq should be str or pd.Timedelta")
+            freq = expected_freq
 
         else:
             # Infer frequency
@@ -98,16 +99,16 @@ class TimeSeries:
             #    ....
 
             # take the most common gap and use it as expected_freq
-            expected_freq = gap_dist.index[0]  # this is a pd.Timedelta object
-            assert isinstance(expected_freq, pd.Timedelta)
+            freq = gap_dist.index[0]  # this is a pd.Timedelta object
+            assert isinstance(freq, pd.Timedelta)
 
-        expected_index = pd.date_range(start, end, freq=expected_freq)
+        expected_index = pd.date_range(start, end, freq=freq)
         missing_points = expected_index.difference(dti)
         # group missing points together as "missing periods"
-        missing_periods = cls.collapse_dt_series_into_periods(missing_points, freq=expected_freq)
+        missing_periods = cls.collapse_dt_series_into_periods(missing_points, freq=freq)
         extra_points = dti.difference(expected_index)
 
-        return missing_periods, extra_points
+        return freq, missing_periods, extra_points
 
     @classmethod
     def collapse_dt_series_into_periods(cls, dti, freq):

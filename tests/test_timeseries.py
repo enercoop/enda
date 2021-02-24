@@ -66,7 +66,7 @@ class TestTimeSeries(unittest.TestCase):
             pd.to_datetime('2018-01-01 02:00:00+01:00'),
             pd.to_datetime('2018-01-01 02:20:00+01:00')
         ])
-        missing_periods, extra_points = TimeSeries.find_missing_and_extra_periods(dti, expected_freq="15min")
+        freq, missing_periods, extra_points = TimeSeries.find_missing_and_extra_periods(dti, expected_freq="15min")
         self.assertEqual(len(missing_periods), 2)  # (01:15:00 -> 01:45:00), (02:15:00 -> 02:15:00)
         self.assertEqual(len(extra_points), 2)  # [00:50:00, 02:20:00]
 
@@ -83,7 +83,8 @@ class TestTimeSeries(unittest.TestCase):
         ])
 
         # should work when we infer "expected_freq"
-        missing_periods, extra_points = TimeSeries.find_missing_and_extra_periods(dti, expected_freq=None)
+        freq, missing_periods, extra_points = TimeSeries.find_missing_and_extra_periods(dti, expected_freq=None)
+        self.assertEqual(freq, pd.Timedelta("15min"))  # inferred a 15min freq
         self.assertEqual(len(missing_periods), 2)  # (01:15:00 -> 01:45:00), (02:15:00 -> 02:15:00)
         self.assertEqual(len(extra_points), 2)  # [00:50:00, 02:20:00]
 
@@ -97,7 +98,7 @@ class TestTimeSeries(unittest.TestCase):
             pd.to_datetime('2018-01-05'),
             pd.to_datetime('2018-01-06')
         ])
-        missing_periods, extra_points = TimeSeries.find_missing_and_extra_periods(dti, '1D')
+        freq, missing_periods, extra_points = TimeSeries.find_missing_and_extra_periods(dti, '1D')
         self.assertEqual(len(missing_periods), 0)
         self.assertEqual(len(extra_points), 1)
 
