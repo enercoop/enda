@@ -11,7 +11,7 @@ with open(os.path.join(HERE, "README.md"), "r") as f:
 # This call to setup() does all the work
 setup(
     name="enda",
-    version="0.1.1.dev1",
+    version="0.1.1.dev3",
 
     description="Tools to manipulate energy timeseries and contracts, and to perform forecasts.",
     long_description=README,
@@ -29,7 +29,7 @@ setup(
         "Bug Tracker": "https://github.com/enercoop/enda/issues"
     },
 
-    packages=["enda"],  # could also tell:  packages = find_packages(exclude=("tests",)),
+    packages=find_packages(exclude=("tests",)),
     include_package_data=True,
     python_requires='>=3.7.3',
     install_requires=[
