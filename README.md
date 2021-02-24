@@ -3,8 +3,7 @@
 
 ## What is it?
 
-**enda** is a Python package that provides tools to manipulate **timeseries** data in conjunction 
-with **contracts** data for analysis and **forecasts**. 
+**enda** is a Python package that provides tools to manipulate **timeseries** data in conjunction with **contracts** data for analysis and **forecasts**. 
 
 Its main goal is assist [Rescoop.eu](https://www.rescoop.eu/) with various applications, such as short-term electricity load and production forecasts, specifically for the [RescoopVPP](https://www.rescoopvpp.eu/) project. Hence some tools in this package perform TSO (transmission network operator) and DNO (distribution network operator) data wrangling for several European countries, as well as weather data. 
 
@@ -41,19 +40,3 @@ conda install enda
 
 ## License
 [MIT](LICENSE)
-
-
-#### Building this package
-
-Go into a python >=3.7.3 venv:
-```
-pip install --upgrade pip
-pip install twine
-python setup.py sdist bdist_wheel
- 
-twine check dist/*     # or:  tar tzf enda-0.1.0.tar.gz
-twine upload --repository-url https://test.pypi.org/legacy/ dist/*
-```
-
-
-

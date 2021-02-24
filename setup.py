@@ -1,17 +1,18 @@
 import pathlib
 from setuptools import setup, find_packages
+import os
 
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
-
 # The text of the README file
-README = (HERE / "README.md").read_text()
+with open(os.path.join(HERE, "README.md"), "r") as f:
+    README = f.read()
 
 # This call to setup() does all the work
 setup(
     name="enda",
-    version="0.1.0",
-    python_requires='>=3.7.3',
+    version="0.1.1.dev1",
+
     description="Tools to manipulate energy timeseries and contracts, and to perform forecasts.",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -22,12 +23,17 @@ setup(
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.9",
+        "Operating System :: OS Independent"
     ],
-    packages=find_packages(exclude=("tests",)),
+    project_urls={
+        "Bug Tracker": "https://github.com/enercoop/enda/issues"
+    },
+
+    packages=["enda"],  # could also tell:  packages = find_packages(exclude=("tests",)),
     include_package_data=True,
+    python_requires='>=3.7.3',
     install_requires=[
-        "pandas", 
-        "h2o"
+        "pandas>=1.1.2",
+        "h2o>=3.32.0.3"
     ]
 )
