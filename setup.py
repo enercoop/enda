@@ -35,6 +35,10 @@ setup(
     install_requires=[
         "pandas>=1.1.2",
         "h2o>=3.32.0.3",
-        "pytz"
+        "statsmodels>=0.12.0",
+        "pytz",
+        "python-dateutil>=2.8.1",
+        "scikit-learn",
+        "joblib"
     ]
 )

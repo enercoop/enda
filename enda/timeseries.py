@@ -141,3 +141,38 @@ class TimeSeries:
                 current_period_start = dti[i]
         periods_list.append((current_period_start, dti[-1]))  # Don't forget last period
         return periods_list
+
+    @staticmethod
+    def interpolate_daily_to_sub_daily_data(
+            df,
+            freq: [str, pd.Timedelta],
+            tz: [str, datetime.tzinfo],
+            index_name: str = 'time',
+            method: str = 'ffill'):
+        """
+        Interpolate daily data in a dataframe (with a DatetimeIndex) to sub-daily data using a given method.
+        :param df: pd.DataFrame
+        :param freq: a frequency < 'D' (e.g. 'H', '30min', '15min', etc)
+        :param tz: the time zone (None not accepted because important)
+        :param index_name: name to give to the new index. Usually going from 'date' to 'time'.
+        :param method: how are data interpolated between two consecutive dates (e.g. 'ffill', 'linear', etc)
+        :return: pd.DataFrame
+        """
+
+        assert type(df.index) == pd.DatetimeIndex
+        assert pd.to_timedelta(freq).total_seconds() <= 24*60*60
+
+        if df.index.tzinfo is None:
+            df.index = pd.to_datetime(df.index).tz_localize(tz)
+        else:
+            df.index = pd.to_datetime(df.index).tz_convert(tz)
+
+        new_end_date = df.index.max() + datetime.timedelta(days=1)
+        extra_row = df.iloc[[-1]].reindex([new_end_date])
+
+        result = df.append(extra_row, ignore_index=False)
+        result = result.resample(freq).interpolate(method=method)
+        result = result.drop(new_end_date)
+        result.index.name = index_name
+
+        return result

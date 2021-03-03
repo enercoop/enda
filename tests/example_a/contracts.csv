@@ -1,4 +1,4 @@
-"contract_id","sub_contract_id","date_start","date_end_exclusive","sub_contract_end_reason","subscribed_power_kva","smart_metered","profile","customer_type","specific_price","estimated_annual_consumption_kwh","tension"
+"customer_id","contract_id","date_start","date_end_exclusive","sub_contract_end_reason","subscribed_power_kva","smart_metered","profile","customer_type","specific_price","estimated_annual_consumption_kwh","tension"
 1,"1-a","2020-09-16","2020-09-19","changed subscribed power",6,"False","RES2","residential","False",4500,"BT<=36kVA RES"
 1,"1-b","2020-09-19",,,9,"False","RES2","residential","False",4500,"BT<=36kVA RES"
 2,"2-a","2020-09-17","2020-09-21","contract end",15,"True",,"professionnal","True",20000,"BT<=36kVA PRO"

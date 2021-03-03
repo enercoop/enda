@@ -9,11 +9,16 @@ class Contracts:
     """
     A class to help handle contracts data.
 
-    contracts : a dataframe with a contract (or sub-contract on each row).
-                  A row has fixed-values between two dates.
-                  Columns can be like in example_a.csv :
-    [contract_id, sub_contract_id, date_start, date_end_exclusive, sub_contract_end_reason, subscribed_power_kva,
-    smart_metered, profile, customer_type, specific_price, estimated_annual_consumption_kwh, tension]
+    contracts : a dataframe with a contract.
+        A contract row has fixed-values between two dates. In some systems, some values of a contract can change over
+        time, for instance the "subscribed power" of an electricity consumption contract. Different ERPs can handle it
+        in different ways, for instance with "sub-contracts" inside a contract or with contract "amendments".
+        Here each row is a period between two dates where all the values of the contract are fixed.
+
+        Columns can be like in example_a.csv :
+        [customer_id, contract_id, date_start, date_end_exclusive,
+         sub_contract_end_reason, subscribed_power_kva, smart_metered, profile,
+         customer_type, specific_price, estimated_annual_consumption_kwh, tension]
 
     Columns [date_start, date_end_exclusive] are required, and with dtype=datetime64 (tz-naive).
     Other columns describe contract characteristics.
@@ -22,11 +27,14 @@ class Contracts:
     """
 
     @staticmethod
-    def read_contracts_from_file(file_path, date_start_col="date_start", date_end_exclusive_col="date_end_exclusive"):
+    def read_contracts_from_file(file_path,
+                                 date_start_col="date_start",
+                                 date_end_exclusive_col="date_end_exclusive",
+                                 date_format="%Y-%m-%d"):
         df = pd.read_csv(file_path)
         for c in [date_start_col, date_end_exclusive_col]:
             if is_string_dtype(df[c]):
-                df[c] = pd.to_datetime(df[c], format="%Y-%m-%d")
+                df[c] = pd.to_datetime(df[c], format=date_format)
         Contracts.check_contracts_dates(df, date_start_col, date_end_exclusive_col)
         return df
 
@@ -87,7 +95,7 @@ class Contracts:
                 raise ValueError("There are NaN values for column {} in these rows:\n{}".format(c, rows_with_nan_c))
 
         # check that no column is named "event_type" or "event_date"
-        for c in ["event_type", "event_date"]:
+        for c in ["event_type", "event_date", "date"]:
             if c in contracts_with_group.columns:
                 raise ValueError("contracts_with_group has a column named {}, but this name is reserved in this"
                                  "function; rename your column.".format(c))
@@ -127,11 +135,12 @@ class Contracts:
         )
 
         # add days that have no increment (with NA values), else the result can have gaps
-        # new "NA" increments = no contract start or end event that day = 0 increment
+        # new "NA" increments = no contract start or end event that day = increment is 0
         df_by_day = df_by_day.asfreq('D').fillna(0)
 
         # compute cumulative sums of daily increments to get daily totals
         portfolio = df_by_day.cumsum(axis=0)
+        portfolio.index.name = "date"  # now values are not increments on an event_date but the total on this date
 
         # careful, portfolio's columns are a hierarchy: (group, columns_to_sum)
         assert len(portfolio.columns.names) == 2
