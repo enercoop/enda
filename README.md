@@ -5,12 +5,12 @@
 
 **enda** is a Python package that provides tools to manipulate **timeseries** data in conjunction with **contracts** data for analysis and **forecasts**. 
 
-Its main goal is assist [Rescoop.eu](https://www.rescoop.eu/) with various applications, such as short-term electricity load and production forecasts, specifically for the [RescoopVPP](https://www.rescoopvpp.eu/) project. Hence some tools in this package perform TSO (transmission network operator) and DNO (distribution network operator) data wrangling for several European countries, as well as weather data. 
+Its main goal is to help [Rescoop.eu](https://www.rescoop.eu/) build various applications, such as short-term electricity load and production forecasts, specifically for the [RescoopVPP](https://www.rescoopvpp.eu/) project. Hence some tools in this package perform TSO (transmission network operator) and DNO (distribution network operator) data wrangling for several European countries, as well as weather data. 
 
 ## Main Features
 Here are some things **enda** does well:
 
-  - Provide robust machine learning algorithms for short-term electricty load (and soon production) forecasts, originally based on Komi Nagbe's thesis (http://www.theses.fr/s148364).
+  - Provide robust machine learning algorithms for short-term electricty load (and soon production) forecasts, developed by Enercoop and originally based on Komi Nagbe's thesis (http://www.theses.fr/s148364).
   - Manipulate **contracts** data coming from your ERP and turn it into timeseries you can use for analysis, visualisation and machine learning.  
   - Timeseries-specific detection of missing data, like time gaps and frequency changes.
   - Date-time feature engineering robust to timezone hazards.

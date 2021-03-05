@@ -39,6 +39,7 @@ setup(
         "pytz",
         "python-dateutil>=2.8.1",
         "scikit-learn",
-        "joblib"
+        "joblib",
+        "numpy"
     ]
 )

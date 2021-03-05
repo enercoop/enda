@@ -132,7 +132,7 @@ class Contracts:
             index="event_date",
             columns=[group_column],
             values=columns_to_sum
-        )
+        )  # TODO ajouter le nom du level 0 (qui contient les mesures à sommer)
 
         # add days that have no increment (with NA values), else the result can have gaps
         # new "NA" increments = no contract start or end event that day = increment is 0

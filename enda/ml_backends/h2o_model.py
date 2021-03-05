@@ -127,8 +127,9 @@ class H2OModel(ModelInterface):
             raise ValueError("Prediction impossible, no model in memory, please use H2OModel.grid_search() "
                              "before trying to predict")
 
+        testing_frame = df
         if self.target in df.columns:
-            testing_frame = df.drop(self.target, 1)
+            testing_frame = testing_frame.drop(self.target, 1)
 
         #LOGGER.info("Predicting -- {} -- from {} to {}"
         #    .format(self.model_id, testing_frame.index.min(), testing_frame.index.max()))
