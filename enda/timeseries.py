@@ -69,14 +69,14 @@ class TimeSeries:
             raise ValueError("given dti is empty")
 
         if expected_start_datetime is not None:
-            if not isinstance(expected_start_datetime, pd.Datetime):
+            if not isinstance(expected_start_datetime, pd.Timestamp):
                 raise TypeError("expected_start_datetime must be a pandas.Datetime")
             start = expected_start_datetime
         else:
             start = dti[0]
 
         if expected_end_datetime is not None:
-            if not isinstance(expected_end_datetime, pd.Datetime):
+            if not isinstance(expected_end_datetime, pd.Timestamp):
                 raise TypeError("expected_end_datetime must be a pandas.Datetime")
             end = expected_end_datetime
         else:

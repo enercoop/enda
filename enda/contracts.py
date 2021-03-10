@@ -1,45 +1,76 @@
 import pandas as pd
 from pandas.api.types import is_string_dtype, is_datetime64_dtype
 from dateutil.relativedelta import relativedelta
-from datetime import datetime
 from statsmodels.tsa.api import Holt
+from enda.timezone_utils import TimezoneUtils
 
 
 class Contracts:
     """
     A class to help handle contracts data.
 
-    contracts : a dataframe with a contract.
+    contracts : a dataframe with a contract or sub-contract on each row.
         A contract row has fixed-values between two dates. In some systems, some values of a contract can change over
-        time, for instance the "subscribed power" of an electricity consumption contract. Different ERPs can handle it
-        in different ways, for instance with "sub-contracts" inside a contract or with contract "amendments".
+        time, for instance the "subscribed power" of an electricity consumption contract.
+        Different ERPs can handle it in different ways, for instance with "sub-contracts" inside a contract
+        or with contract "amendments".
         Here each row is a period between two dates where all the values of the contract are fixed.
 
         Columns can be like in example_a.csv :
-        [customer_id, contract_id, date_start, date_end_exclusive,
-         sub_contract_end_reason, subscribed_power_kva, smart_metered, profile,
-         customer_type, specific_price, estimated_annual_consumption_kwh, tension]
+        [customer_id,
+         contract_id,
+         date_start,
+         date_end_exclusive,  # contract ends at 00h00 that day, so that day is excluded from the contract period.
+         sub_contract_end_reason,
+         subscribed_power_kva,
+         smart_metered,
+         profile,
+         customer_type,
+         specific_price,
+         estimated_annual_consumption_kwh,
+         tension]
 
-    Columns [date_start, date_end_exclusive] are required, and with dtype=datetime64 (tz-naive).
+    Columns [date_start, date_end_exclusive] are required (names can differ), and with dtype=datetime64 (tz-naive).
     Other columns describe contract characteristics.
 
 
     """
 
-    @staticmethod
-    def read_contracts_from_file(file_path,
+    @classmethod
+    def read_contracts_from_file(cls,
+                                 file_path,
                                  date_start_col="date_start",
                                  date_end_exclusive_col="date_end_exclusive",
                                  date_format="%Y-%m-%d"):
+        """
+        Reads contracts from a file. This will convert start and end date columns into dtype=datetime64 (tz-naive)
+        :param file_path: where the source file is located.
+        :param date_start_col: the name of your contract date start column.
+        :param date_end_exclusive_col: the name of your contract date end column, end date is exclusive.
+        :param date_format: the date format for pandas.to_datetime.
+        :return: a pandas.DataFrame with a contract on each row.
+        """
+
         df = pd.read_csv(file_path)
         for c in [date_start_col, date_end_exclusive_col]:
             if is_string_dtype(df[c]):
                 df[c] = pd.to_datetime(df[c], format=date_format)
-        Contracts.check_contracts_dates(df, date_start_col, date_end_exclusive_col)
+        cls.check_contracts_dates(df, date_start_col, date_end_exclusive_col)
         return df
 
     @staticmethod
     def check_contracts_dates(df, date_start_col, date_end_exclusive_col):
+        """
+        Checks that the two columns are present, with dtype=datetime64 (tz-naive)
+        Checks that date_start is always present.
+        A date_end_exclusive==NaT means that the contract has no limited duration.
+        Checks that date_start < date_end_exclusive when date_end_exclusive is set
+
+        :param df: the pandas.DataFrame containing the contracts
+        :param date_start_col: the name of your contract date start column.
+        :param date_end_exclusive_col: the name of your contract date end column, end date is exclusive.
+        """
+
         # check required columns and their types
         for c in [date_start_col, date_end_exclusive_col]:
             if c not in df.columns:
@@ -53,13 +84,21 @@ class Contracts:
             rows_with_nan_date_start = df[df[date_start_col].isnull()]
             raise ValueError("There are NaN values in these rows:\n{}".format(rows_with_nan_date_start))
 
-    @staticmethod
+        contracts_with_end = df.dropna(subset=[date_end_exclusive_col])
+        not_ok = contracts_with_end[date_start_col] >= contracts_with_end[date_end_exclusive_col]
+        if not_ok.sum() >= 1:
+            raise ValueError("Some contracts end before they start:\n{}".format(contracts_with_end[not_ok]))
+
+    @classmethod
     def compute_portfolio_by_day(
+            cls,
             contracts_with_group,
             columns_to_sum,
             date_start_col="date_start",
             date_end_exclusive_col="date_end_exclusive",
-            group_column="group"):
+            group_column="group",
+            max_date_exclusive=None,
+    ):
         """
         Given a list of contracts_with_group ,
 
@@ -67,6 +106,7 @@ class Contracts:
             the total number of active contracts: group_name_pdl
             and the sum of active kVA for this group: group_name_kva
         See unittests for examples.
+
         :param contracts_with_group: the dataframe containing the list of contract to consider.
             Each contract has at least these columns :
                 ["date_start", "date_end_exclusive", "group", and all columns_to_sum]
@@ -75,6 +115,8 @@ class Contracts:
         :param date_start_col:
         :param date_end_exclusive_col:
         :param group_column:
+        :param max_date_exclusive: restricts the output to strictly before this date.
+                                   Useful if you have end_dates far in the future.
 
         :return: a 'portfolio' dataframe with one day per row,
                  and the following column hierarchy: (columns_to_sum, group_column)
@@ -83,7 +125,7 @@ class Contracts:
                  contract start or contract end date.
         """
 
-        Contracts.check_contracts_dates(contracts_with_group, date_start_col, date_end_exclusive_col)
+        cls.check_contracts_dates(contracts_with_group, date_start_col, date_end_exclusive_col)
         if group_column not in contracts_with_group.columns:
             raise ValueError("missing group_column: {}".format(group_column))
 
@@ -119,6 +161,10 @@ class Contracts:
         all_events = pd.concat([start_contract_events, end_contract_events])
         all_events.sort_values(by=["event_date", "event_type"], inplace=True)
 
+        # remove events after max_date if they are not wanted
+        if max_date_exclusive is not None:
+            all_events = all_events[all_events["event_date"] <= max_date_exclusive]
+
         # for each columns_to_sum, replace the value by their "increment" (+X if contract starts; -X if contract ends)
         for c in columns_to_sum:
             all_events[c] = all_events.apply(lambda row: row[c] if row["event_type"] == "start" else -row[c], axis=1)
@@ -132,7 +178,9 @@ class Contracts:
             index="event_date",
             columns=[group_column],
             values=columns_to_sum
-        )  # TODO ajouter le nom du level 0 (qui contient les mesures à sommer)
+        )
+        # Give a name to level 0 of column MultiIndex
+        df_by_day.columns.names = ["measure", group_column]
 
         # add days that have no increment (with NA values), else the result can have gaps
         # new "NA" increments = no contract start or end event that day = increment is 0
@@ -195,31 +243,66 @@ class Contracts:
 
         return df
 
-    @staticmethod
-    def keep_only_groups(portfolio_df, groups_to_keep):
-        """
-        :param portfolio_df:
-        :param groups_to_keep: only keep customer groups in this list
-        :return: a slice of portfolio_df
-        """
-
-        df = portfolio_df.copy(deep=True)
-        if not len(df.columns.names) == 2:
-            raise ValueError("portfolio_df should have MultiIndex columns with 2 levels.")
-
-        groups_to_remove = list(set([group for summed_column, group in df.columns if group not in groups_to_keep]))
-        df = df.drop(columns=groups_to_remove, level=1)  # drop columns from multi-index columns
-        return df
-
-    @staticmethod
-    def forecast_using_trend(portfolio_df, start_forecast_date, nb_days=14, past_days=100):
+    @classmethod
+    def forecast_using_trend(cls, portfolio_df, start_forecast_date, freq, nb_days=14, past_days=100):
         """
         Forecast using exponential smoothing (Holt method) for the next nb_days
         :param portfolio_df:
         :param start_forecast_date: when we stop the portfolio data and start forecasting
+        :param freq: the frequency of the output, it must be the same frequency as the input portfolio_df
         :param nb_days: number of days after 'end_date' to forecast
-        :param past_days: max number fo days to use in the past used to make the forecast (we use only recent data)
+        :param past_days: max number of days to use in the past used to make the forecast
+                          (it is better to use only recent data)
         :return: pd.DataFrame (the forecast data)
         """
 
-        raise NotImplementedError()
+        if nb_days < 1:
+            raise ValueError("nb_days should be at least 1, given {}".format(nb_days))
+
+        if not isinstance(start_forecast_date, pd.Timestamp):
+            raise ValueError("Expected a pandas.Timestamp for start_forecast_date, but got {} of type {}. "
+                             "You can use pandas.to_datetime(...) before passing this argument."
+                             .format(start_forecast_date, type(start_forecast_date)))
+
+        if start_forecast_date > portfolio_df.index.max() + relativedelta(days=1):
+            raise ValueError("Start forecast date ({}) more than 1 day after the latest portfolio information ({}). "
+                             "Portfolio information given is too old."
+                             .format(start_forecast_date, portfolio_df.index.max()))
+
+        if not isinstance(portfolio_df.index, pd.DatetimeIndex):
+            raise ValueError("portfolio_df should have a pandas.DatetimeIndex, but given {}"
+                             .format(portfolio_df.index.dtype))
+
+        # only keep portfolio data before the start_forecast_date
+        pf = portfolio_df
+        pf = pf[pf.index <= start_forecast_date]
+
+        end_forecast_date = TimezoneUtils.add_interval_to_day_dt(
+            day_dt=start_forecast_date,
+            interval=relativedelta(days=nb_days)
+        )
+        date_past_days_ago = TimezoneUtils.add_interval_to_day_dt(
+            day_dt=start_forecast_date,
+            interval=relativedelta(days=-past_days)
+        )
+
+        # only keep recent data to determine the trends
+        pf = pf[pf.index >= date_past_days_ago]
+
+        future_index = pd.date_range(
+            start_forecast_date,
+            end_forecast_date,
+            freq=freq,
+            name=pf.index.name,
+            closed='left'
+        ).tz_convert(pf.index.tzinfo)
+
+        # holt needs a basic integer index
+        pf = pf.reset_index(drop=True)
+        # forecast each column (all columns are measures)
+        result = pf.apply(lambda x: Holt(x, initialization_method="estimated").fit().forecast(len(future_index)))
+        result = result.round(1)
+        result.index = future_index
+
+        return result
+

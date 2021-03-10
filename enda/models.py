@@ -120,10 +120,15 @@ class StackingModel(ModelInterface):
 
     def __init__(self,
                  base_models: typing.Mapping[str, ModelInterface],
-                 stacking_model: ModelInterface):
+                 final_model: ModelInterface):
         """
+        This class serves the same purpose as the Scikit-Learn "Stacking Regressor". However since we work on
+        time-series, we need fine control on which data is passed to train the base_models before training
+        the final_model.
+
+
         :param base_models: a dict of {model_id -> model}, each model must implement enda.ModelInterface.
-        :param stacking_model: the model used for stacking, must also implement enda.ModelInterface
+        :param final_model: the model used for stacking, must also implement enda.ModelInterface
         """
 
         if len(base_models) <= 1:
@@ -134,7 +139,7 @@ class StackingModel(ModelInterface):
         for model_id in sorted(base_models.keys()):
             self.base_models[model_id] = base_models[model_id]
 
-        self.stacking_model = stacking_model
+        self.final_model = final_model
 
     def train(self, df: pandas.DataFrame, target_col: str, base_stack_split_pct: float = 0.05):
 
@@ -170,7 +175,7 @@ class StackingModel(ModelInterface):
         # add the target back, to train the stacking model
         base_model_predictions[target_col] = df_stacking[target_col]
 
-        self.stacking_model.train(base_model_predictions, target_col)
+        self.final_model.train(base_model_predictions, target_col)
 
     def _predict_base_models(self, df, target_col):
         """
@@ -204,11 +209,11 @@ class StackingModel(ModelInterface):
 
     def predict(self, df: pandas.DataFrame, target_col: str):
         base_model_predictions = self._predict_base_models(df, target_col)
-        prediction = self.stacking_model.predict(base_model_predictions, target_col)
+        prediction = self.final_model.predict(base_model_predictions, target_col)
 
         if (prediction.index != df.index).any():
             raise ValueError("prediction must have the same index as given df. "
-                             "Check that self.stacking_model.predict conserves index.")
+                             "Check that self.final_model.predict conserves index.")
 
         return prediction
 
