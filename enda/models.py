@@ -145,13 +145,15 @@ class StackingModel(ModelInterface):
 
         # training stacking will temporarily train single models on part of the data,
         # so it must be done before training the actual single models
-        self._train_stacking_model(df, target_col, base_stack_split_pct)
+        self._train_final_model(df, target_col, base_stack_split_pct)
 
         # re-train base models with the full dataset
         self._train_base_models(df, target_col)
 
-    def _train_stacking_model(self, df, target_col, base_stack_split_pct):
+    def _train_final_model(self, df, target_col, base_stack_split_pct):
         """
+        Trains the final model used for stacking.
+
         (Temporarily) train the single models with a subset of the data,
         then apply them on the rest of the data. Use this to train the stacking model.
         """
