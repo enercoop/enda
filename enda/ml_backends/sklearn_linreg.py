@@ -1,6 +1,10 @@
-from sklearn.linear_model import LinearRegression
 import pandas
 from enda.models import ModelInterface
+
+try:
+    from sklearn.linear_model import LinearRegression
+except ImportError:
+    raise ImportError("h2o is required is you want to use this enda's H2OModel. Try: pip install scikit-learn>=0.24.1")
 
 
 class SKLearnLinearRegression(ModelInterface):

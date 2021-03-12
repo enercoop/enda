@@ -1,5 +1,6 @@
 # Let users know if they're missing any of our hard dependencies
-hard_dependencies = ("numpy", "pytz", "dateutil", "pandas", "h2o", "statsmodels")
+hard_dependencies = ("pandas",)
+# note that we also need python-dateutil and pytz but pandas already depends on them, so importing pandas is enough
 missing_dependencies = []
 
 for dependency in hard_dependencies:
@@ -14,10 +15,8 @@ if len(missing_dependencies) > 0:
     )
 del hard_dependencies, dependency, missing_dependencies
 
-from enda.contracts import (
-    Contracts,
-)
-
-from enda.timeseries import (
-    TimeSeries,
-)
+# import some ubclasses here so users can use for instance : 'enda.Contracts' without knowing the internal structure.
+# Do not import classes that need a specific package like
+from enda.contracts import (Contracts)
+from enda.feature_engineering.datetime_features import (DatetimeFeature)
+from enda.timeseries import (TimeSeries)

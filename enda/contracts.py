@@ -1,7 +1,6 @@
 import pandas as pd
 from pandas.api.types import is_string_dtype, is_datetime64_dtype
 from dateutil.relativedelta import relativedelta
-from statsmodels.tsa.api import Holt
 from enda.timezone_utils import TimezoneUtils
 
 
@@ -196,65 +195,72 @@ class Contracts:
         return portfolio
 
     @staticmethod
-    def get_daily_portfolio_between_dates(daily_portfolio, start_date, end_date_exclusive):
+    def get_portfolio_between_dates(portfolio, start_datetime, end_datetime_exclusive):
         """
         Adds or removes dates if needed.
 
         If additional dates are needed at the beginning, add these dates with 0s
         If additional dates needed at the end, copy the portfolio of the last date into the additional dates
 
-        TODO : add unittests and doc
-        :param daily_portfolio:
-        :param start_date:
-        :param end_date_exclusive:
+        :param portfolio: the dataframe with the portfolio, must have a pandas.DatetimeIndex with frequency
+        :param start_datetime:
+        :param end_datetime_exclusive:
         :return:
         """
 
-        df = daily_portfolio.copy(deep=True)
+        df = portfolio.copy(deep=True)
 
         if not isinstance(df.index, pd.DatetimeIndex):
             raise TypeError("The index of daily_portfolio should be a pd.DatetimeIndex, but given {}"
                             .format(df.index.dtype))
 
-        if not df.index.freqstr == 'D':
-            raise NotImplementedError("This function works only for freq='D' but given {}".format(df.index.freqstr))
+        if df.index.freq is None:
+            raise ValueError("portfolio.index needs to have a freq. "
+                             "Maybe try to set one using df.index.inferred_freq")
 
-        # TODO check types of: start_date, end_date_exclusive
+        freq = df.index.freq
 
         # check that there is no missing value
         if not df.isnull().sum().sum() == 0:
             raise ValueError("daily_portfolio has NaN values.")
 
-        if start_date is not None and df.index.min() > start_date:
+        if start_datetime is not None and df.index.min() > start_datetime:
             # add days with empty portfolio at the beginning
-            df = df.append(pd.Series(name=start_date, dtype='object'))
+            df = df.append(pd.Series(name=start_datetime, dtype='object'))
             df.sort_index(inplace=True)  # put the new row first
-            df = df.asfreq('D').fillna(0)
+            df = df.asfreq(freq).fillna(0)
 
-        if end_date_exclusive is not None and df.index.max() < end_date_exclusive:
+        if end_datetime_exclusive is not None and df.index.max() < end_datetime_exclusive:
             # add days at the end, with the same portfolio as the last available day
-            df = df.append(pd.Series(name=end_date_exclusive, dtype='object'))
+            df = df.append(pd.Series(name=end_datetime_exclusive, dtype='object'))
             df.sort_index(inplace=True)  # make sure this new row is last
-            df = df.asfreq('D', method='ffill')
+            df = df.asfreq(freq, method='ffill')
 
         # remove dates outside of desired range
-        df = df[(df.index >= start_date) & (df.index < end_date_exclusive)]
+        df = df[(df.index >= start_datetime) & (df.index < end_datetime_exclusive)]
         assert df.isnull().sum().sum() == 0  # check that there is no missing value
 
         return df
 
     @classmethod
-    def forecast_using_trend(cls, portfolio_df, start_forecast_date, freq, nb_days=14, past_days=100):
+    def forecast_using_trend(cls, portfolio_df, start_forecast_date, nb_days=14, past_days=100):
         """
         Forecast using exponential smoothing (Holt method) for the next nb_days
+        The output has the same frequency as input portfolio_df.
+
         :param portfolio_df:
         :param start_forecast_date: when we stop the portfolio data and start forecasting
-        :param freq: the frequency of the output, it must be the same frequency as the input portfolio_df
         :param nb_days: number of days after 'end_date' to forecast
         :param past_days: max number of days to use in the past used to make the forecast
                           (it is better to use only recent data)
         :return: pd.DataFrame (the forecast data)
         """
+
+        try:
+            from statsmodels.tsa.api import Holt
+        except ImportError:
+            raise ImportError("statsmodels is required is you want to use this function. "
+                              "Try: pip install statsmodels>=0.12.0")
 
         if nb_days < 1:
             raise ValueError("nb_days should be at least 1, given {}".format(nb_days))
@@ -273,7 +279,14 @@ class Contracts:
             raise ValueError("portfolio_df should have a pandas.DatetimeIndex, but given {}"
                              .format(portfolio_df.index.dtype))
 
+        if portfolio_df.index.freq is None:
+            raise ValueError("Input portfolio_df must have a frequency. "
+                             "Maybe try to set it using pandas.index.inferred_freq")
+
         # only keep portfolio data before the start_forecast_date
+        freq = portfolio_df.index.freq
+        tzinfo = portfolio_df.index.tzinfo  # can be None
+
         pf = portfolio_df
         pf = pf[pf.index <= start_forecast_date]
 
@@ -295,7 +308,9 @@ class Contracts:
             freq=freq,
             name=pf.index.name,
             closed='left'
-        ).tz_convert(pf.index.tzinfo)
+        )
+        if tzinfo is not None:
+            future_index = future_index.tz_convert(pf.index.tzinfo)
 
         # holt needs a basic integer index
         pf = pf.reset_index(drop=True)

@@ -1,13 +1,15 @@
-from dateutil.relativedelta import relativedelta
-
-from enda.timezone_utils import TimezoneUtils
 import unittest
-from datetime import datetime, date, timedelta
-from dateutil import parser as date_parser
 import pandas as pd
+import pytz
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from dateutil import parser as date_parser
+from enda.timezone_utils import TimezoneUtils
 
 
 class TestTimezoneUtils(unittest.TestCase):
+
+    TZ_PARIS = pytz.timezone("Europe/Paris")
 
     def test_pandas_timestamp_bug(self):
 
@@ -19,14 +21,14 @@ class TestTimezoneUtils(unittest.TestCase):
         self.assertFalse(TimezoneUtils.is_timezone_aware(ts))
         self.assertFalse(TimezoneUtils.is_timezone_aware(dt_bis))
 
-        dt1 = TimezoneUtils.FRENCH_TZ.localize(dt, is_dst=True)
-        dt2 = TimezoneUtils.FRENCH_TZ.localize(dt, is_dst=False)
+        dt1 = TestTimezoneUtils.TZ_PARIS.localize(dt, is_dst=True)
+        dt2 = TestTimezoneUtils.TZ_PARIS.localize(dt, is_dst=False)
 
-        ts1 = TimezoneUtils.FRENCH_TZ.localize(ts, is_dst=True)
-        ts2 = TimezoneUtils.FRENCH_TZ.localize(ts, is_dst=False)
+        ts1 = TestTimezoneUtils.TZ_PARIS.localize(ts, is_dst=True)
+        ts2 = TestTimezoneUtils.TZ_PARIS.localize(ts, is_dst=False)
 
-        dt_bis1 = TimezoneUtils.FRENCH_TZ.localize(dt_bis, is_dst=True)
-        dt_bis2 = TimezoneUtils.FRENCH_TZ.localize(dt_bis, is_dst=False)
+        dt_bis1 = TestTimezoneUtils.TZ_PARIS.localize(dt_bis, is_dst=True)
+        dt_bis2 = TestTimezoneUtils.TZ_PARIS.localize(dt_bis, is_dst=False)
 
         self.assertNotEqual(dt1, dt2)
 
@@ -87,11 +89,11 @@ class TestTimezoneUtils(unittest.TestCase):
             # read like that, timezone is pytz.FixedOffset(60) or pytz.FixedOffset(120)
             # we convert it to a real life one
             if at.tzinfo is not None:
-                at = at.tz_convert(TimezoneUtils.FRENCH_TZ)
+                at = at.tz_convert(TestTimezoneUtils.TZ_PARIS)
 
             bt = pd.to_datetime(b)
             if bt.tzinfo is not None:
-                bt = bt.tz_convert(TimezoneUtils.FRENCH_TZ)
+                bt = bt.tz_convert(TestTimezoneUtils.TZ_PARIS)
 
             self.assertEqual(at.isoformat(), a)
             self.assertEqual(bt.isoformat(), b)

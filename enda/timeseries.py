@@ -6,7 +6,7 @@ import pytz
 class TimeSeries:
 
     @classmethod
-    def align_timezone(cls, time_series, tzinfo):
+    def align_timezone(cls, time_series: pd.Series, tzinfo: [str, pytz.timezone]):
         """
         Sometimes a time_series is of pandas type "object" just because the time-zone information
         is not well read initially.
@@ -111,7 +111,11 @@ class TimeSeries:
         return freq, missing_periods, extra_points
 
     @classmethod
-    def collapse_dt_series_into_periods(cls, dti, freq):
+    def collapse_dt_series_into_periods(
+            cls,
+            dti: pd.DatetimeIndex,
+            freq: [str, pd.Timedelta]
+    ):
         """
         This function does not work if freq < 1s
         :param freq:
@@ -119,9 +123,10 @@ class TimeSeries:
         :return:
         """
 
-        assert type(dti) == pd.DatetimeIndex
-        assert pd.to_timedelta(freq).total_seconds() >= 1
+        assert isinstance(dti, pd.DatetimeIndex)
         assert isinstance(freq, str) or isinstance(freq, pd.Timedelta)
+        if pd.to_timedelta(freq).total_seconds() < 1.0:
+            raise ValueError("freq must be more than 1 second, but given {}".format(freq))
 
         if dti.shape[0] == 0:
             return []
@@ -144,7 +149,7 @@ class TimeSeries:
 
     @staticmethod
     def interpolate_daily_to_sub_daily_data(
-            df,
+            df: pd.DataFrame,
             freq: [str, pd.Timedelta],
             tz: [str, datetime.tzinfo],
             index_name: str = 'time',

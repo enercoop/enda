@@ -33,13 +33,6 @@ setup(
     include_package_data=True,
     python_requires='>=3.7.3',
     install_requires=[
-        "pandas>=1.1.2",
-        "h2o>=3.32.0.3",
-        "statsmodels>=0.12.0",
-        "pytz",
-        "python-dateutil>=2.8.1",
-        "scikit-learn",
-        "joblib",
-        "numpy"
+        "pandas>=1.1.2"
     ]
 )

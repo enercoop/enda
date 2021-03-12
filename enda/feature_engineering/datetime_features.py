@@ -59,7 +59,7 @@ class DatetimeFeature:
                 else:
                     df_split[split] = df[colname].dt.__getattribute__(split)
 
-        result = pd.concat([df_split, df], 1, 'inner')
+        result = pd.concat([df, df_split], 1, 'inner')
 
         return result
 
@@ -169,18 +169,6 @@ class DatetimeFeature:
             if split in max_dict.keys():
                 df_split['{}_max'.format(split)] = max_dict[split]
 
-            # elif split in ['minuteofday', 'hour']:
-            #     df_dst_dates = DatetimeFeature.daylight_saving_time_dates()
-            #     df_dst_dates = df_dst_dates[(df_dst_dates.index >= df_split.index.min()) &
-            #                                 (df_dst_dates.index <= df_split.index.max())]
-            #     df_split['{}_max'.format(split)] = np.nan
-            #     df_split.loc[~pd.Index(df_split.index.date).isin(df_dst_dates.index.date), '{}_max'.format(split)]= 24
-            #     df_split['{}_max'.format(split)] = df_split['{}_max'.format(split)].fillna(df_dst_dates['nb_hour'])
-            #     df_split['{}_max'.format(split)] = df_split['{}_max'.format(split)].ffill()
-            #
-            #     if split is 'minuteofday':
-            #         df_split['{}_max'.format(split)] = df_split['{}_max'.format(split)] * 60
-
             if split is 'dayofyear':
                 df_split['{}_max'.format(split)] = df_split.index.is_leap_year
                 df_split['{}_max'.format(split)] = df_split['{}_max'.format(split)].replace({True: 366, False: 365})
@@ -200,7 +188,7 @@ class DatetimeFeature:
             df_split = df_split.drop(split, 1)
             df_split = df_split.drop('{}_max'.format(split), 1)
 
-        result = pd.concat([df_split, df], 1, 'inner')
+        result = pd.concat([df, df_split], 1, 'inner')
 
         return result
 

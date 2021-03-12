@@ -4,13 +4,17 @@ import time
 import shutil
 import pandas as pd
 from enda.models import ModelInterface
-from h2o.estimators import H2OXGBoostEstimator
-from h2o.estimators import H2OGradientBoostingEstimator
-from h2o.estimators import H2ORandomForestEstimator
-from h2o.estimators import H2ODeepLearningEstimator
-from h2o.estimators import H2OGeneralizedLinearEstimator
-from h2o.automl import H2OAutoML
-from h2o.grid.grid_search import H2OGridSearch
+
+try:
+    from h2o.estimators import H2OXGBoostEstimator
+    from h2o.estimators import H2OGradientBoostingEstimator
+    from h2o.estimators import H2ORandomForestEstimator
+    from h2o.estimators import H2ODeepLearningEstimator
+    from h2o.estimators import H2OGeneralizedLinearEstimator
+    from h2o.automl import H2OAutoML
+    from h2o.grid.grid_search import H2OGridSearch
+except ImportError:
+    raise ImportError("h2o is required is you want to use this enda's H2OModel. Try: pip install h2o>=3.32.0.3")
 
 
 class H2OModel(ModelInterface):

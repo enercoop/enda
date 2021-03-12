@@ -1,12 +1,7 @@
 from dateutil.relativedelta import relativedelta
-import pytz
-import pandas as pd
 
 
 class TimezoneUtils:
-    """ A class to cope with limitations """
-
-    FRENCH_TZ = pytz.timezone("Europe/Paris")
 
     @staticmethod
     def is_timezone_aware(dt):
