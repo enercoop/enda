@@ -24,7 +24,7 @@ class H2OModel(ModelInterface):
 
         self.algo_name = algo_name
         self.model_id = model_id
-        self.algo_param_dict = algo_param_dict
+        self.algo_param_dict = algo_param_dict.copy()
         self.target = target
         self.model_path = model_path
         self.algo = None
@@ -40,7 +40,12 @@ class H2OModel(ModelInterface):
             raise NotImplementedError("Algo {} not in {}".format(self.algo_name, algo_implemented_list))
 
         if 'glm' in self.algo_name.lower():
-            self.algo = H2OGeneralizedLinearEstimator(seed=seed, standardize=False)
+            if 'intercept' in self.algo_param_dict:
+                intercept = self.algo_param_dict['intercept']
+                del self.algo_param_dict['intercept']
+                self.algo = H2OGeneralizedLinearEstimator(seed=seed, standardize=False, intercept=intercept)
+            else:
+                self.algo = H2OGeneralizedLinearEstimator(seed=seed, standardize=False)
 
         if 'gbm' in self.algo_name.lower():
             self.algo = H2OGradientBoostingEstimator(seed=seed)
@@ -74,6 +79,11 @@ class H2OModel(ModelInterface):
         """
 
         h2o.no_progress()
+
+        # clean h2o from any previous grid-search on this model,
+        # else re-training using grid-search will error out
+        h2o.remove(self.model_id)
+        self.best_model = None
 
         if search_criteria is None:
             search_criteria = {'strategy': 'RandomDiscrete', 'max_models': 20, 'seed': 1234}

@@ -174,6 +174,7 @@ class StackingModel(ModelInterface):
 
         # make predictions with these temporary base_models, without the target column
         base_model_predictions = self._predict_base_models(df_stacking.drop(columns=[target_col]), target_col)
+
         # add the target back, to train the stacking model
         base_model_predictions[target_col] = df_stacking[target_col]
 
