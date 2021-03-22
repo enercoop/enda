@@ -33,6 +33,7 @@ class TimeSeries:
             raise TypeError("parameter 'tzinfo' should be of type str or datetime.tzinfo")
 
         result = time_series.map(lambda x: x.astimezone(tzinfo))
+        # now all values in 'result' have the same type: pandas.Timestamp with the same tzinfo
         result = pd.DatetimeIndex(result)
         return result
 
