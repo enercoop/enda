@@ -88,32 +88,60 @@ class Contracts:
         if not_ok.sum() >= 1:
             raise ValueError("Some contracts end before they start:\n{}".format(contracts_with_end[not_ok]))
 
+    @staticmethod
+    def __contract_to_events(contracts, date_start_col, date_end_exclusive_col):
+        # check that no column is named "event_type" or "event_date"
+        for c in ["event_type", "event_date", "date"]:
+            if c in contracts.columns:
+                raise ValueError("contracts has a column named {}, but this name is reserved in this"
+                                 "function; rename your column.".format(c))
+
+        columns_to_keep = [c for c in contracts.columns if c not in [date_start_col, date_end_exclusive_col]]
+        events_columns = ["event_type", "event_date"] + columns_to_keep
+
+        # compute "contract start" and "contract end" events
+        start_contract_events = contracts.copy(deep=True)  # all contracts must have a start date
+        start_contract_events["event_type"] = "start"
+        start_contract_events["event_date"] = start_contract_events[date_start_col]
+        start_contract_events = start_contract_events[events_columns]
+
+        # for "contract end" events, only keep contracts with an end date (NaT = contract is not over)
+        end_contract_events = contracts[contracts[date_end_exclusive_col].notna()].copy(deep=True)
+        end_contract_events["event_type"] = "end"
+        end_contract_events["event_date"] = end_contract_events[date_end_exclusive_col]
+        end_contract_events = end_contract_events[events_columns]
+
+        # concat all events together and sort them chronologically
+        all_events = pd.concat([start_contract_events, end_contract_events])
+        all_events.sort_values(by=["event_date", "event_type"], inplace=True)
+
+        return all_events
+
     @classmethod
     def compute_portfolio_by_day(
             cls,
-            contracts_with_group,
+            contracts,
             columns_to_sum,
             date_start_col="date_start",
             date_end_exclusive_col="date_end_exclusive",
-            group_column="group",
             max_date_exclusive=None,
     ):
         """
         Given a list of contracts_with_group ,
 
-        Returns the "portfolio" by day, which is, for each day and each group,
-            the total number of active contracts: group_name_pdl
-            and the sum of active kVA for this group: group_name_kva
-        See unittests for examples.
+        Returns the "portfolio" by day, which is, for each day from the first start of a contract
+        to the last end of a contract, the quantities in "columns_to_sum" over time.
+        See unittests or enda's guides for examples.
 
-        :param contracts_with_group: the dataframe containing the list of contract to consider.
+        If you want to compute the quantities for a group of customers, filter contracts before using this function.
+
+        :param contracts: the dataframe containing the list of contracts to consider.
             Each contract has at least these columns :
-                ["date_start", "date_end_exclusive", "group", and all columns_to_sum]
-                columns_to_sum must be of a summable dtype
-        :param columns_to_sum: the columns on which to compute a running-sum over time, for each group
+                ["date_start", "date_end_exclusive", and all columns_to_sum]
+                each column in columns_to_sum must be of a summable dtype
+        :param columns_to_sum: the columns on which to compute a running-sum over time
         :param date_start_col:
         :param date_end_exclusive_col:
-        :param group_column:
         :param max_date_exclusive: restricts the output to strictly before this date.
                                    Useful if you have end_dates far in the future.
 
@@ -124,62 +152,30 @@ class Contracts:
                  contract start or contract end date.
         """
 
-        cls.check_contracts_dates(contracts_with_group, date_start_col, date_end_exclusive_col)
-        if group_column not in contracts_with_group.columns:
-            raise ValueError("missing group_column: {}".format(group_column))
+        cls.check_contracts_dates(contracts, date_start_col, date_end_exclusive_col)
 
         for c in columns_to_sum:
-            if c not in contracts_with_group.columns:
+            if c not in contracts.columns:
                 raise ValueError("missing column_to_sum: {}".format(c))
-            if contracts_with_group[c].isnull().any():
-                rows_with_nan_c = contracts_with_group[contracts_with_group[c].isnull()]
+            if contracts[c].isnull().any():
+                rows_with_nan_c = contracts[contracts[c].isnull()]
                 raise ValueError("There are NaN values for column {} in these rows:\n{}".format(c, rows_with_nan_c))
 
-        # check that no column is named "event_type" or "event_date"
-        for c in ["event_type", "event_date", "date"]:
-            if c in contracts_with_group.columns:
-                raise ValueError("contracts_with_group has a column named {}, but this name is reserved in this"
-                                 "function; rename your column.".format(c))
-
         # keep only useful columns
-        df = contracts_with_group[[date_start_col, date_end_exclusive_col, group_column] + columns_to_sum]
-        events_columns = ["event_type", "event_date", group_column] + columns_to_sum
-
-        # compute "contract start" and "contract end" events
-        start_contract_events = df.copy(deep=True)  # all contracts must have a start date
-        start_contract_events["event_type"] = "start"
-        start_contract_events["event_date"] = start_contract_events[date_start_col]
-        start_contract_events = start_contract_events[events_columns]
-
-        end_contract_events = df[df[date_end_exclusive_col].notna()].copy(deep=True)  # keep contracts with an end date
-        end_contract_events["event_type"] = "end"
-        end_contract_events["event_date"] = end_contract_events[date_end_exclusive_col]
-        end_contract_events = end_contract_events[events_columns]
-
-        # concat all events together and sort them chronologically
-        all_events = pd.concat([start_contract_events, end_contract_events])
-        all_events.sort_values(by=["event_date", "event_type"], inplace=True)
+        df = contracts[[date_start_col, date_end_exclusive_col] + columns_to_sum]
+        # create start and end events for each contract, sorted chronologically
+        events = cls.__contract_to_events(df, date_start_col, date_end_exclusive_col)
 
         # remove events after max_date if they are not wanted
         if max_date_exclusive is not None:
-            all_events = all_events[all_events["event_date"] <= max_date_exclusive]
+            events = events[events["event_date"] <= max_date_exclusive]
 
-        # for each columns_to_sum, replace the value by their "increment" (+X if contract starts; -X if contract ends)
+        # for each column to sum, replace the value by their "increment" (+X if contract starts; -X if contract ends)
         for c in columns_to_sum:
-            all_events[c] = all_events.apply(lambda row: row[c] if row["event_type"] == "start" else -row[c], axis=1)
+            events[c] = events.apply(lambda row: row[c] if row["event_type"] == "start" else -row[c], axis=1)
 
-        # group events by day and group, and sum the increments of columns_to_sum
-        df_by_day_and_group = all_events.groupby(["event_date", group_column]).sum()
-        df_by_day_and_group = df_by_day_and_group.reset_index(drop=False)
-
-        # separate groups in different columns (pivot "long" to "wide" format)
-        df_by_day = df_by_day_and_group.pivot_table(
-            index="event_date",
-            columns=[group_column],
-            values=columns_to_sum
-        )
-        # Give a name to level 0 of column MultiIndex
-        df_by_day.columns.names = ["measure", group_column]
+        # group events by day and sum the individual contract increments of columns_to_sum to have daily increments
+        df_by_day = events.groupby(["event_date"]).sum()
 
         # add days that have no increment (with NA values), else the result can have gaps
         # new "NA" increments = no contract start or end event that day = increment is 0
@@ -188,9 +184,6 @@ class Contracts:
         # compute cumulative sums of daily increments to get daily totals
         portfolio = df_by_day.cumsum(axis=0)
         portfolio.index.name = "date"  # now values are not increments on an event_date but the total on this date
-
-        # careful, portfolio's columns are a hierarchy: (group, columns_to_sum)
-        assert len(portfolio.columns.names) == 2
 
         return portfolio
 

@@ -4,7 +4,6 @@ import os
 import pandas as pd
 from enda.contracts import Contracts
 from enda.timeseries import TimeSeries
-import pytz
 
 
 class TestContracts(unittest.TestCase):
@@ -46,8 +45,6 @@ class TestContracts(unittest.TestCase):
     @staticmethod
     def get_simple_portfolio_by_day():
         contracts = Contracts.read_contracts_from_file(TestContracts.CONTRACTS_PATH)
-        # put all contract inside a single group
-        contracts["group"] = "1"
         contracts["num_contracts"] = 1  # add a variable to count the number of contracts for each row
 
         # count the running total, each day, of some columns
@@ -55,11 +52,8 @@ class TestContracts(unittest.TestCase):
             contracts,
             columns_to_sum=["num_contracts", "subscribed_power_kva", "estimated_annual_consumption_kwh"],
             date_start_col="date_start",
-            date_end_exclusive_col="date_end_exclusive",
-            group_column="group"
+            date_end_exclusive_col="date_end_exclusive"
         )
-        # just need a regular index not a multi-index here
-        portfolio_by_day.columns = portfolio_by_day.columns.droplevel(1)
 
         return portfolio_by_day
 
@@ -67,7 +61,7 @@ class TestContracts(unittest.TestCase):
         """" test with a single group """
         portfolio_by_day = TestContracts.get_simple_portfolio_by_day()
 
-        # print(portfolio_by_day)
+        print(portfolio_by_day)
         self.assertEqual((11, 3), portfolio_by_day.shape)
         self.assertEqual(4, portfolio_by_day.loc["2020-09-26", "num_contracts"])
         self.assertEqual(30, portfolio_by_day.loc["2020-09-26", "subscribed_power_kva"])
@@ -78,22 +72,19 @@ class TestContracts(unittest.TestCase):
         """" test with 2 groups , and a single measure to sum"""
 
         contracts = Contracts.read_contracts_from_file(TestContracts.CONTRACTS_PATH)
-        # 2 groups of customers here
-        contracts["group"] = contracts.apply(lambda row: 'smart_metered' if row["smart_metered"] else 'slp', axis=1)
 
-        # count the running total, each day, of some columns
-        portfolio_by_day = Contracts.compute_portfolio_by_day(
-            contracts,
-            columns_to_sum=["subscribed_power_kva"],
-            date_start_col="date_start",
-            date_end_exclusive_col="date_end_exclusive",
-            group_column="group"
-        )
+        contracts_sm = contracts[contracts["smart_metered"]]
+        pf_sm = Contracts.compute_portfolio_by_day(contracts_sm, columns_to_sum=["subscribed_power_kva"])
 
-        # print(portfolio_by_day)
-        self.assertEqual(portfolio_by_day.shape, (11, 2))
-        self.assertEqual(27, portfolio_by_day.loc["2020-09-26", ("subscribed_power_kva", "slp")])
-        self.assertEqual(18, portfolio_by_day.loc["2020-09-20", ("subscribed_power_kva", "smart_metered")])
+        contracts_slp = contracts[~contracts["smart_metered"]]
+        pf_slp = Contracts.compute_portfolio_by_day(contracts_slp, columns_to_sum=["subscribed_power_kva"])
+
+        # print(pf_sm, pf_slp)
+        self.assertEqual(pf_sm.shape, (5, 1))
+        self.assertEqual(pf_slp.shape, (11, 1))
+
+        self.assertEqual(18, pf_sm.loc["2020-09-20", "subscribed_power_kva"])
+        self.assertEqual(27, pf_slp.loc["2020-09-26", "subscribed_power_kva"])
 
     def test_get_portfolio_between_dates_1(self):
         """ test with a portfolio by day """
@@ -102,16 +93,16 @@ class TestContracts(unittest.TestCase):
         self.assertEqual(pd.to_datetime("2020-09-16"), portfolio_by_day.index.min())
         self.assertEqual(pd.to_datetime("2020-09-26"), portfolio_by_day.index.max())
 
-        pfd2 = Contracts.get_portfolio_between_dates(
+        pf = Contracts.get_portfolio_between_dates(
             portfolio_by_day,
             start_datetime=pd.to_datetime("2020-09-10"),
             end_datetime_exclusive=pd.to_datetime("2020-09-30")
         )
-        # print(pfd2["num_contracts"])
-        self.assertEqual(pd.to_datetime("2020-09-10"), pfd2.index.min())
-        self.assertEqual(pd.to_datetime("2020-09-29"), pfd2.index.max())
-        self.assertEqual(0, pfd2.loc["2020-09-12", "num_contracts"])
-        self.assertEqual(4, pfd2.loc["2020-09-28", "num_contracts"])
+        # print(pf["num_contracts"])
+        self.assertEqual(pd.to_datetime("2020-09-10"), pf.index.min())
+        self.assertEqual(pd.to_datetime("2020-09-29"), pf.index.max())
+        self.assertEqual(0, pf.loc["2020-09-12", "num_contracts"])
+        self.assertEqual(4, pf.loc["2020-09-28", "num_contracts"])
 
     def test_get_portfolio_between_dates_2(self):
         """ test with a portfolio by 15min step """
