@@ -1,5 +1,7 @@
 # Building this package
 
+This small guide is for the authors of this package. 
+
 The official python packaging tutorial (https://packaging.python.org/tutorials/packaging-projects/) 
 does not work, at least not easily. `python3 -m build` gave errors reading the example 
 `pyproject.toml` and `setup.cfg`.
