@@ -19,25 +19,32 @@ Here are some things **enda** does well:
 The source code is currently hosted on GitHub at: https://github.com/enercoop/enda
 
 Binary installers for the latest released version are available at the [Python
-Package Index (PyPI)](https://pypi.org/project/enda) and on [Conda](https://docs.conda.io/en/latest/).
+Package Index (PyPI)](https://pypi.org/project/enda) (for now not on [Conda](https://docs.conda.io/en/latest/).
 
 ```sh
 # PyPI
 pip install enda
 ```
 
-```sh
-# or conda
-conda install enda
-```
-
 ## How to get started ?
 
 Check out the guides : https://github.com/enercoop/enda/tree/main/guides .
 
-## Dependencies
+## Hard dependencies
 - [Pandas - the main dataframe manipulation tool for python, advanced timeseries management included.](https://pandas.pydata.org/)
-- [H2O - an efficient machine learning framework.](https://docs.h2o.ai/)
+- Pandas itself has hard and optional dependencies, checkout https://pandas.pydata.org/pandas-docs/stable/getting_started/install.html .  
+
+## Optional dependencies 
+
+Optional dependencies are used only for specific methods. Enda will give an error if the method called requires a dependency that is not installed. 
+
+Enda can work with some machine learning "backends" :
+- [Scikit-learn](https://scikit-learn.org/stable/)
+- [H2O - an efficient machine learning framework](https://docs.h2o.ai/)
+You can also easily implement your own ml-backend by implementing enda's ModelInterface. 
+
+Other optional dependencies :
+- [statsmodel](https://pypi.org/project/statsmodels/)
 
 ## License
 [MIT](LICENSE)
