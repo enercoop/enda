@@ -11,7 +11,7 @@ with open(os.path.join(HERE, "README.md"), "r") as f:
 # This call to setup() does all the work
 setup(
     name="enda",
-    version="0.1.1.dev6",
+    version="0.0.1",
 
     description="Tools to manipulate energy time-series and contracts, and to perform forecasts.",
     long_description=README,
@@ -33,6 +33,6 @@ setup(
     include_package_data=True,
     python_requires='>=3.7.3',
     install_requires=[
-        "pandas>=1.1.2"
+        "pandas>=1.0.0"
     ]
 )
