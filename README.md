@@ -32,19 +32,28 @@ Check out the guides : https://github.com/enercoop/enda/tree/main/guides .
 
 ## Hard dependencies
 - [Pandas - the main dataframe manipulation tool for python, advanced timeseries management included.](https://pandas.pydata.org/)
-- Pandas itself has hard and optional dependencies, checkout https://pandas.pydata.org/pandas-docs/stable/getting_started/install.html .  
+- Pandas itself has hard dependencies and optional dependencies, checkout https://pandas.pydata.org/pandas-docs/stable/getting_started/install.html . Hard dependencies of pandas include : `setuptools`, `NumPy`, `python-dateutil`, `pytz`.
 
 ## Optional dependencies 
 
 Optional dependencies are used only for specific methods. Enda will give an error if the method called requires a dependency that is not installed. 
 
-Enda can work with some machine learning "backends" :
+Enda can work with different machine learning "backends" :
 - [Scikit-learn](https://scikit-learn.org/stable/)
 - [H2O - an efficient machine learning framework](https://docs.h2o.ai/)
-You can also easily implement your own ml-backend by implementing enda's ModelInterface. 
+
+You can also easily implement your own ml-backend by implementing enda's ModelInterface. Checkout `enda.ml_backends.sklearn_linreg.py` for an example with `SKLearnLinearRegression`. 
 
 Other optional dependencies :
 - [statsmodel](https://pypi.org/project/statsmodels/)
+
+Furthermore, don't hesitate to install pandas "Recommended dependencies" for speed-ups: `numexpr` and `bottleneck`.
+
+A complete install looks like:
+```
+pip install numexpr bottleneck pandas enda h2o scikit-learn statsmodel
+```
+
 
 ## License
 [MIT](LICENSE)
