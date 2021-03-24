@@ -49,10 +49,13 @@ Other optional dependencies :
 
 Furthermore, don't hesitate to install pandas "Recommended dependencies" for speed-ups: `numexpr` and `bottleneck`.
 
+If you want to save your trained models, we recommend `joblib`. See Scikit-learn's recommendations here : https://scikit-learn.org/stable/modules/model_persistence.html . 
+
 A complete install looks like:
 ```
-pip install numexpr bottleneck pandas enda h2o scikit-learn statsmodel
+pip install numexpr bottleneck pandas enda h2o scikit-learn statsmodel joblib
 ```
+
 
 
 ## License
