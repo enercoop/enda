@@ -4,6 +4,7 @@ import time
 import shutil
 import pandas as pd
 from enda.models import ModelInterface
+import warnings
 
 try:
     from h2o.estimators import H2OXGBoostEstimator
@@ -21,6 +22,8 @@ class H2OModel(ModelInterface):
 
     def __init__(self, algo_name, model_id, algo_param_dict, target, model_path=None, verbose=False, logger=None,
                  seed=1234):
+
+        warnings.warn("H2OModel will be obsolete soon, use H2OEstimator", PendingDeprecationWarning)
 
         self.algo_name = algo_name
         self.model_id = model_id

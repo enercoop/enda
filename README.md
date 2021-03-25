@@ -5,7 +5,7 @@
 
 **enda** is a Python package that provides tools to manipulate **timeseries** data in conjunction with **contracts** data for analysis and **forecasts**. 
 
-Its main goal is to help [Rescoop.eu](https://www.rescoop.eu/) build various applications, such as short-term electricity load and production forecasts, specifically for the [RescoopVPP](https://www.rescoopvpp.eu/) project. Hence some tools in this package perform TSO (transmission network operator) and DNO (distribution network operator) data wrangling for several European countries, as well as weather data. 
+Its main goal is to help [Rescoop.eu](https://www.rescoop.eu/) members build various applications, such as short-term electricity load and production forecasts, specifically for the [RescoopVPP](https://www.rescoopvpp.eu/) project. Hence some tools in this package perform TSO (transmission network operator) and DNO (distribution network operator) data wrangling as well as weather data management. enda is mainly developed by [Enercoop](https://www.enercoop.fr/).
 
 ## Main Features
 Here are some things **enda** does well:
@@ -19,7 +19,7 @@ Here are some things **enda** does well:
 The source code is currently hosted on GitHub at: https://github.com/enercoop/enda
 
 Binary installers for the latest released version are available at the [Python
-Package Index (PyPI)](https://pypi.org/project/enda) (for now not on [Conda](https://docs.conda.io/en/latest/).
+Package Index (PyPI)](https://pypi.org/project/enda) (for now it is not directly on [Conda](https://docs.conda.io/en/latest/)).
 
 ```sh
 # PyPI

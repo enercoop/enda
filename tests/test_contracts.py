@@ -45,12 +45,12 @@ class TestContracts(unittest.TestCase):
     @staticmethod
     def get_simple_portfolio_by_day():
         contracts = Contracts.read_contracts_from_file(TestContracts.CONTRACTS_PATH)
-        contracts["num_contracts"] = 1  # add a variable to count the number of contracts for each row
+        contracts["contracts_count"] = 1  # add a variable to count the number of contracts for each row
 
         # count the running total, each day, of some columns
         portfolio_by_day = Contracts.compute_portfolio_by_day(
             contracts,
-            columns_to_sum=["num_contracts", "subscribed_power_kva", "estimated_annual_consumption_kwh"],
+            columns_to_sum=["contracts_count", "subscribed_power_kva", "estimated_annual_consumption_kwh"],
             date_start_col="date_start",
             date_end_exclusive_col="date_end_exclusive"
         )
@@ -63,9 +63,9 @@ class TestContracts(unittest.TestCase):
 
         print(portfolio_by_day)
         self.assertEqual((11, 3), portfolio_by_day.shape)
-        self.assertEqual(4, portfolio_by_day.loc["2020-09-26", "num_contracts"])
+        self.assertEqual(4, portfolio_by_day.loc["2020-09-26", "contracts_count"])
         self.assertEqual(30, portfolio_by_day.loc["2020-09-26", "subscribed_power_kva"])
-        self.assertEqual(5, portfolio_by_day["num_contracts"].max())
+        self.assertEqual(5, portfolio_by_day["contracts_count"].max())
         self.assertEqual(48, portfolio_by_day["subscribed_power_kva"].max())
 
     def test_compute_portfolio_by_day_2(self):
@@ -98,11 +98,11 @@ class TestContracts(unittest.TestCase):
             start_datetime=pd.to_datetime("2020-09-10"),
             end_datetime_exclusive=pd.to_datetime("2020-09-30")
         )
-        # print(pf["num_contracts"])
+        # print(pf["contracts_count"])
         self.assertEqual(pd.to_datetime("2020-09-10"), pf.index.min())
         self.assertEqual(pd.to_datetime("2020-09-29"), pf.index.max())
-        self.assertEqual(0, pf.loc["2020-09-12", "num_contracts"])
-        self.assertEqual(4, pf.loc["2020-09-28", "num_contracts"])
+        self.assertEqual(0, pf.loc["2020-09-12", "contracts_count"])
+        self.assertEqual(4, pf.loc["2020-09-28", "contracts_count"])
 
     def test_get_portfolio_between_dates_2(self):
         """ test with a portfolio by 15min step """
@@ -127,8 +127,8 @@ class TestContracts(unittest.TestCase):
         # print(pf2)
         self.assertEqual(pd.to_datetime("2020-09-10 00:00:00+02:00"), pf2.index.min())
         self.assertEqual(pd.to_datetime("2020-09-29 23:45:00+02:00"), pf2.index.max())
-        self.assertEqual(0, pf2.loc["2020-09-12 10:30:00+02:00", "num_contracts"])
-        self.assertEqual(4, pf2.loc["2020-09-27 05:15:00+02:00", "num_contracts"])
+        self.assertEqual(0, pf2.loc["2020-09-12 10:30:00+02:00", "contracts_count"])
+        self.assertEqual(4, pf2.loc["2020-09-27 05:15:00+02:00", "contracts_count"])
 
     def test_forecast_using_trend_1(self):
         """ Test on a portfolio_by_day"""

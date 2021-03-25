@@ -178,7 +178,8 @@ class TimeSeries:
 
         result = df.append(extra_row, ignore_index=False)
         result = result.resample(freq).interpolate(method=method)
-        result = result.drop(new_end_date)
+        if new_end_date in result.index:
+            result = result.drop(new_end_date)
         result.index.name = index_name
 
         return result
