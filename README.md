@@ -53,7 +53,7 @@ If you want to save your trained models, we recommend `joblib`. See Scikit-learn
 
 A complete install looks like:
 ```
-pip install numexpr bottleneck pandas enda h2o scikit-learn statsmodel joblib
+pip install numexpr bottleneck pandas enda h2o scikit-learn statsmodels joblib
 ```
 
 
