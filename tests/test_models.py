@@ -47,10 +47,11 @@ class TestStackingModel(unittest.TestCase):
 
         m = StackingModel(
             base_models={
-                "ada": SklearnEstimator(AdaBoostRegressor()),
-                "rf": SklearnEstimator(RandomForestRegressor())
+                "ada": SklearnEstimator(RandomForestRegressor()),
+                "rf": SklearnEstimator(LinearRegression())
             },
-            final_model=SklearnEstimator(LinearRegression())
+            final_model=SklearnEstimator(AdaBoostRegressor()),
+            base_stack_split_pct=0.10
         )
 
         m.train(train_set, target_name)

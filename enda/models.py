@@ -120,15 +120,24 @@ class StackingModel(ModelInterface):
 
     def __init__(self,
                  base_models: typing.Mapping[str, ModelInterface],
-                 final_model: ModelInterface):
+                 final_model: ModelInterface,
+                 base_stack_split_pct: float = 0.20
+                 ):
         """
         This class serves the same purpose as the Scikit-Learn "Stacking Regressor". However since we work on
         time-series, we need fine control on which data is passed to train the base_models before training
-        the final_model.
+        the final_model (to keep it all chronologically consistent).
 
+        Training is made this way :
+            temporarily train base_models on train_set[:x]
+            use base_models to predict on train_set[x:] -> base_model_predictions
+            train final_model on the base_model_predictions
+            re-train base_models on the full train-set
 
         :param base_models: a dict of {model_id -> model}, each model must implement enda.ModelInterface.
         :param final_model: the model used for stacking, must also implement enda.ModelInterface
+        :param base_stack_split_pct: the % of data used to train the base_models for before training final_model
+            (this can be overwritten in the train function)
         """
 
         if len(base_models) <= 1:
@@ -140,17 +149,20 @@ class StackingModel(ModelInterface):
             self.base_models[model_id] = base_models[model_id]
 
         self.final_model = final_model
+        self.base_stack_split_pct = base_stack_split_pct
 
-    def train(self, df: pandas.DataFrame, target_col: str, base_stack_split_pct: float = 0.05):
+    def train(self, df: pandas.DataFrame, target_col: str, base_stack_split_pct: [float, None] = None):
+
+        split_pct = base_stack_split_pct if base_stack_split_pct else self.base_stack_split_pct
 
         # training stacking will temporarily train single models on part of the data,
         # so it must be done before training the actual single models
-        self.train_final_model(df, target_col, base_stack_split_pct)
+        self.train_final_model(df, target_col, split_pct)
 
         # re-train base models with the full dataset
         self.train_base_models(df, target_col)
 
-    def train_final_model(self, df, target_col, base_stack_split_pct):
+    def train_final_model(self, df, target_col, split_pct):
         """
         Trains the final model used for stacking.
 
@@ -159,7 +171,7 @@ class StackingModel(ModelInterface):
         """
 
         # split the training frame : ,
-        split_int = int(df.shape[0] * (1-base_stack_split_pct))
+        split_int = int(df.shape[0] * (1-split_pct))
         split_idx = df.index[split_int]
 
         df_base_models = df[df.index < split_idx]  # one part to train the base models
@@ -167,8 +179,8 @@ class StackingModel(ModelInterface):
 
         if df_base_models.shape[0] == 0 or df_stacking.shape[0] == 0:
             raise ValueError("The split gave an empty train set for the base models or the stacking model. Change"
-                             "parameter 'base_stack_split_pct' (given {}) or provide a larger training set."
-                             .format(base_stack_split_pct))
+                             "parameter 'split_pct' (given {}) or provide a larger training set."
+                             .format(split_pct))
 
         self.train_base_models(df_base_models, target_col)
 
@@ -260,24 +272,24 @@ class ModelWithFallback(ModelInterface):
         self.model_without.train(df.drop(columns=[self.resilient_column]), target_col)
 
     def predict_both(self, df: pandas.DataFrame, target_col: str):
-        df_with = df[df[self.resilient_column].notna()]
-        predict_with = self.model_with.predict(df_with, target_col)
-        if predict_with.shape[0] != df.shape[0]:
+        df_with = df[df[self.resilient_column].notna()]  # only keeps rows where resilient_column is not NaN
+        prediction_with = self.model_with.predict(df_with, target_col)
+        if prediction_with.shape[0] != df.shape[0]:
             # make model_with predict NaN where resilient_column is Nan :
-            predict_with = predict_with.reindex(df.index)  # adds rows with NaN values
+            prediction_with = prediction_with.reindex(df.index)  # adds rows with NaN values
 
-        df_without = df.drop(columns=[self.resilient_column])
-        predict_without = self.model_without.predict(df_without, target_col)
-
-        if (predict_with.index != df.index).any():
-            raise ValueError("predict_with must have the same index as given df. "
+        if (prediction_with.index != df.index).any():
+            raise ValueError("prediction_with must have the same index as given df. "
                              "Check that self.model_with.predict conserves index.")
 
-        if (predict_without.index != df.index).any():
-            raise ValueError("predict_without must have the same index as given df. "
-                             "Check that self.predict_without.predict conserves index.")
+        df_without = df.drop(columns=[self.resilient_column])
+        prediction_without = self.model_without.predict(df_without, target_col)
 
-        return predict_with, predict_without
+        if (prediction_without.index != df.index).any():
+            raise ValueError("prediction_without must have the same index as given df. "
+                             "Check that self.model_without.predict conserves index.")
+
+        return prediction_with, prediction_without
 
     def predict(self, df: pandas.DataFrame, target_col: str) -> pandas.DataFrame:
         predict_with, predict_without = self.predict_both(df, target_col)
