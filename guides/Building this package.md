@@ -6,18 +6,23 @@ The official python packaging tutorial (https://packaging.python.org/tutorials/p
 does not work, at least not easily. `python3 -m build` gave errors reading the example 
 `pyproject.toml` and `setup.cfg`.
 
-The package is built using a `setup.py` file following this tutorial: 
+The package is built using a `setup.py` file following this tutorial : 
 https://packaging.python.org/tutorials/packaging-projects/ .  
 
-First put the correct version number in `setup.py`. We follow 
+first, put the correct version number in `setup.py`. We follow 
 https://packaging.python.org/guides/distributing-packages-using-setuptools/#standards-compliance-for-interoperability .
 https://www.python.org/dev/peps/pep-0440/ .
 Use for instance : `version="0.1.1.dev1"` .
 
-To build, make a python >=3.7.3 venv. Then:
+To build, make a python >=3.7.3 venv. Then :
 ```shell
 source {path-to-venv}/bin/activate
 pip install --upgrade pip twine setuptools
+```
+
+Run the unittests and check there is no error :
+```shell
+python -m unittest discover tests/
 ```
 
 ```shell
@@ -28,12 +33,12 @@ twine check dist/*
 
 ## Test.pypi.org
 
-To upload to `test.pypi.org`:
+To upload to `test.pypi.org` :
 ```shell
 twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 ```
 
-Check that the package is there: https://test.pypi.org/project/enda/#history .
+Check that the package is there : https://test.pypi.org/project/enda/#history .
 
 Test to install and use this test package. Go to another directory, and create/activate a virtualenv.
 ```shell
@@ -76,7 +81,7 @@ The steps are the same as in the previous section except for :
 twine upload dist/*
 ```
 Then to test the package just get `enda` using pip without specifying `--index-url`. 
-Also, the hard requirements (`pandas`) will be downloaded automatically:
+Also, the hard requirements (`pandas`) will be downloaded automatically :
 ```
 pip install enda
 ```

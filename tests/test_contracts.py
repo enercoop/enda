@@ -107,22 +107,23 @@ class TestContracts(unittest.TestCase):
     def test_get_portfolio_between_dates_2(self):
         """ test with a portfolio by 15min step """
         portfolio_by_day = TestContracts.get_simple_portfolio_by_day()
+        tz_str = 'Europe/Berlin'
 
         pf = TimeSeries.interpolate_daily_to_sub_daily_data(
             portfolio_by_day,
             freq='15min',
-            tz='Europe/Paris'
+            tz=tz_str
         )
         # print(pf)
         self.assertEqual(pd.to_datetime("2020-09-16 00:00:00+02:00"), pf.index.min())
         self.assertEqual(pd.to_datetime("2020-09-26 23:45:00+02:00"), pf.index.max())
         self.assertIsInstance(pf.index, pd.DatetimeIndex)
-        self.assertEqual("Europe/Paris", str(pf.index[0].tzinfo))
+        self.assertEqual(tz_str, str(pf.index[0].tzinfo))
 
         pf2 = Contracts.get_portfolio_between_dates(
             pf,
-            start_datetime=pd.to_datetime("2020-09-10 00:00:00+02:00").tz_convert("Europe/Paris"),
-            end_datetime_exclusive=pd.to_datetime("2020-09-30 00:00:00+02:00").tz_convert("Europe/Paris")
+            start_datetime=pd.to_datetime("2020-09-10 00:00:00+02:00").tz_convert(tz_str),
+            end_datetime_exclusive=pd.to_datetime("2020-09-30 00:00:00+02:00").tz_convert(tz_str)
         )
         # print(pf2)
         self.assertEqual(pd.to_datetime("2020-09-10 00:00:00+02:00"), pf2.index.min())

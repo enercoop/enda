@@ -35,8 +35,8 @@ class TestUtils:
         # turn the portfolio_by_day into a portfolio timeseries with our desired freq and timezone
         portfolio = TimeSeries.interpolate_daily_to_sub_daily_data(
             portfolio_by_day,
-            freq='35min',
-            tz='Europe/Paris'
+            freq='15min',
+            tz='Europe/Berlin'
         )
 
         # read historical load, weather and TSO forecast data
@@ -47,7 +47,7 @@ class TestUtils:
             df['time'] = pd.to_datetime(df['time'])
             # for now df['time'] can be of dtype "object" because there are 2 french timezones: +60min and +120min.
             # it is important to align time-zone to 'Europe/Paris' to make sure the df has a pandas.DatetimeIndex
-            df['time'] = TimeSeries.align_timezone(df['time'], tzinfo='Europe/Paris')
+            df['time'] = TimeSeries.align_timezone(df['time'], tzinfo='Europe/Berlin')
             df.set_index('time', inplace=True)
 
         # prepare datasets
@@ -72,7 +72,15 @@ class TestUtils:
             how='inner', left_index=True, right_index=True
         )
 
+        assert isinstance(train_set.index, pd.DatetimeIndex)
+        assert str(train_set.index.tz) == 'Europe/Berlin'
         assert isinstance(test_set.index, pd.DatetimeIndex)
+        assert str(test_set.index.tz) == "Europe/Berlin"
+
+        assert train_set.shape == (384, 6)
+        assert test_set.shape == (384, 5)
+
+
 
         return train_set, test_set, target_name
 
