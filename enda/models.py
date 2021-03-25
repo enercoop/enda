@@ -145,12 +145,12 @@ class StackingModel(ModelInterface):
 
         # training stacking will temporarily train single models on part of the data,
         # so it must be done before training the actual single models
-        self._train_final_model(df, target_col, base_stack_split_pct)
+        self.train_final_model(df, target_col, base_stack_split_pct)
 
         # re-train base models with the full dataset
-        self._train_base_models(df, target_col)
+        self.train_base_models(df, target_col)
 
-    def _train_final_model(self, df, target_col, base_stack_split_pct):
+    def train_final_model(self, df, target_col, base_stack_split_pct):
         """
         Trains the final model used for stacking.
 
@@ -170,19 +170,20 @@ class StackingModel(ModelInterface):
                              "parameter 'base_stack_split_pct' (given {}) or provide a larger training set."
                              .format(base_stack_split_pct))
 
-        self._train_base_models(df_base_models, target_col)
+        self.train_base_models(df_base_models, target_col)
 
         # make predictions with these temporary base_models, without the target column
-        base_model_predictions = self._predict_base_models(df_stacking.drop(columns=[target_col]), target_col)
+        base_model_predictions = self.predict_base_models(df_stacking.drop(columns=[target_col]), target_col)
 
         # add the target back, to train the stacking model
         base_model_predictions[target_col] = df_stacking[target_col]
 
         self.final_model.train(base_model_predictions, target_col)
 
-    def _predict_base_models(self, df, target_col):
+    def predict_base_models(self, df, target_col):
         """
         :return: a Dataframe with the prediction of each base model in each column.
+        Each column's name is the model_id given when initializing the StackingModel object.
         """
 
         model_dfs = []
@@ -205,13 +206,13 @@ class StackingModel(ModelInterface):
 
         return predict_df
 
-    def _train_base_models(self, df, target_col):
+    def train_base_models(self, df, target_col):
         # train base models
         for model_id, model in self.base_models.items():
             model.train(df, target_col)
 
     def predict(self, df: pandas.DataFrame, target_col: str):
-        base_model_predictions = self._predict_base_models(df, target_col)
+        base_model_predictions = self.predict_base_models(df, target_col)
         prediction = self.final_model.predict(base_model_predictions, target_col)
 
         if (prediction.index != df.index).any():
@@ -253,17 +254,17 @@ class ModelWithFallback(ModelInterface):
         Trains the two models : model_with and model_without the 'column_name'
         """
 
-        # only train the "model_with" where column_name is present (not NA)
+        # only train the "model_with" where resilient_column is present (not NA)
         self.model_with.train(df.dropna(subset=[self.resilient_column]), target_col)
-        # train the "model_without" column_name
+        # train the "model_without" without resilient_column
         self.model_without.train(df.drop(columns=[self.resilient_column]), target_col)
 
     def predict_both(self, df: pandas.DataFrame, target_col: str):
         df_with = df[df[self.resilient_column].notna()]
         predict_with = self.model_with.predict(df_with, target_col)
         if predict_with.shape[0] != df.shape[0]:
-            # Add missing rows with NaN prediction
-            predict_with = predict_with.reindex(df.index)
+            # make model_with predict NaN where resilient_column is Nan :
+            predict_with = predict_with.reindex(df.index)  # adds rows with NaN values
 
         df_without = df.drop(columns=[self.resilient_column])
         predict_without = self.model_without.predict(df_without, target_col)

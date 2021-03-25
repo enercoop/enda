@@ -61,7 +61,7 @@ class TestContracts(unittest.TestCase):
         """" test with a single group """
         portfolio_by_day = TestContracts.get_simple_portfolio_by_day()
 
-        print(portfolio_by_day)
+        # print(portfolio_by_day)
         self.assertEqual((11, 3), portfolio_by_day.shape)
         self.assertEqual(4, portfolio_by_day.loc["2020-09-26", "contracts_count"])
         self.assertEqual(30, portfolio_by_day.loc["2020-09-26", "subscribed_power_kva"])

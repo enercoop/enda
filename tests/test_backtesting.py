@@ -24,10 +24,10 @@ class TestBackTesting(unittest.TestCase):
                 days_between_trains=7,
                 gap_days_between_train_and_eval=14
         ):
-            if count_iterations % 20 == 0:
-                print("Iteration {}/105, train set {}->{}, test set {}->{}"
-                      .format(count_iterations, train_set.index.min(), train_set.index.max(),
-                              test_set.index.min(), test_set.index.max()))
+            # if count_iterations % 20 == 0:
+            #    print("Iteration {}/105, train set {}->{}, test set {}->{}"
+            #          .format(count_iterations, train_set.index.min(), train_set.index.max(),
+            #                  test_set.index.min(), test_set.index.max()))
             count_iterations += 1
 
         self.assertEqual(count_iterations, 105)
@@ -50,10 +50,10 @@ class TestBackTesting(unittest.TestCase):
                 days_between_trains=10,
                 gap_days_between_train_and_eval=5
         ):
-            if count_iterations % 20 == 0:
-                print("Iteration {}/110, train set {}->{}, test set {}->{}"
-                      .format(count_iterations, train_set.index.min(), train_set.index.max(),
-                              test_set.index.min(), test_set.index.max()))
+            # if count_iterations % 20 == 0:
+            #    print("Iteration {}/110, train set {}->{}, test set {}->{}"
+            #          .format(count_iterations, train_set.index.min(), train_set.index.max(),
+            #                  test_set.index.min(), test_set.index.max()))
             count_iterations += 1
 
         self.assertEqual(count_iterations, 110)
