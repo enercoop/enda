@@ -73,7 +73,7 @@ Before uploading to the real `pypi.org`, first check that the enda version in `s
 
 The steps are the same as in the previous section except for :
 ```shell
-twine upload --repository-url https://pypi.org/ dist/*
+twine upload dist/*
 ```
 Then to test the package just get `enda` using pip without specifying `--index-url`. 
 Also, the hard requirements (`pandas`) will be downloaded automatically:
