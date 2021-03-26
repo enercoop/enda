@@ -51,7 +51,7 @@ Furthermore, don't hesitate to install pandas "Recommended dependencies" for spe
 
 If you want to save your trained models, we recommend `joblib`. See Scikit-learn's recommendations here : https://scikit-learn.org/stable/modules/model_persistence.html . 
 
-A complete install looks like :
+An almost complete install looks like :
 ```
 pip install numexpr bottleneck pandas enda jupyter h2o scikit-learn statsmodels joblib matplotlib
 ```
