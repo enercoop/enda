@@ -91,7 +91,7 @@ class Contracts:
     @staticmethod
     def __contract_to_events(contracts, date_start_col, date_end_exclusive_col):
         # check that no column is named "event_type" or "event_date"
-        for c in ["event_type", "event_date", "date"]:
+        for c in ["event_type", "event_date"]:
             if c in contracts.columns:
                 raise ValueError("contracts has a column named {}, but this name is reserved in this"
                                  "function; rename your column.".format(c))
@@ -151,6 +151,11 @@ class Contracts:
                  The first row is the earliest contract start date and the last row is the latest
                  contract start or contract end date.
         """
+
+        for c in ["date"]:
+            if c in contracts.columns:
+                raise ValueError("contracts has a column named {}, but this name is reserved in this"
+                                 "function; rename your column.".format(c))
 
         cls.check_contracts_dates(contracts, date_start_col, date_end_exclusive_col)
 
@@ -313,4 +318,3 @@ class Contracts:
         result.index = future_index
 
         return result
-

@@ -1,9 +1,9 @@
 import unittest
 import numpy as np
 import pandas as pd
-from enda.models import ModelWithFallback, StackingModel, NormalizedModel
+from enda.estimators import EndaEstimatorWithFallback, EndaStackingEstimator, EndaNormalizedEstimator
 from tests.test_utils import TestUtils
-from enda.ml_backends.sklearn_estimator import SklearnEstimator
+from enda.ml_backends.sklearn_estimator import EndaSklearnEstimator
 try:
     from sklearn.ensemble import AdaBoostRegressor, RandomForestRegressor
     from sklearn.linear_model import LinearRegression
@@ -24,10 +24,10 @@ class TestModelWithFallback(unittest.TestCase):
         # the dtype of the column should still be 'float64'
         self.assertEqual('float64', str(test_set['tso_forecast_load_mw'].dtype))
 
-        m = ModelWithFallback(
+        m = EndaEstimatorWithFallback(
             resilient_column='tso_forecast_load_mw',
-            model_with=SklearnEstimator(AdaBoostRegressor()),
-            model_without=SklearnEstimator(RandomForestRegressor())
+            estimator_with=EndaSklearnEstimator(AdaBoostRegressor()),
+            estimator_without=EndaSklearnEstimator(RandomForestRegressor())
         )
 
         m.train(train_set, target_name)
@@ -45,12 +45,12 @@ class TestStackingModel(unittest.TestCase):
     def test_1(self):
         train_set, test_set, target_name = TestUtils.read_example_a_train_test_sets()
 
-        m = StackingModel(
-            base_models={
-                "ada": SklearnEstimator(RandomForestRegressor()),
-                "rf": SklearnEstimator(LinearRegression())
+        m = EndaStackingEstimator(
+            base_estimators={
+                "ada": EndaSklearnEstimator(RandomForestRegressor()),
+                "rf": EndaSklearnEstimator(LinearRegression())
             },
-            final_model=SklearnEstimator(AdaBoostRegressor()),
+            final_estimator=EndaSklearnEstimator(AdaBoostRegressor()),
             base_stack_split_pct=0.10
         )
 
@@ -63,7 +63,7 @@ class TestStackingModel(unittest.TestCase):
         self.assertEqual(0, prediction[target_name].isna().sum())
 
         # also check the underlying base model predictions
-        base_model_predictions = m.predict_base_models(test_set, target_name)
+        base_model_predictions = m.predict_base_estimators(test_set, target_name)
         # print(base_model_predictions)
         self.assertListEqual(["ada", "rf"], list(base_model_predictions.columns))
 
@@ -73,8 +73,8 @@ class TestNormalizedModel(unittest.TestCase):
     def test_1(self):
         train_set, test_set, target_name = TestUtils.read_example_a_train_test_sets()
 
-        m = NormalizedModel(
-            normalized_model=SklearnEstimator(RandomForestRegressor()),
+        m = EndaNormalizedEstimator(
+            inner_estimator=EndaSklearnEstimator(RandomForestRegressor()),
             target_col="load_kw",
             normalization_col="subscribed_power_kva",
             columns_to_normalize=["contracts_count", "estimated_annual_consumption_kwh"]

@@ -15,7 +15,7 @@ if len(missing_dependencies) > 0:
     )
 del hard_dependencies, dependency, missing_dependencies
 
-# import some ubclasses here so users can use for instance :
+# import some subclasses here so users can use for instance :
 # 'enda.Contracts' without knowing the internal structure.
 # Do not import classes that need a specific packages like "H2OModel".
 from enda.contracts import (Contracts)

@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 from tests.test_utils import TestUtils
-from enda.ml_backends.sklearn_estimator import SklearnEstimator
+from enda.ml_backends.sklearn_estimator import EndaSklearnEstimator
 
 try:
     from sklearn.linear_model import LinearRegression, SGDRegressor
@@ -41,11 +41,10 @@ class TestSklearnEstimator(unittest.TestCase):
             ),
 
         ]:
-            m = SklearnEstimator(estimator)
+            m = EndaSklearnEstimator(estimator)
             m.train(train_set, target_name)
             prediction = m.predict(test_set, target_name)
 
             # prediction must preserve the pandas.DatetimeIndex
             self.assertIsInstance(prediction.index, pd.DatetimeIndex)
             self.assertTrue((test_set.index == prediction.index).all())
-

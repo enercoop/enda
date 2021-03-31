@@ -2,10 +2,11 @@ import unittest
 import pandas as pd
 import time
 from tests.test_utils import TestUtils
-from enda.ml_backends.h2o_estimator import H2OEstimator
+from enda.ml_backends.h2o_estimator import EndaH2OEstimator
 import pickle
 import os
 import shutil
+import copy
 
 try:
     import h2o
@@ -37,6 +38,7 @@ class TestH2OEstimator(unittest.TestCase):
     def tearDownClass(cls):
         """ shutdown the local h2o server """
         h2o.cluster().shutdown()  # shutdown h2o local server
+        print("H2O cluster shutdown...")
         time.sleep(3)  # wait for h2o to actually finish shutting down
 
     def test_estimators(self):
@@ -50,7 +52,7 @@ class TestH2OEstimator(unittest.TestCase):
             H2ODeepLearningEstimator()
         ]:
             print(type(estimator))
-            m = H2OEstimator(estimator)
+            m = EndaH2OEstimator(estimator)
             m.train(train_set, target_name)
             prediction = m.predict(test_set, target_name)
 
@@ -60,7 +62,7 @@ class TestH2OEstimator(unittest.TestCase):
 
     def test_joblib(self):
         train_set, test_set, target_name = TestUtils.read_example_a_train_test_sets()
-        m = H2OEstimator(H2OGeneralizedLinearEstimator())
+        m = EndaH2OEstimator(H2OGeneralizedLinearEstimator())
         m.train(train_set, target_name)
 
         file_path_joblib = os.path.join(TestUtils.EXAMPLE_A_DIR, "tmp_test_joblib_h2o_estimator.joblib")
@@ -89,7 +91,7 @@ class TestH2OEstimator(unittest.TestCase):
         """
 
         train_set, test_set, target_name = TestUtils.read_example_a_train_test_sets()
-        m = H2OEstimator(H2OGeneralizedLinearEstimator())
+        m = EndaH2OEstimator(H2OGeneralizedLinearEstimator())
         m.train(train_set, target_name)
 
         file_path_pickle = os.path.join(TestUtils.EXAMPLE_A_DIR, "tmp_test_pickle_h2o_estimator.pickle")
@@ -113,10 +115,30 @@ class TestH2OEstimator(unittest.TestCase):
         # clean the file of this test
         os.remove(file_path_pickle)
 
+    def test_deepcopy(self):
+        train_set, test_set, target_name = TestUtils.read_example_a_train_test_sets()
+
+        for estimator in [
+            H2OXGBoostEstimator(),
+            H2OGradientBoostingEstimator(ntrees=10, max_depth=5, sample_rate=0.5, min_rows=5)
+        ]:
+
+            m = EndaH2OEstimator(estimator)
+            m.train(train_set, target_name)
+
+            m_deepcopy = copy.deepcopy(m)
+            m_deepcopy.predict(train_set.drop(columns=[target_name]), target_name)
+            m_deepcopy.predict(test_set, target_name)
+
+    def test_deepcopy_model_not_trained(self):
+        m_not_trained = EndaH2OEstimator(H2OGeneralizedLinearEstimator())
+        with self.assertRaises(ValueError):
+            copy.deepcopy(m_not_trained)
+
     def test_regular_h2o_save_load(self):
         """ An example to show how to work with h2o models even with just the h2o functions """
         train_set, test_set, target_name = TestUtils.read_example_a_train_test_sets()
-        m = H2OEstimator(H2OGeneralizedLinearEstimator())
+        m = EndaH2OEstimator(H2OGeneralizedLinearEstimator())
         m.train(train_set, target_name)
 
         file_path_1 = os.path.join(TestUtils.EXAMPLE_A_DIR, "test_regular_h2o_save_load_1")

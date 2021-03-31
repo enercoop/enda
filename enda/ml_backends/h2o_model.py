@@ -3,7 +3,7 @@ import h2o
 import time
 import shutil
 import pandas as pd
-from enda.models import ModelInterface
+from enda.estimators import EndaEstimator
 import warnings
 
 try:
@@ -18,7 +18,7 @@ except ImportError:
     raise ImportError("h2o is required is you want to use this enda's H2OModel. Try: pip install h2o>=3.32.0.3")
 
 
-class H2OModel(ModelInterface):
+class EndaH2OModel(EndaEstimator):
 
     def __init__(self, algo_name, model_id, algo_param_dict, target, model_path=None, verbose=False, logger=None,
                  seed=1234):
@@ -148,7 +148,7 @@ class H2OModel(ModelInterface):
         if self.target in df.columns:
             testing_frame = testing_frame.drop(self.target, 1)
 
-        #LOGGER.info("Predicting -- {} -- from {} to {}"
+        # LOGGER.info("Predicting -- {} -- from {} to {}"
         #    .format(self.model_id, testing_frame.index.min(), testing_frame.index.max()))
 
         test = h2o.H2OFrame(df)

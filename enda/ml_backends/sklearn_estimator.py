@@ -1,8 +1,8 @@
 import pandas
-from enda.models import ModelInterface
+from enda.estimators import EndaEstimator
 
 
-class SklearnEstimator(ModelInterface):
+class EndaSklearnEstimator(EndaEstimator):
     """
     This is a simple wrapper around any Scikit-learn estimator (or anything with the same fit/predict methods)
     It makes it easier to deal pandas time-series dataframes as input and output.

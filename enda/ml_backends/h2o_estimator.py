@@ -1,17 +1,19 @@
 import pandas
-from enda.models import ModelInterface
+from enda.estimators import EndaEstimator
 import os
 import tempfile
 import shutil
+import warnings
 
 try:
     import h2o
+    import h2o.exceptions
 except ImportError:
     raise ImportError("h2o is required is you want to use this enda's H2OEstimator. "
                       "Try: pip install h2o>=3.32.0.3")
 
 
-class H2OEstimator(ModelInterface):
+class EndaH2OEstimator(EndaEstimator):
     """
     This is a wrapper around any H2O estimator (or anything with the same train/predict methods).
     H2OEstimator implements enda's ModelInterface.
@@ -24,9 +26,6 @@ class H2OEstimator(ModelInterface):
     objects. So we have methods for that.
 
     """
-
-    __tmp_file_path_1 = os.path.join(tempfile.gettempdir(), "__h2o_estimator_tmp_file_1_136987")
-    __tmp_file_path_2 = os.path.join(tempfile.gettempdir(), "__h2o_estimator_tmp_file_2_136987")
 
     def __init__(self, h2o_estimator):
         self.model = h2o_estimator
@@ -45,46 +44,59 @@ class H2OEstimator(ModelInterface):
         forecast.index = df.index  # put back the correct index (typically a pandas.DatetimeIndex)
         return forecast
 
+    # All below is just for model persistence : to comply with pickle and deepcopy.
+
+    __tmp_file_path_1 = os.path.join(tempfile.gettempdir(), "__h2o_estimator_tmp_file_1_136987")
+    __tmp_file_path_2 = os.path.join(tempfile.gettempdir(), "__h2o_estimator_tmp_file_2_136987")
+
     @staticmethod
-    def __h2o_model_to_tar_binary(h2o_model):
+    def __h2o_model_to_binary(h2o_model):
 
         # save h2o model to tmp file
-        model_path_from_h2o = h2o.save_model(h2o_model, path=H2OEstimator.__tmp_file_path_1, force=True)
+        try:
+            model_path_from_h2o = h2o.save_model(h2o_model, path=EndaH2OEstimator.__tmp_file_path_1, force=True)
+        except (h2o.exceptions.H2OResponseError, TypeError) as e:
+            raise ValueError("Problem getting the model from h2o server. Train the model first. "
+                             "Cannot access model binary before training (for pickle or deepcopy or other uses).", e)
+
+        if not model_path_from_h2o.startswith(EndaH2OEstimator.__tmp_file_path_1):
+            warnings.warn("Expected model_path_from_h2o={} to start with {}"
+                          .format(model_path_from_h2o, EndaH2OEstimator.__tmp_file_path_1))
 
         # last step actually made a folder and a file inside (at path 'model_path_from_h2o')
         # but we must keep the file inside to read it later,
         # else reading the model later based on the folder does not work despite what H2O docs say
-        shutil.move(model_path_from_h2o, H2OEstimator.__tmp_file_path_2)
-        shutil.rmtree(H2OEstimator.__tmp_file_path_1)
+        shutil.move(model_path_from_h2o, EndaH2OEstimator.__tmp_file_path_2)
+        shutil.rmtree(EndaH2OEstimator.__tmp_file_path_1)
 
         # read the tmp file as binary
-        with open(H2OEstimator.__tmp_file_path_2, mode='rb') as file:
-            tar_binary = file.read()
+        with open(EndaH2OEstimator.__tmp_file_path_2, mode='rb') as file:
+            binary = file.read()
 
         # cleanup tmp file
-        os.remove(H2OEstimator.__tmp_file_path_2)
+        os.remove(EndaH2OEstimator.__tmp_file_path_2)
 
-        return tar_binary
+        return binary
 
     @staticmethod
-    def __h2o_model_from_tar_binary(tar_binary):
+    def __h2o_model_from_binary(binary):
 
-        # save tar_binary to tmp file
-        with open(H2OEstimator.__tmp_file_path_2, mode='wb') as file:
-            file.write(tar_binary)
+        # save binary to tmp file
+        with open(EndaH2OEstimator.__tmp_file_path_2, mode='wb') as file:
+            file.write(binary)
 
         # load H2O model from the file
-        h2o_model = h2o.upload_model(path=H2OEstimator.__tmp_file_path_2)
+        h2o_model = h2o.upload_model(path=EndaH2OEstimator.__tmp_file_path_2)
 
         # cleanup tmp file
-        os.remove(H2OEstimator.__tmp_file_path_2)
+        os.remove(EndaH2OEstimator.__tmp_file_path_2)
 
         return h2o_model
 
     def __getstate__(self):
         # for pickle, see https://docs.python.org/3/library/pickle.html#pickle-state
 
-        self.__model_binary = H2OEstimator.__h2o_model_to_tar_binary(self.model)
+        self.__model_binary = EndaH2OEstimator.__h2o_model_to_binary(self.model)
         state = self.__dict__.copy()
         # Remove the un-picklable entry : 'model', but keep the picklable entry: __model_binary
         del state['model']
@@ -94,6 +106,6 @@ class H2OEstimator(ModelInterface):
         # for pickle, see https://docs.python.org/3/library/pickle.html#pickle-state
 
         self.__dict__.update(state)  # loads only __model_binary
-        self.model = H2OEstimator.__h2o_model_from_tar_binary(self.__model_binary)
+        self.model = EndaH2OEstimator.__h2o_model_from_binary(self.__model_binary)
         # we don't need to keep the __model_binary
         self.__model_binary = None
