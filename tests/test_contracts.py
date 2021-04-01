@@ -131,14 +131,75 @@ class TestContracts(unittest.TestCase):
         self.assertEqual(0, pf2.loc["2020-09-12 10:30:00+02:00", "contracts_count"])
         self.assertEqual(4, pf2.loc["2020-09-27 05:15:00+02:00", "contracts_count"])
 
-    def test_forecast_using_trend_1(self):
+    def test_forecast_portfolio_linear_1(self):
+        """ Test on a portfolio_by_day"""
+
+        portfolio_by_day = TestContracts.get_simple_portfolio_by_day()
+
+        # print(portfolio_by_day['subscribed_power_kva'])
+
+        # linear forecast using the 11 days gives an increasing trend
+        forecast_by_day_a = Contracts.forecast_portfolio_linear(
+            portfolio_by_day,
+            start_forecast_date=pd.to_datetime("2020-09-27"),
+            end_forecast_date_exclusive=pd.to_datetime("2020-09-30"),
+            freq='D'
+        )
+
+        # print(forecast_by_day_a['subscribed_power_kva'])
+
+        self.assertEqual((3, 3), forecast_by_day_a.shape)
+        self.assertEqual(pd.to_datetime("2020-09-29"), forecast_by_day_a.index.max())
+        self.assertGreaterEqual(forecast_by_day_a.loc["2020-09-27", "subscribed_power_kva"], 40)
+        self.assertGreaterEqual(forecast_by_day_a.loc["2020-09-29", "subscribed_power_kva"], 40)
+
+        # linear forecast using only the last 7 days gives a decreasing trend
+        forecast_by_day_b = Contracts.forecast_portfolio_linear(
+            portfolio_by_day[portfolio_by_day.index >= '2020-09-20'],
+            start_forecast_date=pd.to_datetime("2020-09-27"),
+            end_forecast_date_exclusive=pd.to_datetime("2020-10-02"),
+            freq='D'
+        )
+
+        # print(forecast_by_day_b['subscribed_power_kva'])
+
+        self.assertEqual((5, 3), forecast_by_day_b.shape)
+        self.assertEqual(pd.to_datetime("2020-10-01"), forecast_by_day_b.index.max())
+        self.assertLessEqual(forecast_by_day_b.loc["2020-09-27", "subscribed_power_kva"], 40)
+        self.assertLessEqual(forecast_by_day_b.loc["2020-09-29", "subscribed_power_kva"], 40)
+
+    def test_forecast_portfolio_linear_2(self):
+        """Test on a portfolio at freq=7min"""
+
+        portfolio_by_day = TestContracts.get_simple_portfolio_by_day()
+        portfolio_by_20min = TimeSeries.interpolate_daily_to_sub_daily_data(portfolio_by_day,
+                                                                            freq='20min', tz='Europe/Paris')
+
+        # print(portfolio_by_20min)
+
+        # linear forecast_by_10min, give it a portfolio_by_20min to train
+        forecast_by_10min = Contracts.forecast_portfolio_linear(
+            portfolio_by_20min,
+            start_forecast_date=pd.to_datetime("2020-09-27 00:00:00+02:00").tz_convert("Europe/Paris"),
+            end_forecast_date_exclusive=pd.to_datetime("2020-09-30 00:00:00+02:00").tz_convert("Europe/Paris"),
+            freq='10min',
+            tzinfo='Europe/Paris'
+        )
+
+        # print(forecast_by_10min)
+        self.assertEqual((432, 3), forecast_by_10min.shape)
+        self.assertEqual("Europe/Paris", str(forecast_by_10min.index.tzinfo))
+        self.assertGreaterEqual(forecast_by_10min.loc["2020-09-27 00:00:00+02:00", "subscribed_power_kva"], 40)
+        self.assertGreaterEqual(forecast_by_10min.loc["2020-09-29 00:00:00+02:00", "subscribed_power_kva"], 40)
+
+    def test_forecast_portfolio_holt_1(self):
         """ Test on a portfolio_by_day"""
 
         portfolio_by_day = TestContracts.get_simple_portfolio_by_day()
 
         # print(portfolio_by_day)
 
-        forecast_by_day = Contracts.forecast_using_trend(
+        forecast_by_day = Contracts.forecast_portfolio_holt(
             portfolio_by_day,
             start_forecast_date=pd.to_datetime("2020-09-27"),
             nb_days=3,
@@ -151,21 +212,23 @@ class TestContracts(unittest.TestCase):
         self.assertLessEqual(38, forecast_by_day.loc["2020-09-27", "subscribed_power_kva"])
         self.assertGreaterEqual(40, forecast_by_day.loc["2020-09-29", "subscribed_power_kva"])
 
-    def test_forecast_using_trend_2(self):
+    def test_forecast_portfolio_holt_2(self):
         """ Test on a portfolio at freq=5min """
 
         portfolio_by_day = TestContracts.get_simple_portfolio_by_day()
         portfolio_5min = TimeSeries.interpolate_daily_to_sub_daily_data(portfolio_by_day,
                                                                         freq='5min', tz='Europe/Paris')
-        # print(portfolio_5min)
+        print(portfolio_5min[['subscribed_power_kva']][portfolio_5min.index >= '2020-09-19 00:00:00+02:00'])
 
-        forecast_5_min = Contracts.forecast_using_trend(
+        forecast_5_min = Contracts.forecast_portfolio_holt(
             portfolio_5min,
             start_forecast_date=pd.to_datetime("2020-09-27 00:00:00+02:00").tz_convert("Europe/Paris"),
             nb_days=5,
-            past_days=7  # if we look only at the last 7 days, the trend is decreasing (10 days would be increasing)
+            past_days=7,  # if we look only at the last 7 days, the trend is decreasing (10 days would be increasing),
+            holt_init_params={"exponential": True, "damped_trend": True, "initialization_method": "estimated"},
+            holt_fit_params={"damping_trend": 0.98}
         )
-        # print(forecast_5_min)
+        print(forecast_5_min[['subscribed_power_kva']])
 
         self.assertEqual((12*24*5, 3), forecast_5_min.shape)
         self.assertEqual(
@@ -173,4 +236,4 @@ class TestContracts(unittest.TestCase):
             forecast_5_min.index.max()
         )
         self.assertGreaterEqual(30, forecast_5_min.loc["2020-09-27 00:00:00+02:00", "subscribed_power_kva"])
-        self.assertGreater(30, forecast_5_min.loc["2020-10-01 23:55:00+02:00", "subscribed_power_kva"])
+        self.assertGreaterEqual(30, forecast_5_min.loc["2020-10-01 23:55:00+02:00", "subscribed_power_kva"])

@@ -1,16 +1,29 @@
-class Scoring:
-    """ A class to help scoring algorithms """
+import pandas
 
-    def __init__(self, predictions_df, target, algo_names):
+
+class Scoring:
+    """
+    A class to help scoring algorithms
+    predictions_df must include the 'target' column and the predictions in all other columns
+    """
+
+    def __init__(self, predictions_df: pandas.DataFrame, target: str):
 
         self.predictions_df = predictions_df
         self.target = target
-        self.algo_names = algo_names
+        if self.target not in self.predictions_df.columns:
+            raise ValueError("target={} must be in predictions_df columns : {}"
+                             .format(self.target, self.predictions_df))
+        if len(self.predictions_df.columns) < 2:
+            raise ValueError("predictions_df must have at least 2 columns (1 target and 1 prediction)")
+
+        algo_names = list([c for c in self.predictions_df.columns if c != self.target])
 
         error_df = self.predictions_df.copy(deep=True)
-        for x in self.algo_names:
+        for x in algo_names:
             error_df[x] = error_df[x] - error_df[self.target]
-        self.error_df = error_df[[self.algo_names]]
+        error_df.drop(columns=[self.target], inplace=True)
+        self.error_df = error_df
 
         self.pct_error_df = self.error_df.div(self.predictions_df[self.target], axis=0)*100
 

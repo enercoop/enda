@@ -4,15 +4,15 @@ from enda.estimators import EndaEstimator
 
 class EndaSklearnEstimator(EndaEstimator):
     """
-    This is a simple wrapper around any Scikit-learn estimator (or anything with the same fit/predict methods)
+    This is a simple wrapper around any Scikit-learn estimator.
     It makes it easier to deal pandas time-series dataframes as input and output.
-
-    SklearnEstimator implements enda's ModelInterface.
     """
 
     def __init__(self, sklearn_estimator):
-        # will error out if the object passed is not a correct sklearn estimator
-        # check_estimator(sklearn_estimator)
+        """
+        Like in scikit-learn we use duck typing here, so we don't check the type of argument 'sklearn_estimator'
+        """
+
         self.model = sklearn_estimator
 
     def train(self, df: pandas.DataFrame, target_col: str):

@@ -2,6 +2,7 @@ import pandas as pd
 from pandas.api.types import is_string_dtype, is_datetime64_dtype
 from dateutil.relativedelta import relativedelta
 from enda.timezone_utils import TimezoneUtils
+import pytz
 
 
 class Contracts:
@@ -241,7 +242,73 @@ class Contracts:
         return df
 
     @classmethod
-    def forecast_using_trend(cls, portfolio_df, start_forecast_date, nb_days=14, past_days=100):
+    def forecast_portfolio_linear(cls,
+                                  portfolio_df: pd.DataFrame,
+                                  start_forecast_date,
+                                  end_forecast_date_exclusive,
+                                  freq: [pd.Timedelta, str],
+                                  max_allowed_gap: pd.Timedelta = pd.Timedelta(days=1),
+                                  tzinfo: [pytz.timezone, str, None] = None
+                                  ):
+
+        if end_forecast_date_exclusive < start_forecast_date:
+            raise ValueError("end_forecast_date must be after start_forecast_date")
+
+        gap = portfolio_df.index.max() - start_forecast_date
+        if gap > max_allowed_gap:
+            raise ValueError("The gap between the end of portfolio_df and start_forecast_date is too big:"
+                             "{} (max_allowed_gap={}). Provide more recent data or change max_allowed_gap."
+                             .format(gap, max_allowed_gap))
+
+        if not isinstance(portfolio_df.index, pd.DatetimeIndex):
+            raise ValueError("portfolio_df should have a pandas.DatetimeIndex, but given {}"
+                             .format(portfolio_df.index.dtype))
+
+        try:
+            from enda.ml_backends.sklearn_estimator import EndaSklearnEstimator
+            from sklearn.linear_model import LinearRegression
+            import numpy as np
+        except ImportError:
+            raise ImportError("sklearn is required is you want to use this function. "
+                              "Try: pip install scikit-learn")
+
+        result_index = pd.date_range(
+            start=start_forecast_date,
+            end=end_forecast_date_exclusive,
+            freq=freq,
+            name=portfolio_df.index.name,
+            closed='left'
+        )
+
+        if tzinfo is not None:
+            result_index = result_index.tz_convert(tzinfo)
+
+        predictions = []
+
+        for c in portfolio_df.columns:
+            epoch_column = "seconds_since_epoch_" if c != "seconds_since_epoch_" else "seconds_since_epoch__"
+
+            train_set = portfolio_df[[c]].copy(deep=True)
+            train_set[epoch_column] = train_set.index.astype(np.int64) // 10**9
+
+            test_set = pd.DataFrame(
+                data={"epoch_column": result_index.astype(np.int64) // 10**9},
+                index=result_index
+            )
+
+            lr = EndaSklearnEstimator(LinearRegression())
+            lr.train(train_set, target_col=c)
+            predictions.append(lr.predict(test_set, target_col=c))
+
+        return pd.concat(predictions, axis=1, join='outer')
+
+    @classmethod
+    def forecast_portfolio_holt(cls,
+                                portfolio_df: pd.DataFrame,
+                                start_forecast_date,
+                                nb_days: int = 14,
+                                past_days: int = 100,
+                                holt_init_params=None, holt_fit_params=None):
         """
         Forecast using exponential smoothing (Holt method) for the next nb_days
         The output has the same frequency as input portfolio_df.
@@ -251,6 +318,11 @@ class Contracts:
         :param nb_days: number of days after 'end_date' to forecast
         :param past_days: max number of days to use in the past used to make the forecast
                           (it is better to use only recent data)
+        :param holt_init_params: the dict of parameters to give to the Holt __init__ method. If none, defaults to :
+                                holt_fit_params={"initialization_method":"estimated"}
+                                For more details see the statsmodels documentation :
+                                https://www.statsmodels.org/stable/examples/notebooks/generated/exponential_smoothing.html
+        :param holt_fit_params: the dict of params to give to the Holt.fi() method. If none, defaults to : {}
         :return: pd.DataFrame (the forecast data)
         """
 
@@ -260,13 +332,14 @@ class Contracts:
             raise ImportError("statsmodels is required is you want to use this function. "
                               "Try: pip install statsmodels>=0.12.0")
 
+        if holt_init_params is None:
+            holt_init_params = {"initialization_method": "estimated"}
+
+        if holt_fit_params is None:
+            holt_fit_params = {}
+
         if nb_days < 1:
             raise ValueError("nb_days should be at least 1, given {}".format(nb_days))
-
-        if not isinstance(start_forecast_date, pd.Timestamp):
-            raise ValueError("Expected a pandas.Timestamp for start_forecast_date, but got {} of type {}. "
-                             "You can use pandas.to_datetime(...) before passing this argument."
-                             .format(start_forecast_date, type(start_forecast_date)))
 
         if start_forecast_date > portfolio_df.index.max() + relativedelta(days=1):
             raise ValueError("Start forecast date ({}) more than 1 day after the latest portfolio information ({}). "
@@ -308,12 +381,12 @@ class Contracts:
             closed='left'
         )
         if tzinfo is not None:
-            future_index = future_index.tz_convert(pf.index.tzinfo)
+            future_index = future_index.tz_convert(tzinfo)
 
         # holt needs a basic integer index
         pf = pf.reset_index(drop=True)
         # forecast each column (all columns are measures)
-        result = pf.apply(lambda x: Holt(x, initialization_method="estimated").fit().forecast(len(future_index)))
+        result = pf.apply(lambda x: Holt(x, **holt_init_params).fit(**holt_fit_params).forecast(len(future_index)))
         result = result.round(1)
         result.index = future_index
 

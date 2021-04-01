@@ -14,11 +14,11 @@ try:
     from sklearn.feature_selection import SelectFromModel
     from sklearn.neural_network import MLPRegressor
 except ImportError as e:
-    raise ImportError("scikit-learn is required is you want to test enda's SklearnEstimator. "
+    raise ImportError("scikit-learn is required is you want to test enda's EndaSklearnEstimator. "
                       "Try: pip install scikit-learn>=0.24.1", e)
 
 
-class TestSklearnEstimator(unittest.TestCase):
+class TestEndaSklearnEstimator(unittest.TestCase):
 
     def test_estimators(self):
         train_set, test_set, target_name = TestUtils.read_example_a_train_test_sets()
