@@ -11,7 +11,7 @@ with open(os.path.join(HERE, "README.md"), "r") as f:
 # This call to setup() does all the work
 setup(
     name="enda",
-    version="0.0.3",
+    version="0.0.4",
 
     description="Tools to manipulate energy time-series and contracts, and to perform forecasts.",
     long_description=README,
