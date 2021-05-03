@@ -1,3 +1,19 @@
+###
+# This is an example of a program that can perform training and forecasts for electricity load.
+#
+# When the placeholder functions are implemented, you should be able to run the following commands
+# (in the correct python virtualenv) :
+#
+# 1. Collect the full historic dataset, save it locally, and then test training with just 1000 data points:
+# python -m {abc.xyz}.example_c --task learn --learn_data_limit 1000
+# 2. Collect the forecast input data, save it locally, then test the "predict" mode :
+# python -m {abc.xyz}.example_c --task predict
+# 3. Train the algorithm with the full dataset saved locally at step 1:
+# python -m {abc.xyz}.example_c --task learn --read_local_data
+# 4. Predict load using the forecast input data saved at step 2, and send the prediction to CofyCloud :
+# python -m {abc.xyz}.example_c --task predict --read_local_data --send_prediction_to_cofycloud
+
+
 import os
 import warnings
 import pickle
