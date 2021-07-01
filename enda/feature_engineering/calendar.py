@@ -44,7 +44,7 @@ class FrenchHolidays:
 
         if year_list is None:
             current_year = datetime.datetime.utcnow().year
-            year_list = range(2000, current_year + 1)
+            year_list = range(2000, current_year + 2)
 
         d = SchoolHolidayDates()
         result = pd.DataFrame()
