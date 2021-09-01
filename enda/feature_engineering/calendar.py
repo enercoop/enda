@@ -44,7 +44,7 @@ class FrenchHolidays:
 
         if year_list is None:
             current_year = datetime.datetime.utcnow().year
-            year_list = range(2000, current_year + 1)
+            year_list = range(2000, current_year + 2)
 
         d = SchoolHolidayDates()
         result = pd.DataFrame()
@@ -182,15 +182,21 @@ class Calendar:
 
         return result
 
-    @staticmethod
-    def get_french_special_days(freq='30min'):
+    def get_french_special_days(self, freq='30min'):
 
-        lockdown = Calendar().get_french_lockdown()
-        public_holidays = Calendar().get_public_holidays()
-        school_holidays = Calendar().get_school_holidays()
-        extra_long_weekend = Calendar().get_extra_long_weekend()
+        lockdown = self.get_french_lockdown()
+        public_holidays = self.get_public_holidays()
+        school_holidays = self.get_school_holidays()
+        extra_long_weekend = self.get_extra_long_weekend()
 
-        result = pd.concat([lockdown, public_holidays, school_holidays, extra_long_weekend], 1, 'inner')
-        result = Calendar().interpolate_daily_to_subdaily_data(result, freq=freq)
+        lockdown_new_freq = self.interpolate_daily_to_subdaily_data(lockdown, freq=freq)
+        public_holidays_new_freq = self.interpolate_daily_to_subdaily_data(public_holidays, freq=freq)
+        school_holidays_new_freq = self.interpolate_daily_to_subdaily_data(school_holidays, freq=freq)
+        extra_long_weekend_new_freq = self.interpolate_daily_to_subdaily_data(extra_long_weekend, freq=freq)
+
+        result = pd.concat(
+            [
+                lockdown_new_freq, public_holidays_new_freq, school_holidays_new_freq, extra_long_weekend_new_freq
+            ], 1, 'outer')
 
         return result
