@@ -11,14 +11,14 @@ with open(os.path.join(HERE, "README.md"), "r") as f:
 # This call to setup() does all the work
 setup(
     name="enda",
-    version="0.0.4",
+    version="0.0.5",
 
     description="Tools to manipulate energy time-series and contracts, and to perform forecasts.",
     long_description=README,
     long_description_content_type="text/markdown",
     url="https://github.com/enercoop/enda",
     author="Enercoop",
-    author_email="emmanuel.charon@enercoop.org",
+    author_email="team-data@enercoop.org",
     license="MIT",
     classifiers=[
         "License :: OSI Approved :: MIT License",
