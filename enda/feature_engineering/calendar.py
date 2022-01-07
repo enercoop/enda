@@ -1,5 +1,6 @@
 import pandas as pd
 import datetime
+import warnings
 from enda.feature_engineering.datetime_features import DatetimeFeature
 
 try:
@@ -28,7 +29,7 @@ class FrenchHolidays:
                 df_res.index = df_res.index.map(lambda x: unidecode.unidecode(x))
                 result = result.append(df_res.T, ignore_index=True)
             except Exception as e:
-                raise ValueError("Missing french public holidays : {}".format(e))
+                warnings.warn("Missing french public holidays : {}".format(e))
 
         if orientation is not 'columns':
             result = result.stack().reset_index(level=0, drop=True)
@@ -56,7 +57,7 @@ class FrenchHolidays:
                 df_res = df_res.reset_index(drop=True)
                 result = result.append(df_res, ignore_index=True)
             except Exception as e:
-                raise ValueError("Missing french school holidays : {}".format(e))
+                warnings.warn("Missing french school holidays : {}".format(e))
 
         return result
 
