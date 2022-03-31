@@ -1,18 +1,29 @@
-import unittest
+import logging
 import numpy as np
 import pandas as pd
-from enda.estimators import EndaEstimatorWithFallback, EndaStackingEstimator, EndaNormalizedEstimator
-from tests.test_utils import TestUtils
-from enda.ml_backends.sklearn_estimator import EndaSklearnEstimator
+import unittest
+
 try:
     from sklearn.ensemble import AdaBoostRegressor, RandomForestRegressor
     from sklearn.linear_model import LinearRegression
-except ImportError as e:
+except ImportError:
     raise ImportError("scikit-learn required")
+
+from enda.estimators import EndaEstimatorWithFallback, EndaStackingEstimator, EndaNormalizedEstimator
+from tests.test_utils import TestUtils
+from enda.ml_backends.sklearn_estimator import EndaSklearnEstimator
 
 
 class TestEndaEstimatorWithFallback(unittest.TestCase):
+    
+    def setUp(self):
+        logging.captureWarnings(True)
+        logging.disable(logging.ERROR)
 
+    def tearDown(self):
+        logging.captureWarnings(False)
+        logging.disable(logging.NOTSET)
+    
     def test_1(self):
         # read sample dataset from unittest files
         train_set, test_set, target_name = TestUtils.read_example_a_train_test_sets()
@@ -42,6 +53,14 @@ class TestEndaEstimatorWithFallback(unittest.TestCase):
 
 class TestEndaStackingEstimator(unittest.TestCase):
 
+    def setUp(self):
+        logging.captureWarnings(True)
+        logging.disable(logging.ERROR)
+
+    def tearDown(self):
+        logging.captureWarnings(False)
+        logging.disable(logging.NOTSET)
+
     def test_1(self):
         train_set, test_set, target_name = TestUtils.read_example_a_train_test_sets()
 
@@ -69,7 +88,15 @@ class TestEndaStackingEstimator(unittest.TestCase):
 
 
 class TestEndaNormalizedEstimator(unittest.TestCase):
+   
+    def setUp(self):
+        logging.captureWarnings(True)
+        logging.disable(logging.ERROR)
 
+    def tearDown(self):
+        logging.captureWarnings(False)
+        logging.disable(logging.NOTSET)
+        
     def test_1(self):
         train_set, test_set, target_name = TestUtils.read_example_a_train_test_sets()
 

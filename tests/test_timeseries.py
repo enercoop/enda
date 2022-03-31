@@ -158,11 +158,10 @@ class TestTimeSeries(unittest.TestCase):
         self.assertEqual(dti2.dtype, "datetime64[ns, Europe/Berlin]")
 
     def test_align_timezone_3(self):
-        """
-        should not work when given time-series is time zone naive or has naive elements,
-        or element other than a tz-aware datetime
-        """
-
+        
+        # should not work when given time-series is time zone naive or has naive elements,
+        # or element other than a tz-aware datetime
+           
         s1 = pd.Series([
             pd.to_datetime('2021-12-31 04:00:00')
         ])

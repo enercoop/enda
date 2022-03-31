@@ -1,9 +1,17 @@
-import unittest
+import logging
 import pandas as pd
+import unittest
+
 from enda.backtesting import BackTesting
 
 
 class TestBackTesting(unittest.TestCase):
+
+    def setUp(self):
+        logging.disable(logging.ERROR)
+
+    def tearDown(self):
+        logging.disable(logging.NOTSET)
 
     def test_yield_train_test_1(self):
 
