@@ -42,9 +42,9 @@ class DatetimeFeature:
                 raise TypeError("To split a datetime index, please provide a DatetimeIndex in your dataframe")
 
             for split in split_list:
-                if split is 'weekofyear':  # To avoid a FutureWarning
+                if split == 'weekofyear':  # To avoid a FutureWarning
                     df_split[split] = df.index.isocalendar().week
-                elif split is 'minuteofday':
+                elif split == 'minuteofday':
                     df_split[split] = df.index.hour * 60 + df.index.minute
                 else:
                     df_split[split] = df.index.__getattribute__(split)
@@ -54,12 +54,12 @@ class DatetimeFeature:
                 raise TypeError("{} is not a datetime column : {}".format(colname, df[[colname]].dtypes))
 
             for split in split_list:
-                if split is 'weekofyear':  # To avoid a FutureWarning
+                if split == 'weekofyear':  # To avoid a FutureWarning
                     df_split[split] = df[colname].dt.isocalendar().week
                 else:
                     df_split[split] = df[colname].dt.__getattribute__(split)
 
-        result = pd.concat([df, df_split], 1, 'inner')
+        result = pd.concat([df, df_split], axis=1, join='inner')
 
         return result
 
@@ -161,7 +161,7 @@ class DatetimeFeature:
             raise TypeError("To split a datetime index, please provide a DatetimeIndex in your dataframe")
 
         for split in split_list:
-            if split is 'minuteofday':
+            if split == 'minuteofday':
                 df_split[split] = df.index.hour * 60 + df.index.minute
             else:
                 df_split[split] = df.index.__getattribute__(split)
@@ -169,12 +169,12 @@ class DatetimeFeature:
             if split in max_dict.keys():
                 df_split['{}_max'.format(split)] = max_dict[split]
 
-            if split is 'dayofyear':
+            if split == 'dayofyear':
                 df_split['{}_max'.format(split)] = df_split.index.is_leap_year
                 df_split['{}_max'.format(split)] = df_split['{}_max'.format(split)].replace({True: 366, False: 365})
                 df_split['{}_max'.format(split)] = df_split['{}_max'.format(split)].astype(int)
 
-            if split is 'day':
+            if split == 'day':
                 df_split['{}_max'.format(split)] = df_split.index.days_in_month
 
             if split in ['month', 'day', 'dayofyear']:
@@ -185,10 +185,10 @@ class DatetimeFeature:
             df_split['{}_{}'.format(split, 'sin')] = np.sin(
                 (2 * np.pi * df_split[split]) / df_split['{}_max'.format(split)])
 
-            df_split = df_split.drop(split, 1)
-            df_split = df_split.drop('{}_max'.format(split), 1)
+            df_split = df_split.drop(columns=split)
+            df_split = df_split.drop(columns='{}_max'.format(split))
 
-        result = pd.concat([df, df_split], 1, 'inner')
+        result = pd.concat([df, df_split], axis=1, join='inner')
 
         return result
 
