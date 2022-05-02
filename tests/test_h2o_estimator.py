@@ -52,7 +52,7 @@ class TestH2OEstimator(unittest.TestCase):
 
         for estimator in [
             H2OGeneralizedLinearEstimator(),
-            # H2OXGBoostEstimator(),
+            H2OXGBoostEstimator(),
             H2OGradientBoostingEstimator(),
             H2ORandomForestEstimator(),
             H2ODeepLearningEstimator()
@@ -125,7 +125,7 @@ class TestH2OEstimator(unittest.TestCase):
         train_set, test_set, target_name = TestUtils.read_example_a_train_test_sets()
 
         for estimator in [
-            #H2OXGBoostEstimator(),
+            H2OXGBoostEstimator(),
             H2OGradientBoostingEstimator(ntrees=10, max_depth=5, sample_rate=0.5, min_rows=5)
         ]:
 

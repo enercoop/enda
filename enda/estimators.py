@@ -3,21 +3,6 @@ from collections import OrderedDict
 import pandas
 import typing
 
-from enda.timeseries import TimeSeries
-from enda.decorators import handle_multiindex
-
-try:
-    from h2o.estimators.estimator_base import H2OEstimator as H2OBaseEstimator
-except ImportError:
-    raise ImportError("h2o is required is you want to use enda's estimators"
-                      "Try: pip install h2o>=3.32.0.3")
-
-try:
-    from sklearn.base import BaseEstimator as SklearnBaseEstimator
-
-except ImportError:
-    raise ImportError("sklearn is required is you want to use enda's estimators")
-
 
 class EndaEstimator(metaclass=abc.ABCMeta):
     """
@@ -53,22 +38,6 @@ class EndaEstimator(metaclass=abc.ABCMeta):
     def predict(self, df: pandas.DataFrame, target_col: str) -> pandas.DataFrame:
         """ Predicts and returns a dataframe with just 1 column: target_col_name """
         raise NotImplementedError
-
-    @classmethod 
-    def _estimator_factory(cls, 
-                           estimator: [SklearnBaseEstimator, H2OBaseEstimator]):
-        '''
-        Factory function meant to return a EndaSklearnEstimator or EndaH2OEstimator
-        from an estimator of these backends. 
-        '''
-        from enda.ml_backends.sklearn_estimator import EndaSklearnEstimator
-        from enda.ml_backends.h2o_estimator import EndaH2OEstimator
-        if(isinstance(estimator, SklearnBaseEstimator)):
-            return EndaSklearnEstimator(estimator)
-        if(isinstance(estimator, H2OBaseEstimator)):
-            return EndaH2OEstimator(estimator)
-        else:
-            raise ValueError("No EndaEstimator could be built from the provided estimator")
 
 
 class EndaNormalizedEstimator(EndaEstimator):
@@ -347,7 +316,7 @@ class EndaEstimatorRecopy(EndaEstimator):
 
         '''
         Set up the attribute data that will store the dataframe
-        :param period: The period on which data should be kept. 
+        :param period: The period on which data should be averaged. 
                        It typically is just a day, or an hour. 
                        If nothing is provided, the last provided value of the
                        dataframe is kept and used everywhere. 
@@ -356,7 +325,6 @@ class EndaEstimatorRecopy(EndaEstimator):
         '''
         self.period = period
         self.training_data = None
-        self.training_data_freq = None
     
     def train(self, df: pandas.DataFrame, target_col: str):
         '''
@@ -382,16 +350,15 @@ class EndaEstimatorRecopy(EndaEstimator):
             #     self.training_data_freq = TimeSeries.get_timeseries_frequency(df.index) 
             # except Exception:
             #     raise ValueError("No clear frequency in the training data.")
-            period_index = pandas.to_timedelta(self.period)
+            period_delta = pandas.to_timedelta(self.period)
             self.training_data = (
-                df[df.index > df.index.max() - period_index]
+                df[df.index > df.index.max() - period_delta]
                 .mean()
                 )     
 
     def predict(self, df: pandas.DataFrame, target_col: str):
         '''
-        Make a prediction over the index of the 
-        
+        Make a prediction just copying the retained information.
         :param df: The input forecast dataframe, with a single DatetimeIndex 
         '''
      

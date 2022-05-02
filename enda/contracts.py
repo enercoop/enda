@@ -89,7 +89,7 @@ class Contracts:
         contracts_with_end = df.dropna(subset=[date_end_exclusive_col])
         not_ok = contracts_with_end[date_start_col] >= contracts_with_end[date_end_exclusive_col]
         if not_ok.sum() >= 1:
-            raise ValueError("Some ending date happen before starting date:\n{}".format(contracts_with_end[not_ok]))
+            raise ValueError("Some ending date happens before starting date:\n{}".format(contracts_with_end[not_ok]))
 
     @staticmethod
     def __contract_to_events(contracts, date_start_col, date_end_exclusive_col):

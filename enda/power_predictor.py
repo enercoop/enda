@@ -5,12 +5,12 @@ from enda.estimators import EndaEstimator
 
 class PowerPredictor():
     """
-    This class handles the dayahead power prediction. 
+    This class handles the day-ahead power prediction. 
     It access the train() and predict() methods of an EndaEstimator object. 
-    We have the possibility to apply a standard power plant method, that is
-    considering all observations to be occurences of the same plant, under 
-    different conditions (eg. meteo, or installed kw). This is applied 
-    for solar and wind plants notably. 
+    We have the possibility to apply a standard power plant method 
+    considering all observations to be occurences of the same theoretical plant
+    under different conditions (eg. meteo, or installed kw). 
+    This is applied for solar and wind plants notably. 
     We also have the possibility to treat each plant independently. Even if 
     this is less interesting when applying an usual IA algorithm, this option 
     is typically used with a naive estimator for plants along the run of rivers.
@@ -19,7 +19,9 @@ class PowerPredictor():
 
     def __init__(self, standard_plant: bool = False):
         """
-        :param estimator EndaEstimator
+        :param standard_plant: boolean that indicates if we want to use a 
+               standard plant approach, merging all observations over the plant
+               portfolio.  
         """
         
         self.standard_plant = standard_plant
@@ -27,6 +29,9 @@ class PowerPredictor():
     
     def train(self, df: pd.DataFrame, estimator: EndaEstimator, target_col: str):
         '''
+        We provide to this function an EndaEstimator, a training dataframe (two-levels
+        multiindexed), and the target column. 
+
         To train the estimator, we have two options. In the first case, we merge all the 
         observations for all the plants, and consider them to be simple realizations 
         of the same single power plant with different characteristics ; that's the standard 
@@ -34,8 +39,14 @@ class PowerPredictor():
         The second option is used for power plants along river, for which no IA is required. 
         It is a naive recopy estimator which is used. 
         
-        :param df: the training dataframe.
-        :param estimator: an EndaEstimator 
+        The training sets self.prod_estimators as a dictionnary of stations ID - estimator
+        In case of a standard plant approach, the returned dictionary has a single entry, 
+        called "standard_plant", which becomes a reserved ID. 
+
+        :param df: the training two-levels multiindexed dataframe
+        :param estimator: an EndaEstimator that will serve as a canvas to create other 
+               estimators of the same type that will be trained over each plant or over
+               all of them in case of non-standard plant.
         :param target_col: the target column
         '''
 
@@ -76,8 +87,13 @@ class PowerPredictor():
                 self.prod_estimators[station_id] = prod_estimator
                 
     def predict(self, df: pd.DataFrame, target_col: str):
+        '''
+        Predict target_column values once train() has been called. 
+        :param df: the forecast two-levels multiindexed dataframe
+        :param target_col: the target column
+        :return: the two-levels dataframe with the predicted target only.
+        '''
 
-        # check we have an instance of multiindexed dataframe. 
         if not isinstance(df.index, pd.MultiIndex):
             raise ValueError("Prediction for power generation must be performed using "
                              "a two-levels multi-indexed dataframe")
