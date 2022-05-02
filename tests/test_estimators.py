@@ -9,7 +9,8 @@ try:
 except ImportError:
     raise ImportError("scikit-learn required")
 
-from enda.estimators import EndaEstimatorWithFallback, EndaStackingEstimator, EndaNormalizedEstimator
+from enda.estimators import EndaEstimatorWithFallback, EndaStackingEstimator
+from enda.estimators import EndaNormalizedEstimator, EndaEstimatorRecopy
 from tests.test_utils import TestUtils
 from enda.ml_backends.sklearn_estimator import EndaSklearnEstimator
 
@@ -107,6 +108,30 @@ class TestEndaNormalizedEstimator(unittest.TestCase):
             columns_to_normalize=["contracts_count", "estimated_annual_consumption_kwh"]
         )
 
+        m.train(train_set, target_name)
+        prediction = m.predict(test_set, target_name)
+        # print(prediction)
+
+        self.assertIsInstance(prediction.index, pd.DatetimeIndex)
+        self.assertTrue((test_set.index == prediction.index).all())
+        self.assertEqual(0, prediction[target_name].isna().sum())
+
+
+class TestEndaEstimatorRecopy(unittest.TestCase):
+   
+    def setUp(self):
+        logging.captureWarnings(True)
+        logging.disable(logging.ERROR)
+
+    def tearDown(self):
+        logging.captureWarnings(False)
+        logging.disble(logging.NOTSET)
+        
+    def test_1(self):
+        train_set, test_set, target_name = TestUtils.read_example_a_train_test_sets()
+
+        m = EndaEstimatorRecopy(time_step='1D')
+        
         m.train(train_set, target_name)
         prediction = m.predict(test_set, target_name)
         # print(prediction)

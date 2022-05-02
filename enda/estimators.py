@@ -1,7 +1,22 @@
 import abc
-import pandas
 from collections import OrderedDict
+import pandas
 import typing
+
+from enda.timeseries import TimeSeries
+from enda.decorators import handle_multiindex
+
+try:
+    from h2o.estimators.estimator_base import H2OEstimator as H2OBaseEstimator
+except ImportError:
+    raise ImportError("h2o is required is you want to use enda's estimators"
+                      "Try: pip install h2o>=3.32.0.3")
+
+try:
+    from sklearn.base import BaseEstimator as SklearnBaseEstimator
+
+except ImportError:
+    raise ImportError("sklearn is required is you want to use enda's estimators")
 
 
 class EndaEstimator(metaclass=abc.ABCMeta):
@@ -38,6 +53,22 @@ class EndaEstimator(metaclass=abc.ABCMeta):
     def predict(self, df: pandas.DataFrame, target_col: str) -> pandas.DataFrame:
         """ Predicts and returns a dataframe with just 1 column: target_col_name """
         raise NotImplementedError
+
+    @classmethod 
+    def _estimator_factory(cls, 
+                           estimator: [SklearnBaseEstimator, H2OBaseEstimator]):
+        '''
+        Factory function meant to return a EndaSklearnEstimator or EndaH2OEstimator
+        from an estimator of these backends. 
+        '''
+        from enda.ml_backends.sklearn_estimator import EndaSklearnEstimator
+        from enda.ml_backends.h2o_estimator import EndaH2OEstimator
+        if(isinstance(estimator, SklearnBaseEstimator)):
+            return EndaSklearnEstimator(estimator)
+        if(isinstance(estimator, H2OBaseEstimator)):
+            return EndaH2OEstimator(estimator)
+        else:
+            raise ValueError("No EndaEstimator could be built from the provided estimator")
 
 
 class EndaNormalizedEstimator(EndaEstimator):
@@ -302,3 +333,93 @@ class EndaEstimatorWithFallback(EndaEstimator):
         result = predict_with[target_col].fillna(predict_without[target_col])  # pandas series
         result = result.to_frame(target_col)
         return result
+
+
+class EndaEstimatorRecopy(EndaEstimator):
+    """
+    This estimator is used to recopy the information
+    It is notably used to predict the production of river power plants, for which no 
+    artificial intelligence is relevant. 
+    It simply recopies the most recent data on a daily basis. 
+    """
+
+    def __init__(self, period: str = None, key_col: str = None):
+
+        '''
+        Set up the attribute data that will store the dataframe
+        :param period: The period on which data should be kept. 
+                       It typically is just a day, or an hour. 
+                       If nothing is provided, the last provided value of the
+                       dataframe is kept and used everywhere. 
+                       If something is provided, we assume some periodicty is expected, 
+                       so that the prediction aims at keeping it.  
+        '''
+        self.period = period
+        self.training_data = None
+        self.training_data_freq = None
+    
+    def train(self, df: pandas.DataFrame, target_col: str):
+        '''
+        This function keeps the more recent data of the input dataframe,
+        and stores it in the attribute training_data.
+
+        :param df: The input dataframe, with a single DatetimeIndex
+        :param target_col: the target column 
+        '''
+
+        if type(df.index) != pandas.DatetimeIndex:
+            raise ValueError("Index should be of type DatetimeIndex")
+
+        if target_col not in df.columns: 
+            raise ValueError("Target column not found in the training dataframe")
+            
+        if self.period is None:
+            self.training_data = df.sort_index().iloc[-1, df.columns.get_indexer([target_col])]
+            
+        else:
+            # the training dataframe must have a well-defined frequency
+            # try: 
+            #     self.training_data_freq = TimeSeries.get_timeseries_frequency(df.index) 
+            # except Exception:
+            #     raise ValueError("No clear frequency in the training data.")
+            period_index = pandas.to_timedelta(self.period)
+            self.training_data = (
+                df[df.index > df.index.max() - period_index]
+                .mean()
+                )     
+
+    def predict(self, df: pandas.DataFrame, target_col: str):
+        '''
+        Make a prediction over the index of the 
+        
+        :param df: The input forecast dataframe, with a single DatetimeIndex 
+        '''
+     
+        if self.training_data is None: 
+            raise ValueError("There is no training dataset defined")
+
+        if not isinstance(df.index, type(self.training_data.index)):
+            raise ValueError("Forecast dataset index should be of same type of input dataset")
+            
+        if self.period is None:
+            df[target_col] = self.training_data[target_col]
+        
+        else:
+            # date_start = df.index.min()    
+            # if date_start > self.training_data.index.max() + 10 * pd.timedelta(self.period):
+            #     raise ValueError("The prediction is too distant in the future to be correct")
+            
+            # A periodicity of the data is assumed. We will loop over the forecast dataframe
+            # index and find the appropriate data in the original dataframe  
+
+            # the forecast dataframe must have a well-defined frequency
+            # try: 
+            #     forecast_data_freq = TimeSeries.get_timeseries_frequency(df.index) 
+            # except Exception:
+            #     raise ValueError("No clear frequency in the forecasting data.")
+            
+            # if forecast_data_freq != self.training_data_freq: 
+            #     raise ValueError("Forecast and training dataframes must have the same frequency")
+            df[target_col] = self.training_data[target_col]
+
+        return df.loc[:, [target_col]]

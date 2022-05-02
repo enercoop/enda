@@ -1,13 +1,14 @@
 import datetime
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-# TODO : unittest
+from enda.decorators import handle_multiindex
 
 
 class DatetimeFeature:
 
     @staticmethod
+    @handle_multiindex
     def split_datetime(df, split_list=None, index=True, colname=None):
         """
         Split a specific datetime column or datetime index into different date and time attributes (given by split list)
@@ -137,6 +138,7 @@ class DatetimeFeature:
         return result
 
     @staticmethod
+    @handle_multiindex
     def encode_cyclic_datetime_index(df, split_list=None):
         """
         Split and encode a datetime index into different date and time attributes (given by split list).
@@ -188,12 +190,12 @@ class DatetimeFeature:
             df_split = df_split.drop(columns=split)
             df_split = df_split.drop(columns='{}_max'.format(split))
 
-        result = pd.concat([df, df_split], axis=1, join='inner')
+        result = pd.concat([df, df_split], axis=1, join='inner', verify_integrity=True)
 
         return result
 
     @staticmethod
-    def get_datetime_features(df):
-        result = DatetimeFeature.encode_cyclic_datetime_index(df)
-        result = DatetimeFeature.split_datetime(result)
+    def get_datetime_features(df, split_list=None, index=True, colname=None):
+        result = DatetimeFeature.encode_cyclic_datetime_index(df, split_list, index, colname)
+        result = DatetimeFeature.split_datetime(result, split_list)
         return result
