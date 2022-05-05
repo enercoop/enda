@@ -342,7 +342,10 @@ class EndaEstimatorRecopy(EndaEstimator):
             raise ValueError("Target column not found in the training dataframe")
             
         if self.period is None:
-            self.training_data = df.sort_index().iloc[-1, df.columns.get_indexer([target_col])]
+            self.training_data = (
+                df.sort_index()
+                  .iloc[-1, df.columns.get_indexer([target_col])]
+                )
             
         else:
             # the training dataframe must have a well-defined frequency
@@ -352,7 +355,9 @@ class EndaEstimatorRecopy(EndaEstimator):
             #     raise ValueError("No clear frequency in the training data.")
             period_delta = pandas.to_timedelta(self.period)
             self.training_data = (
-                df[df.index > df.index.max() - period_delta]
+                df.iloc[df.index > df.index.max() - period_delta, 
+                        df.columns.get_indexer([target_col])
+                        ]
                 .mean()
                 )     
 
@@ -361,15 +366,17 @@ class EndaEstimatorRecopy(EndaEstimator):
         Make a prediction just copying the retained information.
         :param df: The input forecast dataframe, with a single DatetimeIndex 
         '''
-     
+
         if self.training_data is None: 
             raise ValueError("There is no training dataset defined")
 
         if not isinstance(df.index, type(self.training_data.index)):
             raise ValueError("Forecast dataset index should be of same type of input dataset")
-            
+           
+        df_predict = df.copy(deep=True)
+        
         if self.period is None:
-            df[target_col] = self.training_data[target_col]
+            df_predict[target_col] = self.training_data[target_col]
         
         else:
             # date_start = df.index.min()    
@@ -387,6 +394,6 @@ class EndaEstimatorRecopy(EndaEstimator):
             
             # if forecast_data_freq != self.training_data_freq: 
             #     raise ValueError("Forecast and training dataframes must have the same frequency")
-            df[target_col] = self.training_data[target_col]
+            df_predict[target_col] = self.training_data[target_col]
 
-        return df.loc[:, [target_col]]
+        return df_predict.loc[:, [target_col]]

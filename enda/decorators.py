@@ -34,21 +34,20 @@ def handle_multiindex(func):
                             .format(df.index.levels[1].dtype))
 
         key_col = df.index.levels[0].name
-        date_col = df.index.levels[1].name
-        
-        if 'index_name' not in kwargs.keys(): 
-            index_name = date_col
-        else: 
-            index_name = kwargs['index_name']        
+        date_col = df.index.levels[1].name 
         
         df_new = pd.DataFrame()
-        for key, data in df.groupby(level=0):
+        for key, data in df.groupby(level=0, sort=False):
             data = data.reset_index().set_index(date_col).drop(columns=[key_col])
             args_decorator = (data,) 
             kwargs_decorator = {x: kwargs[x] for x in kwargs.keys() if x != 'df'}
             data = func(*args_decorator, **kwargs_decorator)
+            if not isinstance(data, pd.DataFrame):
+                raise TypeError("@handle_multiindex decorator cannot be used with "
+                                "a function which does not return a dataframe")
+            new_date_col = data.index.name
             data[key_col] = key
-            data = data.reset_index().set_index([key_col, index_name])
+            data = data.reset_index().set_index([key_col, new_date_col])
             df_new = pd.concat([df_new, data], axis=0)
         
         return df_new
