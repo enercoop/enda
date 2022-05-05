@@ -1,10 +1,41 @@
 import unittest
-from enda.timeseries import TimeSeries
 import pandas as pd
+import pandas.testing as pd_testing
 import pytz
+
+from enda.timeseries import TimeSeries
 
 
 class TestTimeSeries(unittest.TestCase):
+
+    def setUp(self):
+        # add the possibility to unitetst dataframe equality
+        def assertDataframeEqual(a, b, msg):
+            try:
+                pd_testing.assert_frame_equal(a, b)
+            except AssertionError as e:
+                raise self.failureException(msg) from e
+        self.addTypeEqualityFunc(pd.DataFrame, assertDataframeEqual)
+
+        # define a single index df 
+        df = pd.date_range(
+            start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-04 00:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='D',
+            tz='Europe/Paris',
+            name='date'
+        ).to_frame().set_index('date')
+        df["value"] = [0] * 2 + [1] * 2
+        self.single_index_test = df
+
+        # define a multiindex_df
+        df1 = df.copy()
+        df1['key'] = 'key1'
+        df2 = df.copy()
+        df2["value"] = [2] * 2 + [3] * 2  # change values
+        df2 = df2.iloc[:-1, ]  # suppress last day
+        df2['key'] = 'key2'
+        self.multi_index_test = pd.concat([df1, df2], axis=0).reset_index().set_index(['key', 'date'])
 
     def test_collapse_dt_series_into_periods(self):
 
@@ -185,3 +216,163 @@ class TestTimeSeries(unittest.TestCase):
         for s in [s4]:
             with self.assertRaises(AttributeError):
                 TimeSeries.align_timezone(s, tzinfo="UTC")
+
+    def test_interpolate_daily_to_sub_daily_data_single_index(self): 
+        
+        df_expected = pd.date_range(
+            start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-04 18:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='6H', 
+            tz='Europe/Paris',
+            name='time'
+        ).to_frame().set_index('time')
+        df_expected["value"] = [0.] * 8 + [1.] * 8
+        df_expected.index.freq = '6H'
+        
+        # test with full kwargs
+        sub_df = TimeSeries.interpolate_daily_to_sub_daily_data(
+                     df=self.single_index_test, 
+                     freq='6H',
+                     tz='Europe/Paris'
+                 )
+
+        self.assertEqual(df_expected, sub_df)
+
+        # test with a combination of args and kwargs
+        sub_df = TimeSeries.interpolate_daily_to_sub_daily_data(
+                     self.single_index_test, 
+                     freq='6H',
+                     tz='Europe/Paris'
+                 )
+        self.assertEqual(df_expected, sub_df)
+
+    def test_interpolate_daily_to_sub_daily_data_multi_index(self): 
+                
+        df1_expected = pd.date_range(
+            start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-04 18:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='6H', 
+            tz='Europe/Paris',
+            name='time'
+        ).to_frame()
+        df1_expected["value"] = [0.] * 8 + [1.] * 8
+        df1_expected["key"] = 'key1'
+        df1_expected.index.freq = '6H'
+        
+        df2_expected = pd.date_range(
+            start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-03 18:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='6H', 
+            tz='Europe/Paris',
+            name='time'
+        ).to_frame()
+        df2_expected["value"] = [2.] * 8 + [3.] * 4
+        df2_expected["key"] = 'key2'
+        df2_expected.index.freq = '6H'
+
+        df_expected = pd.concat([df1_expected, df2_expected], axis=0).set_index(['key', 'time'])
+         
+        # test with full kwargs
+        sub_df = TimeSeries.interpolate_daily_to_sub_daily_data(
+                     df=self.multi_index_test, 
+                     freq='6H',
+                     tz='Europe/Paris'
+                 )
+        self.assertEqual(df_expected, sub_df)
+
+        # test with a combination of args and kwargs
+        sub_df = TimeSeries.interpolate_daily_to_sub_daily_data(
+                     df=self.multi_index_test,
+                     freq='6H',
+                     tz='Europe/Paris'
+                 )
+        self.assertEqual(df_expected, sub_df)
+
+    def test_interpolate_freq_to_sub_freq_data_single_index(self): 
+
+        # test interpolate freq to subfreq on a 6H basis
+        df_expected = pd.date_range(
+              start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
+              end=pd.to_datetime('2021-01-04 00:00:00+01:00').tz_convert('Europe/Paris'),
+              freq='6H', 
+              tz='Europe/Paris',
+              name='time'
+        ).to_frame().set_index('time')
+        df_expected.index.freq = '6H'
+        df_expected['value'] = [0.] * 5 + [0.25, 0.5, 0.75] + [1] * 5
+
+        sub_df = TimeSeries.interpolate_freq_to_sub_freq_data(
+            df=self.single_index_test, freq='6H', tz='Europe/Paris', index_name='time'
+        )
+        self.assertEqual(df_expected, sub_df)
+
+    def test_interpolate_freq_to_sub_freq_data_single_index_2(self): 
+
+        # test interpolate freq to subfreq on a 6H basis
+        df_expected = pd.date_range(
+              start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
+              end=pd.to_datetime('2021-01-04 00:00:00+01:00').tz_convert('Europe/Paris'),
+              freq='6H', 
+              tz='Europe/Paris',
+              name='date'
+        ).to_frame().set_index('date')
+        df_expected.index.freq = '6H'
+        df_expected['value'] = [0.] * 8 + [1] * 5
+
+        sub_df = TimeSeries.interpolate_freq_to_sub_freq_data(
+            self.single_index_test, freq='6H', tz='Europe/Paris', method='ffill'
+            )
+        self.assertEqual(df_expected, sub_df)
+
+    def test_interpolate_freq_to_sub_freq_data_multi_index(self): 
+        
+        # test interpolation with a multiindex
+
+        df1_expected = pd.date_range(
+            start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-04 00:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='6H', 
+            tz='Europe/Paris',
+            name='time'
+        ).to_frame()
+        df1_expected["value"] = [0.] * 8 + [1.] * 5
+        df1_expected["key"] = 'key1'
+        df1_expected.index.freq = '6H'
+        
+        df2_expected = pd.date_range(
+            start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-03 00:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='6H', 
+            tz='Europe/Paris',
+            name='time'
+        ).to_frame()
+        df2_expected["value"] = [2.] * 8 + [3.] * 1
+        df2_expected["key"] = 'key2'
+        df2_expected.index.freq = '6H'
+
+        df_expected = pd.concat([df1_expected, df2_expected], axis=0).set_index(['key', 'time'])
+        
+        sub_df = TimeSeries.interpolate_freq_to_sub_freq_data(
+            self.multi_index_test, freq='6H', tz='Europe/Paris', method='ffill', index_name='time'
+            )
+
+        self.assertEqual(df_expected, sub_df)
+
+    # def test_forward_fill_final_record(self): 
+
+    #     # test extend_final_data: this is a ffill of the last record 
+    #     # on the provided frequency 
+    #     df_expected = pd.date_range(
+    #           start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
+    #           end=pd.to_datetime('2021-01-04 00:00:00+01:00').tz_convert('Europe/Paris'),
+    #           freq='6H', 
+    #           tz='Europe/Paris',
+    #           name='time'
+    #     ).to_frame().set_index('time')
+    #     df_expected.index.freq = '6H'
+    #     df_expected['value'] = [0.] * 5 + [0.25, 0.5, 0.75] + [1] * 5
+
+    #     sub_df = TimeSeries.interpolate_freq_to_sub_freq_data(
+    #         df=self.single_index_test, freq='6H', tz='Europe/Paris', index_name='time'
+    #     )
+    #     self.assertEqual(df_expected, sub_df)
