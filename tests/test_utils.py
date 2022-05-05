@@ -80,8 +80,6 @@ class TestUtils:
         assert train_set.shape == (384, 6)
         assert test_set.shape == (384, 5)
 
-
-
         return train_set, test_set, target_name
 
     @staticmethod

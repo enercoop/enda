@@ -156,12 +156,13 @@ class TimeSeries:
             index: pd.DatetimeIndex
             ):
         '''
-        Retrieve the frequency of a pandas index. This calls pd.infer_freq() under the hood,
+        Retrieve the frequency of a pandas dataframe's index. 
+        This calls pd.infer_freq() under the hood,
         but strictly forces the frequency to be defined.
         '''
         if(type(index) != pd.DatetimeIndex): 
-            raise ValueError("TimeSeries.get_timeseries_frequency(index) expects"
-                             " a pandas DatetimeIndex")
+            raise TypeError("The dataframe index must be a DatetimeIndex")
+
         differences = index.to_series().sort_values().diff()
         if differences.nunique() != 1:
             str_error = ("Frequency could not be inferred from the original data. "
@@ -173,69 +174,6 @@ class TimeSeries:
         else: 
             freq = pd.infer_freq(index)
             return freq if freq[0].isdecimal() else '1' + freq
-
-    # @staticmethod
-    # @handle_multiindex
-    # def interpolate_freq_to_sub_freq_data(
-    #         df: pd.DataFrame,
-    #         freq: [str, pd.Timedelta],
-    #         tz: [str, datetime.tzinfo],
-    #         index_name: str = None,
-    #         method: str = 'ffill',
-    #         expand_initial=False, 
-    #         expand_final=False, 
-    #         cut_off_frequency=None
-    #         ):
-    #     '''
-    #     Interpolate dataframe data on a smaller frequency than the one initially defined 
-    #     in the dataframe
-    #     The original index of the data must have a well-defined frequency, ie. it must be 
-    #     able to retrieve its frequency with inferred_freq
-    #     :param df: pd.DataFrame
-    #     :param freq: a frequency < 'D' (e.g. 'H', '30min', '15min', etc)
-    #     :param tz: the time zone (None not accepted because important)
-    #     :param index_name: name to give to the new index. Usually going from 'date' to 'time'.
-    #     :param method: how are data interpolated between two consecutive dates (e.g. 'ffill', 'linear', etc)
-    #     :return: pd.DataFrame
-    #     '''
-
-    #     assert type(df.index) == pd.DatetimeIndex
-    #     freq_original = TimeSeries.get_timeseries_frequency(df.index)
-    #     assert pd.to_timedelta(freq).total_seconds() <= pd.to_timedelta(freq_original).total_seconds()
-
-    #     if df.index.tzinfo is None:
-    #         df.index = pd.to_datetime(df.index).tz_localize(tz)
-    #     else:
-    #         df.index = pd.to_datetime(df.index).tz_convert(tz)
-        
-    #     start_date = df.index.min() 
-    #     extra_start_date = start_date - pd.to_timedelta(freq_original)
-    #     end_date = df.index.max()
-    #     extra_end_date = end_date + pd.to_timedelta(freq_original)
-
-    #     result = df.copy()       
-
-    #     if expand_final:
-    #         extra_row = pd.DataFrame(result.iloc[[-1]].values, index=[extra_end_date], columns=result.columns)
-    #         result = pd.concat([result, extra_row], axis=0, ignore_index=False)
-
-    #     if expand_initial: 
-    #         extra_row = pd.DataFrame(result.iloc[[0]].values, index=[extra_start_date], columns=result.columns)
-    #         result = pd.concat([extra_row, result], axis=0, ignore_index=False)
-
-    #     result = result.resample(freq).interpolate(method=method)
-
-    #     if expand_final or expand_initial:
-    #         if extra_end_date in df.index:
-    #             result = result.drop(extra_end_date)
-    #         if cut_off_frequency is not None:
-    #             cut_off_start = start_date.floor(cut_off_frequency)
-    #             cut_off_end = (end_date.floor(cut_off_frequency) + pd.to_timedelta(cut_off_frequency))
-    #             result = result[(result.index >= cut_off_start) & (result.index < cut_off_end)]
-       
-    #     result.index.name = index_name
-
-    #     return result
 
     @staticmethod
     @handle_multiindex
@@ -345,7 +283,7 @@ class TimeSeries:
         end_date = df.index.max()
         end_row = df.loc[[end_date], :]
         extra_end_date = end_date + pd.to_timedelta(gap_frequency)
-        extra_row = pd.DataFrame(df.loc[end_date, :].values, 
+        extra_row = pd.DataFrame(df.loc[[end_date], :].values, 
                                  index=[extra_end_date], 
                                  columns=df.columns)
         extra_row.index.name = df.index.name
@@ -414,7 +352,8 @@ class TimeSeries:
             index_name: str = None):
         """
         Upsample data provided in a given dataframe with a DatetimeIndex, or a two-levels 
-        compatible Multiindex. 
+        compatible Multiindex.         
+        The provided frequency serves as a basis to group the data and average.
         """
 
         if type(df.index) != pd.DatetimeIndex:

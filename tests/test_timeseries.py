@@ -358,21 +358,79 @@ class TestTimeSeries(unittest.TestCase):
 
         self.assertEqual(df_expected, sub_df)
 
-    # def test_forward_fill_final_record(self): 
+    def test_forward_fill_final_record_1(self): 
 
-    #     # test extend_final_data: this is a ffill of the last record 
-    #     # on the provided frequency 
-    #     df_expected = pd.date_range(
-    #           start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
-    #           end=pd.to_datetime('2021-01-04 00:00:00+01:00').tz_convert('Europe/Paris'),
-    #           freq='6H', 
-    #           tz='Europe/Paris',
-    #           name='time'
-    #     ).to_frame().set_index('time')
-    #     df_expected.index.freq = '6H'
-    #     df_expected['value'] = [0.] * 5 + [0.25, 0.5, 0.75] + [1] * 5
+        # test extend_final_data: this is a ffill of the last record 
+        # on the provided frequency 
+        df_test = pd.date_range(
+            start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-02 00:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='12H', tz='Europe/Paris', name='time'
+        ).to_frame().set_index('time')
+        df_test["value"] = [0., 1., 2.]
 
-    #     sub_df = TimeSeries.interpolate_freq_to_sub_freq_data(
-    #         df=self.single_index_test, freq='6H', tz='Europe/Paris', index_name='time'
-    #     )
-    #     self.assertEqual(df_expected, sub_df)
+        df_expected = pd.date_range(
+            start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-02 12:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='12H', tz='Europe/Paris', name='time'
+        ).to_frame().set_index('time')
+        df_expected["value"] = [0., 1., 2., 2.]
+        df_expected.index.freq = '12H'
+
+        sub_df = TimeSeries.forward_fill_final_record(
+            df=df_test, 
+            gap_frequency='1D'
+        )
+        self.assertEqual(df_expected, sub_df)
+
+    def test_forward_fill_final_record_2(self): 
+
+        # forward_fill_final_record with a cutoff frequency
+
+        df_test = pd.date_range(
+            start=pd.to_datetime('2021-01-01 19:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-01 22:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='1H', tz='Europe/Paris', name='time'
+        ).to_frame().set_index('time')
+        df_test["value"] = [0., 1., 2., 3.]
+
+        df_expected = pd.date_range(
+            start=pd.to_datetime('2021-01-01 19:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-01 23:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='1H', tz='Europe/Paris', name='time'
+        ).to_frame().set_index('time')
+        df_expected["value"] = [0., 1., 2., 3., 3.]
+        df_expected.index.freq = '1H'
+
+        sub_df = TimeSeries.forward_fill_final_record(
+            df=df_test, 
+            gap_frequency='3H',
+            cut_off_frequency='1D'
+        )
+        self.assertEqual(df_expected, sub_df)
+
+    def test_average_to_upper_freq(self): 
+
+        # average to upper freq
+
+        df_test = pd.date_range(
+            start=pd.to_datetime('2021-01-01 19:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-01 22:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='1H', tz='Europe/Paris', name='time'
+        ).to_frame().set_index('time')
+        df_test["value"] = [0., 1., 2., 3.]
+
+        df_expected = pd.date_range(
+            start=pd.to_datetime('2021-01-01 19:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-01 23:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='1H', tz='Europe/Paris', name='time'
+        ).to_frame().set_index('time')
+        df_expected["value"] = [0., 1., 2., 3., 3.]
+        df_expected.index.freq = '1H'
+
+        sub_df = TimeSeries.forward_fill_final_record(
+            df=df_test, 
+            gap_frequency='3H',
+            cut_off_frequency='1D'
+        )
+        self.assertEqual(df_expected, sub_df)
