@@ -71,8 +71,8 @@ class PowerPredictor():
                                  "a reserved name in this situation.")
             
             df_train = df_train.reset_index().set_index(date_col).drop(columns=[key_col])
-            prod_estimator = copy.deepcopy(estimator)
-            prod_estimator.train(df_train, target_col)
+            estimator.train(df_train, target_col)
+            prod_estimator = copy.deepcopy(estimator)            
             self.prod_estimators = dict() 
             self.prod_estimators["standard_plant"] = prod_estimator
 
@@ -82,11 +82,11 @@ class PowerPredictor():
             self.prod_estimators = dict() 
             for station_id, data in df.groupby(level=0):
                 data = data.reset_index().set_index(date_col).drop(columns=[key_col])
+                estimator.train(data, target_col)
                 prod_estimator = copy.deepcopy(estimator)
-                prod_estimator.train(data, target_col)
                 self.prod_estimators[station_id] = prod_estimator
                 
-    def predict(self, df: pd.DataFrame, target_col: str):
+    def predict(self, df: pd.DataFrame, target_col: str, is_positive: bool = False):
         '''
         Predict target_column values once train() has been called. 
         :param df: the forecast two-levels multiindexed dataframe
@@ -118,6 +118,10 @@ class PowerPredictor():
                 else:
                     data[target_col] = 0
             
+            if is_positive:
+                # reset to 0 negative values in case
+                data.loc[(data[target_col] < 0), target_col] = 0
+
             data[key_col] = station_id
             data = data.reset_index().set_index([key_col, time_col])
             df_new = pd.concat([df_new, data], axis=0)

@@ -15,45 +15,7 @@ class PowerStations:
     records (samples) for the standard power plant algorithm. 
     """
 
-    @classmethod
-    def read_outages_from_file(
-            cls,
-            file_path,
-            station_col="station",
-            time_start_col="time_start",
-            time_end_exclusive_col="time_end_exclusive",
-            tzinfo="Europe/Paris",          
-            pct_outages_col=None
-            ):
-        """
-        Reads outages from a file. This will convert start and end date columns into dtype=datetime64 (tz-naive)
-        :param file_path: where the source file is located.
-        :param time_start_col: the name of the outage time start column.
-        :param time_end_exclusive_col: the name of the outage time end column, end date is exclusive.
-        :param time_format: the time format for pandas.to_datetime
-        :param pct_outages_col: the percentage of availability of the powerplant. 
-               If none is given, it is assumled the power plant is simply shutdown. 
-        :return: a pandas.DataFrame with an outage on each row.
-        """
-
-        df = pd.read_csv(file_path)
-        for c in [time_start_col, time_end_exclusive_col]:
-            if is_string_dtype(df[c]):
-                df[c] = pd.to_datetime(df[c])
-                df[c] = TimeSeries.align_timezone(df[c], tzinfo=tzinfo)
-
-        # check stations
-        cls.check_stations(df, station_col, time_start_col, time_end_exclusive_col, is_naive=False)
-        
-        # check pct_outage_col
-        if pct_outages_col is not None:
-            if pct_outages_col not in df.columns:
-                raise ValueError(f"Provided column {pct_outages_col} is not present in dataframe")
-            if not (df[pct_outages_col].dropna().between(0,100)).all(): 
-                print("yo")
-                raise ValueError(f"Some values in {pct_outages_col} are not percentage")    
-        
-        return df
+    # ------ Check
 
     @classmethod
     def check_stations(cls, df, station_col, date_start_col, date_end_exclusive_col, is_naive=True):
@@ -64,18 +26,22 @@ class PowerStations:
         '''
         
         if station_col not in df.columns:
-            raise ValueError("Required column not found : {}".format(station_col))
-        if df[station_col].isnull().any():
-            rows_with_nan_time = df[station_col.isnull()]
-            raise ValueError("There are NaN values for {} in these rows:\n{}".format(
-                station_col, rows_with_nan_time))
+            raise ValueError(f"Required column not found : {station_col}")
+        if df[station_col].isna().any():
+            rows_with_nan_time = df[df[station_col].isna()]
+            raise ValueError(f"There are NaN values for {station_col} in these rows:\n"
+                             f"{rows_with_nan_time}")
         
         rows_with_duplicates = df.duplicated([station_col, date_start_col])   
         if rows_with_duplicates.any():
-            raise ValueError("Duplicated station_col date_col for these rows:\n{}".format(df[rows_with_duplicates]))
+            raise ValueError(f"Duplicated station_col date_col for these rows:\n"
+                             f"{df[rows_with_duplicates]}")
         
         # Check date start and end using Contracts
         Contracts.check_contracts_dates(df, date_start_col, date_end_exclusive_col, is_naive)
+
+
+    # ------ Build daily dataframes
 
     @staticmethod
     def __station_to_events(stations, date_start_col, date_end_exclusive_col):
@@ -138,10 +104,6 @@ class PowerStations:
         if max_date_exclusive is not None:
             events = events[events["event_date"] <= max_date_exclusive]
 
-        # we just consider the end date as an end of data -> all columns must be summable         
-        # for c in not_summable_columns:
-        #    events[c] = events.apply(lambda row: row[c] if row["event_type"] == "start" else np.nan, axis=1)
-        
         # other_columns = set(stations.columns) - set(not_summable_columns) - set([station_col, date_start_col, date_end_exclusive_col])
         other_columns = set(stations.columns) - set([station_col, date_start_col, date_end_exclusive_col])
         for c in other_columns:
@@ -162,17 +124,18 @@ class PowerStations:
         return df.reset_index().set_index([station_col, "date"])
 
     @staticmethod
-    def get_stations_between_dates(stations, start_datetime, end_datetime_exclusive, 
-                                   not_summable_columns=[], freq=None):
+    def get_stations_between_dates(
+            stations,
+            start_datetime, 
+            end_datetime_exclusive, 
+            freq=None
+            ):
         """
         Adds or removes dates if needed.
 
-        If additional dates are needed at the beginning, add these dates with 0 in the 
-        columns (TODO: that are summable)
-
         If additional dates needed at the end, copy the data of the last date into the additional dates
 
-        :param stations: the dataframe with the stations. It must be a MultIndex datfrale,
+        :param stations: the dataframe with the stations. It must be a MultiIndex datframe,
                          whose second order index is a pandas.DatetimeIndex with frequency.
         :param start_datetime: the start date column, it is the same for all stations
         :param end_datetime_exclusive: the end date (exclusive)
@@ -190,7 +153,7 @@ class PowerStations:
         if not isinstance(df.index.levels[1], pd.DatetimeIndex):
             raise TypeError("The second index of daily_stations should be a pd.DatetimeIndex, but given {}"
                             .format(df.index.levels[1].dtype))
-
+      
         if freq is None:
             try:
                 freq = df.index.levels[1].inferred_freq
@@ -202,30 +165,75 @@ class PowerStations:
         if not df.isnull().sum().sum() == 0:
             raise ValueError("daily_stations has NaN values.")
 
+        key_col = df.index.levels[0].name
+        date_col = df.index.levels[1].name 
+
         df_new = pd.DataFrame()
         for station, data in df.groupby(level=0):
             if start_datetime is not None and data.index.levels[1].min() > start_datetime:
                 # add days with empty portfolio at the beginning
                 data.loc[(station, start_datetime), :] = tuple([0 for x in range(len(df.columns))])
                 data.sort_index(inplace=True)  # put the new row first
-                data = data.reset_index().set_index("date").asfreq(freq, method='ffill')
-                data = data.reset_index().set_index(["station", "date"])
+                data = data.reset_index().set_index(date_col).asfreq(freq, method='ffill')
+                data = data.reset_index().set_index([key_col, date_col])
         
             if end_datetime_exclusive is not None and data.index.levels[1].max() < end_datetime_exclusive:
                 # add days at the end, with the same portfolio as the last available day
                 data.loc[(station, end_datetime_exclusive), :] = tuple([0 for x in range(len(df.columns))])
                 data.sort_index(inplace=True) 
-                data = data.reset_index().set_index("date").asfreq(freq, method='ffill')
-                data = data.reset_index().set_index(["station", "date"])
+                data = data.reset_index().set_index(date_col).asfreq(freq, method='ffill')
+                data = data.reset_index().set_index([key_col, date_col])
             
             # remove dates outside of desired range
-            data = data[(data.index.get_level_values('date') >= start_datetime) & 
-                        (data.index.get_level_values('date') < end_datetime_exclusive)]
+            data = data[(data.index.get_level_values(date_col) >= start_datetime) & 
+                        (data.index.get_level_values(date_col) < end_datetime_exclusive)]
             assert data.isnull().sum().sum() == 0  # check that there is no missing value
             
             df_new = pd.concat([df_new, data], axis=0)
 
         return df_new
+
+
+    # ------ Outages
+
+    @classmethod
+    def read_outages_from_file(
+            cls,
+            file_path,
+            station_col="station",
+            time_start_col="time_start",
+            time_end_exclusive_col="time_end_exclusive",
+            tzinfo="Europe/Paris",          
+            pct_outages_col=None
+            ):
+        """
+        Reads outages from a file. This will convert start and end date columns into dtype=datetime64 (tz-naive)
+        :param file_path: where the source file is located.
+        :param time_start_col: the name of the outage time start column.
+        :param time_end_exclusive_col: the name of the outage time end column, end date is exclusive.
+        :param time_format: the time format for pandas.to_datetime
+        :param pct_outages_col: the percentage of availability of the powerplant. 
+               If none is given, it is assumled the power plant is simply shutdown. 
+        :return: a pandas.DataFrame with an outage on each row.
+        """
+
+        df = pd.read_csv(file_path)
+        for c in [time_start_col, time_end_exclusive_col]:
+            if is_string_dtype(df[c]):
+                df[c] = pd.to_datetime(df[c])
+                df[c] = TimeSeries.align_timezone(df[c], tzinfo=tzinfo)
+
+        # check stations
+        cls.check_stations(df, station_col, time_start_col, time_end_exclusive_col, is_naive=False)
+        
+        # check pct_outage_col
+        if pct_outages_col is not None:
+            if pct_outages_col not in df.columns:
+                raise ValueError(f"Provided column {pct_outages_col} is not present in dataframe")
+            if not (df[pct_outages_col].dropna().between(0, 100)).all(): 
+                raise ValueError(f"Some values in {pct_outages_col} are not percentage")    
+        
+        return df
 
     @staticmethod
     def integrate_outages(
@@ -293,17 +301,24 @@ class PowerStations:
     
         return df_stations.set_index([key_col_stations, time_col_stations])
 
+
+    # ------ Load factor
+
     @staticmethod
     def compute_load_factor(
             df,
             installed_capacity_kw, 
             power_kw, 
+            load_factor_col="load_factor",
             drop_power_kw=True):
         '''
-        This function computes the load_factor, which is the target column of all 
-        methods implemented in that part of the code
+        This function computes the load_factor, which is the target column of most 
+        methods implemented for the power stations production prediction
         :param installed_capacity_kw: the column of df that contains the installed_capacity in kw
-        :param power_kw: the column of df which contains the power
+        :param power_kw: the column which contains the power (in kW)
+        :param load_factor_col: name of the computed load factor column
+        :param drop_power_kw: boolean flag which indicates whether the power  
+                              column shall be dropped. 
         '''
 
         df = df.copy()
@@ -317,7 +332,7 @@ class PowerStations:
             else:
                 return row[power_kw] / row[installed_capacity_kw]
 
-        df["load_factor"] = df.apply(load_factor_manage_no_capacity, axis=1)
+        df[load_factor_col] = df.apply(load_factor_manage_no_capacity, axis=1)
 
         if drop_power_kw:
             df = df.drop(columns=power_kw)
@@ -325,24 +340,28 @@ class PowerStations:
         return df 
 
     @staticmethod
-    def compute_power_kw_load_factor(
+    def compute_power_kw_from_load_factor(
             df,
             installed_capacity_kw, 
             load_factor, 
+            power_kw_col="power_kw",
             drop_load_factor=True):
         '''
-        This function computes the load_factor, which is the target column of all 
-        methods implemented in that part of the code
+        This function computes the power (in kW) from the computed load_factor. 
+        It is the inverse transform of compute_load_factor()
         :param installed_capacity_kw: the column of df that contains the installed_capacity in kw
-        :param power_kw: the column of df which contains the power
+        :param load_factor: the column which contains the load factor
+        :param power_kw_col: name of the computed power column 
+        :param drop_load_factor: boolean flag which indicates whether the load factor 
+                                 column shall be dropped. 
         '''
 
         df = df.copy()
         for c in [installed_capacity_kw, load_factor]:
             if c not in df.columns:
-                raise ValueError("Required column not found : {}".format(c))
+                raise ValueError(f"Required column not found : {c}")
         
-        df["power_kw"] = df[installed_capacity_kw] * df[load_factor]
+        df[power_kw_col] = df[installed_capacity_kw] * df[load_factor]
 
         if drop_load_factor:
             df = df.drop(columns=load_factor)

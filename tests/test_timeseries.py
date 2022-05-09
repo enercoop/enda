@@ -409,28 +409,54 @@ class TestTimeSeries(unittest.TestCase):
         )
         self.assertEqual(df_expected, sub_df)
 
-    def test_average_to_upper_freq(self): 
+    def test_average_to_upper_freq_1(self): 
 
         # average to upper freq
 
         df_test = pd.date_range(
-            start=pd.to_datetime('2021-01-01 19:00:00+01:00').tz_convert('Europe/Paris'),
-            end=pd.to_datetime('2021-01-01 22:00:00+01:00').tz_convert('Europe/Paris'),
-            freq='1H', tz='Europe/Paris', name='time'
+            start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-02 00:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='12H', tz='Europe/Paris', name='time'
         ).to_frame().set_index('time')
-        df_test["value"] = [0., 1., 2., 3.]
+        df_test["value"] = [0., 1., 2.]
 
         df_expected = pd.date_range(
-            start=pd.to_datetime('2021-01-01 19:00:00+01:00').tz_convert('Europe/Paris'),
-            end=pd.to_datetime('2021-01-01 23:00:00+01:00').tz_convert('Europe/Paris'),
-            freq='1H', tz='Europe/Paris', name='time'
+            start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-02 00:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='1D', tz='Europe/Paris', name='time'
         ).to_frame().set_index('time')
-        df_expected["value"] = [0., 1., 2., 3., 3.]
-        df_expected.index.freq = '1H'
+        df_expected["value"] = [0.5, 2.]
+        df_expected.index.freq = '1D'
 
-        sub_df = TimeSeries.forward_fill_final_record(
+        sub_df = TimeSeries.average_to_upper_freq(
             df=df_test, 
-            gap_frequency='3H',
-            cut_off_frequency='1D'
+            freq='1D',
+            tz="Europe/Paris"
+        )
+        self.assertEqual(df_expected, sub_df)
+
+    def test_average_to_upper_freq_2(self): 
+
+        # average to upper freq
+
+        df_test = pd.date_range(
+            start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-02 00:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='12H', tz='Europe/Paris', name='time'
+        ).to_frame().set_index('time')
+        df_test["value"] = [0., 1., 2.]
+
+        df_expected = pd.date_range(
+            start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-02 00:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='1D', tz='Europe/Paris', name='time'
+        ).to_frame().set_index('time')
+        df_expected["value"] = [0.5, 2.]
+        df_expected.index.freq = '1D'
+
+        sub_df = TimeSeries.average_to_upper_freq(
+            df=df_test, 
+            freq='1D',
+            tz="Europe/Paris"
         )
         self.assertEqual(df_expected, sub_df)

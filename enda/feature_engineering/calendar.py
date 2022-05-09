@@ -2,6 +2,7 @@ import pandas as pd
 import datetime
 import warnings
 from enda.feature_engineering.datetime_features import DatetimeFeature
+from enda.timeseries import TimeSeries
 
 try:
     import unidecode
@@ -159,30 +160,6 @@ class Calendar:
 
         return public_holidays[['extra_long_weekend']]
 
-    @staticmethod
-    def interpolate_daily_to_subdaily_data(df, freq, method='ffill', tz='Europe/Paris'):
-        """
-        Interpolate daily data in a dataframe (with a DatetimeIndex) to subdaily data using a given method.
-        :param df: pd.DataFrame
-        :param freq: a frequency < 'D' (e.g. 'H', '30min', '15min', etc)
-        :param method: how are data interpolated between two consecutive dates (e.g. 'ffill', 'linear', etc)
-        :param tz: timezone ('Europe/Paris')
-        :return: pd.DataFrame
-        """
-        if df.index.tzinfo is None:
-            df.index = pd.to_datetime(df.index).tz_localize(tz)
-
-        new_end_date = df.index.max() + datetime.timedelta(days=1)
-        extra_row = df.iloc[[-1]].reindex([new_end_date])
-
-        result = df.append(extra_row, ignore_index=False)
-        result = result.resample(freq).interpolate(method=method)
-        result = result.drop(new_end_date)
-
-        result.index.name = 'time'
-
-        return result
-
     def get_french_special_days(self, freq='30min'):
 
         lockdown = self.get_french_lockdown()
@@ -190,10 +167,14 @@ class Calendar:
         school_holidays = self.get_school_holidays()
         extra_long_weekend = self.get_extra_long_weekend()
 
-        lockdown_new_freq = self.interpolate_daily_to_subdaily_data(lockdown, freq=freq)
-        public_holidays_new_freq = self.interpolate_daily_to_subdaily_data(public_holidays, freq=freq)
-        school_holidays_new_freq = self.interpolate_daily_to_subdaily_data(school_holidays, freq=freq)
-        extra_long_weekend_new_freq = self.interpolate_daily_to_subdaily_data(extra_long_weekend, freq=freq)
+        lockdown_new_freq = TimeSeries.interpolate_daily_to_sub_daily_data(
+            lockdown, freq=freq, method='ffill', tz="Europe/Paris")
+        public_holidays_new_freq = TimeSeries.interpolate_daily_to_sub_daily_data(
+            public_holidays, freq=freq, method='ffill', tz="Europe/Paris")
+        school_holidays_new_freq = TimeSeries.interpolate_daily_to_sub_daily_data(
+            school_holidays, freq=freq, method='ffill', tz="Europe/Paris")
+        extra_long_weekend_new_freq = TimeSeries.interpolate_daily_to_sub_daily_data(
+            extra_long_weekend, freq=freq, method='ffill', tz="Europe/Paris")
 
         result = pd.concat(
             [

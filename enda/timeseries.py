@@ -354,13 +354,26 @@ class TimeSeries:
         Upsample data provided in a given dataframe with a DatetimeIndex, or a two-levels 
         compatible Multiindex.         
         The provided frequency serves as a basis to group the data and average.
+        If the initial dataframe has no frequency, we raise an error. 
+
+        Example: 
+
+        1. Given df:      
+        time_index                value
+        2021-01-01 00:00:00+01:00 1
+        2021-01-01 00:12:00+01:00 2
+        2021-01-02 00:00:00+01:00 3
+
+        average_to_upper_freq(df, freq='1D'):
+        2021-01-01 00:00:00+01:00 1.5
+        2021-01-02 00:00:00+01:00 3
         """
 
         if type(df.index) != pd.DatetimeIndex:
             raise TypeError("The dataframe index must be a DatetimeIndex")
 
         freq_original = TimeSeries.get_timeseries_frequency(df.index)
-        if pd.to_timedelta(freq).total_seconds() >= pd.to_timedelta(freq_original).total_seconds():
+        if pd.to_timedelta(freq).total_seconds() < pd.to_timedelta(freq_original).total_seconds():
             raise ValueError("The required frequency is smaller than the original one")
 
         if df.index.tzinfo is None:

@@ -48,7 +48,7 @@ class TestContracts(unittest.TestCase):
         with self.assertRaises(ValueError):
             Contracts.check_contracts_dates(
                 c,
-                date_start_col="dummy",
+                date_start_col="date_start",
                 date_end_exclusive_col="date_end_exclusive"
             )
 
