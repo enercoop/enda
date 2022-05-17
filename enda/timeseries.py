@@ -2,6 +2,7 @@ import datetime
 import numpy as np
 import pandas as pd
 import pytz
+import warnings
 
 from enda.decorators import handle_multiindex
 
@@ -179,7 +180,6 @@ class TimeSeries:
     @handle_multiindex
     def interpolate_freq_to_sub_freq_data(
             df: pd.DataFrame,
-            *,
             freq: [str, pd.Timedelta],
             tz: [str, datetime.tzinfo],
             index_name: str = None,
@@ -226,7 +226,6 @@ class TimeSeries:
     @handle_multiindex
     def forward_fill_final_record(
             df: pd.DataFrame,
-            *,
             gap_frequency: [str, pd.Timedelta],
             cut_off_frequency: [str, pd.Timedelta] = None):
         '''
@@ -321,7 +320,6 @@ class TimeSeries:
     @handle_multiindex
     def interpolate_daily_to_sub_daily_data(
             df: pd.DataFrame,
-            *,
             freq: [str, pd.Timedelta],
             tz: [str, datetime.tzinfo],
             index_name: str = 'time',
@@ -363,7 +361,6 @@ class TimeSeries:
     @handle_multiindex
     def average_to_upper_freq(
             df: pd.DataFrame,
-            *,
             freq: [str, pd.Timedelta],
             tz: [str, datetime.tzinfo],
             index_name: str = None, 

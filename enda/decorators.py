@@ -33,6 +33,11 @@ def handle_multiindex(func):
             raise TypeError("The second index of the dataframe should be a pd.DatetimeIndex, but given {}"
                             .format(df.index.levels[1].dtype))
 
+        # and for now, we cannot accept no-key arguments excpet df for a multiindex
+        if ('df' in kwargs.keys() and len(args) > 0) or ('df' not in kwargs.keys() and len(args) != 1): 
+            raise NotImplementedError("The function with multi-index dataframes as input only works "
+                                      "using keyword-only arguments (except for 'df' argument)")
+
         key_col = df.index.levels[0].name
         date_col = df.index.levels[1].name 
         
