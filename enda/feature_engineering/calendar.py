@@ -2,6 +2,7 @@ import pandas as pd
 import datetime
 import warnings
 from enda.feature_engineering.datetime_features import DatetimeFeature
+from enda.timeseries import TimeSeries
 
 try:
     import unidecode
@@ -27,11 +28,11 @@ class FrenchHolidays:
                 res = JoursFeries.for_year(year)
                 df_res = pd.DataFrame.from_dict(res, orient='index')
                 df_res.index = df_res.index.map(lambda x: unidecode.unidecode(x))
-                result = result.append(df_res.T, ignore_index=True)
+                result = pd.concat([result, df_res.T], ignore_index=True)
             except Exception as e:
                 warnings.warn("Missing french public holidays : {}".format(e))
 
-        if orientation is not 'columns':
+        if orientation != 'columns':
             result = result.stack().reset_index(level=0, drop=True)
             result.index.name = 'nom_jour_ferie'
             result = result.to_frame('date')
@@ -55,7 +56,7 @@ class FrenchHolidays:
                 df_res = pd.DataFrame.from_dict(res, orient='index')
                 df_res['nom_vacances'] = df_res['nom_vacances'].map(lambda x: unidecode.unidecode(x))
                 df_res = df_res.reset_index(drop=True)
-                result = result.append(df_res, ignore_index=True)
+                result = pd.concat([result, df_res], ignore_index=True)
             except Exception as e:
                 warnings.warn("Missing french school holidays : {}".format(e))
 
@@ -73,7 +74,7 @@ class Calendar:
         So far, the main lockdown period goes from 2020-03-17 to 2020-05-11.
         """
 
-        if self.country is not 'FR':
+        if self.country != 'FR':
             raise NotImplementedError("Public holidays in {} unknown".format(self.country))
 
         start_lockdown_date = pd.to_datetime('2020-03-17')
@@ -94,7 +95,7 @@ class Calendar:
         whether it is a public holiday (denoted by a 1) or not (denoted by a 0)
         """
 
-        if self.country is 'FR':
+        if self.country == 'FR':
             public_holidays = FrenchHolidays.get_public_holidays()
         else:
             raise NotImplementedError("Public holidays in {} unknown".format(self.country))
@@ -115,14 +116,14 @@ class Calendar:
         the number of school areas (zone A, B et C) in vacation (either 0, 1, 2 or 3)
         """
 
-        if self.country is 'FR':
+        if self.country == 'FR':
             school_holidays = FrenchHolidays.get_school_holidays()
         else:
             raise NotImplementedError("School holidays in {} unknown".format(self.country))
 
         school_holidays = school_holidays.set_index('date')
         school_holidays.index = pd.to_datetime(school_holidays.index)
-        school_holidays = school_holidays.drop('nom_vacances', 1)
+        school_holidays = school_holidays.drop('nom_vacances', axis=1)
 
         school_holidays['nb_school_areas_off'] = school_holidays.sum(axis=1)
         school_holidays = school_holidays.asfreq('D')
@@ -169,19 +170,17 @@ class Calendar:
         :param tz: timezone ('Europe/Paris')
         :return: pd.DataFrame
         """
-        if df.index.tzinfo is None:
-            df.index = pd.to_datetime(df.index).tz_localize(tz)
 
-        new_end_date = df.index.max() + datetime.timedelta(days=1)
-        extra_row = df.iloc[[-1]].reindex([new_end_date])
+        warnings.warn(
+            "The Calendar.interpolate_daily_to_sub_daily_data method is deprecated "
+            "and will be removed from enda in a future version. "
+            "Use TimeSeries.interpolate_daily_to_sub_daily_data instead.",
+            FutureWarning
+        )
 
-        result = df.append(extra_row, ignore_index=False)
-        result = result.resample(freq).interpolate(method=method)
-        result = result.drop(new_end_date)
-
-        result.index.name = 'time'
-
-        return result
+        return TimeSeries.interpolate_daily_to_sub_daily_data(
+            df, freq=freq, method='ffill', tz="Europe/Paris"
+        )
 
     def get_french_special_days(self, freq='30min'):
 
@@ -190,14 +189,18 @@ class Calendar:
         school_holidays = self.get_school_holidays()
         extra_long_weekend = self.get_extra_long_weekend()
 
-        lockdown_new_freq = self.interpolate_daily_to_subdaily_data(lockdown, freq=freq)
-        public_holidays_new_freq = self.interpolate_daily_to_subdaily_data(public_holidays, freq=freq)
-        school_holidays_new_freq = self.interpolate_daily_to_subdaily_data(school_holidays, freq=freq)
-        extra_long_weekend_new_freq = self.interpolate_daily_to_subdaily_data(extra_long_weekend, freq=freq)
+        lockdown_new_freq = TimeSeries.interpolate_daily_to_sub_daily_data(
+            lockdown, freq=freq, method='ffill', tz="Europe/Paris")
+        public_holidays_new_freq = TimeSeries.interpolate_daily_to_sub_daily_data(
+            public_holidays, freq=freq, method='ffill', tz="Europe/Paris")
+        school_holidays_new_freq = TimeSeries.interpolate_daily_to_sub_daily_data(
+            school_holidays, freq=freq, method='ffill', tz="Europe/Paris")
+        extra_long_weekend_new_freq = TimeSeries.interpolate_daily_to_sub_daily_data(
+            extra_long_weekend, freq=freq, method='ffill', tz="Europe/Paris")
 
         result = pd.concat(
             [
                 lockdown_new_freq, public_holidays_new_freq, school_holidays_new_freq, extra_long_weekend_new_freq
-            ], 1, 'outer')
+            ], axis=1, join='outer')
 
         return result

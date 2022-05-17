@@ -1,12 +1,22 @@
-import unittest
-import pathlib
+import logging
 import os
 import pandas as pd
+import pathlib
+import unittest
+
 from enda.contracts import Contracts
 from enda.timeseries import TimeSeries
 
 
 class TestContracts(unittest.TestCase):
+
+    def setUp(self):
+        logging.captureWarnings(True)
+        logging.disable(logging.ERROR)
+
+    def tearDown(self):
+        logging.captureWarnings(False)
+        logging.disable(logging.NOTSET)
 
     EXAMPLE_A_DIR = os.path.join(pathlib.Path(__file__).parent.absolute(), "example_a")
     CONTRACTS_PATH = os.path.join(EXAMPLE_A_DIR, "contracts.csv")
@@ -38,7 +48,7 @@ class TestContracts(unittest.TestCase):
         with self.assertRaises(ValueError):
             Contracts.check_contracts_dates(
                 c,
-                date_start_col="dummy",
+                date_start_col="date_start",
                 date_end_exclusive_col="date_end_exclusive"
             )
 
@@ -218,7 +228,7 @@ class TestContracts(unittest.TestCase):
         portfolio_by_day = TestContracts.get_simple_portfolio_by_day()
         portfolio_5min = TimeSeries.interpolate_daily_to_sub_daily_data(portfolio_by_day,
                                                                         freq='5min', tz='Europe/Paris')
-        print(portfolio_5min[['subscribed_power_kva']][portfolio_5min.index >= '2020-09-19 00:00:00+02:00'])
+        # print(portfolio_5min[['subscribed_power_kva']][portfolio_5min.index >= '2020-09-19 00:00:00+02:00'])
 
         forecast_5_min = Contracts.forecast_portfolio_holt(
             portfolio_5min,
@@ -228,7 +238,7 @@ class TestContracts(unittest.TestCase):
             holt_init_params={"exponential": True, "damped_trend": True, "initialization_method": "estimated"},
             holt_fit_params={"damping_trend": 0.98}
         )
-        print(forecast_5_min[['subscribed_power_kva']])
+        # print(forecast_5_min[['subscribed_power_kva']])
 
         self.assertEqual((12*24*5, 3), forecast_5_min.shape)
         self.assertEqual(

@@ -135,6 +135,10 @@ data/
 # PyCharm project meta-data
 *.idea
 
+# Sublime project meta-data
+*.sublime-project
+*.sublime-workspace
+
 # Mac OSX file system:
 *.DS_STORE
 *.DS_Store

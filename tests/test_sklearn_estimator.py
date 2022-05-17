@@ -1,3 +1,4 @@
+import logging
 import unittest
 import pandas as pd
 from tests.test_utils import TestUtils
@@ -19,6 +20,14 @@ except ImportError as e:
 
 
 class TestEndaSklearnEstimator(unittest.TestCase):
+
+    def setUp(self):
+        logging.captureWarnings(True)
+        logging.disable(logging.ERROR)
+
+    def tearDown(self):
+        logging.captureWarnings(False)
+        logging.disable(logging.NOTSET)
 
     def test_estimators(self):
         train_set, test_set, target_name = TestUtils.read_example_a_train_test_sets()

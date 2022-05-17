@@ -1,8 +1,9 @@
 import pandas as pd
 from pandas.api.types import is_string_dtype, is_datetime64_dtype
 from dateutil.relativedelta import relativedelta
-from enda.timezone_utils import TimezoneUtils
 import pytz
+
+from enda.timezone_utils import TimezoneUtils
 
 
 class Contracts:
@@ -59,7 +60,7 @@ class Contracts:
         return df
 
     @staticmethod
-    def check_contracts_dates(df, date_start_col, date_end_exclusive_col):
+    def check_contracts_dates(df, date_start_col, date_end_exclusive_col, is_naive=True):
         """
         Checks that the two columns are present, with dtype=datetime64 (tz-naive)
         Checks that date_start is always present.
@@ -76,8 +77,8 @@ class Contracts:
             if c not in df.columns:
                 raise ValueError("Required column not found : {}".format(c))
             # data at a 'daily' precision should not have TZ information
-            if not is_datetime64_dtype(df[c]):
-                raise ValueError("Expected tz-naive datetime dtype for column, but found dtype: {}"
+            if not is_datetime64_dtype(df[c]) and is_naive:
+                raise ValueError("Expected tz-naive datetime dtype for column {}, but found dtype: {}"
                                  .format(c, df[c].dtype))
         # check NaN values for date_start
         if df[date_start_col].isnull().any():
@@ -87,7 +88,7 @@ class Contracts:
         contracts_with_end = df.dropna(subset=[date_end_exclusive_col])
         not_ok = contracts_with_end[date_start_col] >= contracts_with_end[date_end_exclusive_col]
         if not_ok.sum() >= 1:
-            raise ValueError("Some contracts end before they start:\n{}".format(contracts_with_end[not_ok]))
+            raise ValueError("Some ending date happens before starting date:\n{}".format(contracts_with_end[not_ok]))
 
     @staticmethod
     def __contract_to_events(contracts, date_start_col, date_end_exclusive_col):

@@ -1,8 +1,7 @@
+import logging
 import unittest
 import pandas as pd
 import time
-from tests.test_utils import TestUtils
-from enda.ml_backends.h2o_estimator import EndaH2OEstimator
 import pickle
 import os
 import shutil
@@ -25,20 +24,27 @@ try:
 except ImportError as e:
     raise ImportError("joblib is required is you want to test enda's H2OEstimator.", e)
 
+from tests.test_utils import TestUtils
+from enda.ml_backends.h2o_estimator import EndaH2OEstimator
+
 
 class TestH2OEstimator(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         """ initialize a local h2o server to tests h2o backend"""
+        logging.captureWarnings(True)
+        logging.disable(logging.ERROR)
         h2o.init(nthreads=-1)  # starts an h2o local server
         h2o.no_progress()  # don't print out progress bars
 
     @classmethod
     def tearDownClass(cls):
         """ shutdown the local h2o server """
+        logging.captureWarnings(False)
+        logging.disable(logging.NOTSET)       
         h2o.cluster().shutdown()  # shutdown h2o local server
-        print("H2O cluster shutdown...")
+        # print("H2O cluster shutdown...")
         time.sleep(3)  # wait for h2o to actually finish shutting down
 
     def test_estimators(self):
@@ -51,7 +57,7 @@ class TestH2OEstimator(unittest.TestCase):
             H2ORandomForestEstimator(),
             H2ODeepLearningEstimator()
         ]:
-            print(type(estimator))
+            # print(type(estimator))
             m = EndaH2OEstimator(estimator)
             m.train(train_set, target_name)
             prediction = m.predict(test_set, target_name)
