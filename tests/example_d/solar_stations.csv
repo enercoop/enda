@@ -1,6 +1,0 @@
-station,date_start,date_end_exclusive,installed_capacity_kw
-pv_1,2019-10-01,2029-10-01,75
-pv_2,2019-09-04,2024-09-01,36
-pv_3,2019-04-01,2039-01-01,250
-pv_4,2019-10-01,2024-10-01,42
-

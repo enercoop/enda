@@ -312,24 +312,23 @@ class EndaEstimatorRecopy(EndaEstimator):
     It simply recopies the most recent data on a daily basis. 
     """
 
-    def __init__(self, period: str = None, key_col: str = None):
+    def __init__(self, period: [str, pandas.Timedelta] = None, key_col: str = None):
 
         '''
         Set up the attribute data that will store the dataframe
-        :param period: The period on which data should be averaged. 
-                       It typically is just a day, or an hour. 
-                       If nothing is provided, the last provided value of the
-                       dataframe is kept and used everywhere. 
-                       If something is provided, we assume some periodicty is expected, 
-                       so that the prediction aims at keeping it.  
+        :param period: The period on which past data should be averaged to be used as future value.
+                       It must be convertible to a pandas.Timedelta object, eg '1D', '2H', etc...
+                       If nothing is provided, the last past value is used in the future    
         '''
-        self.period = period
+        self.period = pandas.to_timedelta(period) if period is not None else None
         self.training_data = None
     
     def train(self, df: pandas.DataFrame, target_col: str):
         '''
         This function keeps the more recent data of the input dataframe,
-        and stores it in the attribute training_data.
+        and stores it in the attribute training_data. If a period has been 
+        given to the estimator constructor, it is used to define a period on 
+        which to average the data. 
 
         :param df: The input dataframe, with a single DatetimeIndex
         :param target_col: the target column 
@@ -339,7 +338,7 @@ class EndaEstimatorRecopy(EndaEstimator):
             raise ValueError("Index should be of type DatetimeIndex")
 
         if target_col not in df.columns: 
-            raise ValueError("Target column not found in the training dataframe")
+            raise ValueError(f"Target column {target_col} not found in the training dataframe")
             
         if self.period is None:
             self.training_data = (
@@ -349,13 +348,8 @@ class EndaEstimatorRecopy(EndaEstimator):
             
         else:
             # the training dataframe must have a well-defined frequency
-            # try: 
-            #     self.training_data_freq = TimeSeries.get_timeseries_frequency(df.index) 
-            # except Exception:
-            #     raise ValueError("No clear frequency in the training data.")
-            period_delta = pandas.to_timedelta(self.period)
             self.training_data = (
-                df.iloc[df.index > df.index.max() - period_delta, 
+                df.iloc[df.index > df.index.max() - self.period, 
                         df.columns.get_indexer([target_col])
                         ]
                 .mean()
@@ -365,35 +359,17 @@ class EndaEstimatorRecopy(EndaEstimator):
         '''
         Make a prediction just copying the retained information.
         :param df: The input forecast dataframe, with a single DatetimeIndex 
+        :param target_col: the target column 
         '''
 
         if self.training_data is None: 
-            raise ValueError("There is no training dataset defined")
+            raise ValueError("There is no training dataset defined. Must call 'train' before 'predict'")
 
         if not isinstance(df.index, type(self.training_data.index)):
             raise ValueError("Forecast dataset index should be of same type of input dataset")
            
         df_predict = df.copy(deep=True)
         
-        if self.period is None:
-            df_predict[target_col] = self.training_data[target_col]
+        df_predict[target_col] = self.training_data[target_col]
         
-        else:
-            # date_start = df.index.min()    
-            # if date_start > self.training_data.index.max() + 10 * pd.timedelta(self.period):
-            #     raise ValueError("The prediction is too distant in the future to be correct")
-            
-            # A periodicity of the data is assumed. We will loop over the forecast dataframe
-            # index and find the appropriate data in the original dataframe  
-
-            # the forecast dataframe must have a well-defined frequency
-            # try: 
-            #     forecast_data_freq = TimeSeries.get_timeseries_frequency(df.index) 
-            # except Exception:
-            #     raise ValueError("No clear frequency in the forecasting data.")
-            
-            # if forecast_data_freq != self.training_data_freq: 
-            #     raise ValueError("Forecast and training dataframes must have the same frequency")
-            df_predict[target_col] = self.training_data[target_col]
-
         return df_predict.loc[:, [target_col]]

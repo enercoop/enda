@@ -58,8 +58,11 @@ class EndaH2OEstimator(EndaEstimator):
         except (h2o.exceptions.H2OResponseError, TypeError) as e:
             raise ValueError("Problem getting the model from h2o server. Train the model first. "
                              "Cannot access model binary before training (for pickle or deepcopy or other uses).", e)
-
-        if not model_path_from_h2o.startswith(EndaH2OEstimator.__tmp_file_path_1):
+        
+        # model can be saved in __tmp_file_path_1, or in private/__tmp_file_path_1
+        potential_startswith = [EndaH2OEstimator.__tmp_file_path_1, 
+                                "/private" + EndaH2OEstimator.__tmp_file_path_1]
+        if not model_path_from_h2o.startswith(tuple(potential_startswith)):
             warnings.warn("Expected model_path_from_h2o={} to start with {}"
                           .format(model_path_from_h2o, EndaH2OEstimator.__tmp_file_path_1))
 

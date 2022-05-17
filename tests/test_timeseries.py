@@ -385,6 +385,33 @@ class TestTimeSeries(unittest.TestCase):
 
     def test_forward_fill_final_record_2(self): 
 
+        # forward_fill_final_record with a None cutoff frequency
+        # and 3H as the original frequency 
+
+        df_test = pd.date_range(
+            start=pd.to_datetime('2021-01-01 19:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-01 22:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='1H', tz='Europe/Paris', name='time'
+        ).to_frame().set_index('time')
+        df_test["value"] = [0., 1., 2., 3.]
+
+        df_expected = pd.date_range(
+            start=pd.to_datetime('2021-01-01 19:00:00+01:00').tz_convert('Europe/Paris'),
+            end=pd.to_datetime('2021-01-02 00:00:00+01:00').tz_convert('Europe/Paris'),
+            freq='1H', tz='Europe/Paris', name='time'
+        ).to_frame().set_index('time')
+        df_expected["value"] = [0., 1., 2., 3., 3., 3.]
+        df_expected.index.freq = '1H'
+
+        sub_df = TimeSeries.forward_fill_final_record(
+            df=df_test, 
+            gap_frequency='3H',
+            cut_off_frequency=None
+        )
+        self.assertEqual(df_expected, sub_df)
+
+    def test_forward_fill_final_record_3(self): 
+
         # forward_fill_final_record with a cutoff frequency
 
         df_test = pd.date_range(

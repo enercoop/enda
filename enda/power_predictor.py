@@ -117,6 +117,7 @@ class PowerPredictor():
                     data = self.prod_estimators[station_id].predict(data, target_col)
                 else:
                     data[target_col] = 0
+                    data = data.loc[:, [target_col]]
             
             if is_positive:
                 # reset to 0 negative values in case

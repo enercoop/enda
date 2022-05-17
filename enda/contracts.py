@@ -3,7 +3,6 @@ from pandas.api.types import is_string_dtype, is_datetime64_dtype
 from dateutil.relativedelta import relativedelta
 import pytz
 
-from enda.decorators import handle_multiindex
 from enda.timezone_utils import TimezoneUtils
 
 

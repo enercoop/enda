@@ -160,6 +160,28 @@ class Calendar:
 
         return public_holidays[['extra_long_weekend']]
 
+    @staticmethod
+    def interpolate_daily_to_subdaily_data(df, freq, method='ffill', tz='Europe/Paris'):
+        """
+        Interpolate daily data in a dataframe (with a DatetimeIndex) to subdaily data using a given method.
+        :param df: pd.DataFrame
+        :param freq: a frequency < 'D' (e.g. 'H', '30min', '15min', etc)
+        :param method: how are data interpolated between two consecutive dates (e.g. 'ffill', 'linear', etc)
+        :param tz: timezone ('Europe/Paris')
+        :return: pd.DataFrame
+        """
+
+        warnings.warn(
+            "The Calendar.interpolate_daily_to_sub_daily_data method is deprecated "
+            "and will be removed from enda in a future version. "
+            "Use TimeSeries.interpolate_daily_to_sub_daily_data instead.",
+            FutureWarning
+        )
+
+        return TimeSeries.interpolate_daily_to_sub_daily_data(
+            df, freq=freq, method='ffill', tz="Europe/Paris"
+        )
+
     def get_french_special_days(self, freq='30min'):
 
         lockdown = self.get_french_lockdown()

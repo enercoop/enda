@@ -2,6 +2,8 @@ import os
 import pathlib
 import pandas as pd
 from enda.contracts import Contracts
+from enda.feature_engineering.datetime_features import DatetimeFeature
+from enda.power_stations import PowerStations
 from enda.timeseries import TimeSeries
 
 
@@ -9,6 +11,7 @@ class TestUtils:
     """ Some functions useful for the tests. """
 
     EXAMPLE_A_DIR = os.path.join(pathlib.Path(__file__).parent.absolute(), "example_a")
+    EXAMPLE_D_DIR = os.path.join(pathlib.Path(__file__).parent.absolute(), "example_d")
 
     @staticmethod
     def read_example_a_train_test_sets():
@@ -84,4 +87,137 @@ class TestUtils:
 
     @staticmethod
     def read_example_b_train_test_sets():
-        pass
+        raise NotImplementedError()
+
+    @staticmethod
+    def read_example_d_dataset(source):
+        """ 
+        Read the example d data for a techno in particular, 
+        and compute train/test sets
+        """
+        if source not in ["wind", "solar", "river"]: 
+            raise NotImplementedError("unknown source argument")
+        
+        # get station portfolio
+        stations = Contracts.read_contracts_from_file(os.path.join(
+            TestUtils.EXAMPLE_D_DIR, source, "stations_" + source + ".csv")
+        )
+        
+        # display it as a multiindex with day as second index 
+        stations = PowerStations.get_stations_daily(
+               stations, 
+               station_col='station',
+               date_start_col="date_start",
+               date_end_exclusive_col="date_end_exclusive"
+           )
+        
+        # between dates of interest
+        stations = PowerStations.get_stations_between_dates(
+               stations, 
+               start_datetime=pd.to_datetime('2020-01-01'),
+               end_datetime_exclusive=pd.to_datetime('2021-01-11')
+           )
+
+        # on a 30-minutes scale
+        stations = TimeSeries.interpolate_daily_to_sub_daily_data(
+               stations,
+               freq='30min', 
+               tz='Europe/Paris', 
+               index_name='time'
+           )
+
+        # get events like outages and shutdowns
+        filepath = os.path.join(TestUtils.EXAMPLE_D_DIR, "events.csv")
+        outages = PowerStations.read_outages_from_file(
+            filepath, 
+            station_col='station',
+            time_start_col="time_start", 
+            time_end_exclusive_col="time_end", 
+            pct_outages_col="impact_production_pct_kw",
+            tzinfo="Europe/Paris"
+        )
+        
+        stations = PowerStations.integrate_outages(
+            stations=stations,   
+            outages=outages, 
+            station_col="station",
+            time_start_col="time_start",
+            time_end_exclusive_col="time_end", 
+            installed_capacity_col="installed_capacity_kw",
+            pct_outages_col="impact_production_pct_kw"
+        )
+        
+        # get production
+        production = pd.read_csv(os.path.join(
+            TestUtils.EXAMPLE_D_DIR, source, "production_" + source + ".csv")
+        )
+        production['time'] = pd.to_datetime(production['time'])
+        production['time'] = TimeSeries.align_timezone(production['time'], tzinfo='Europe/Paris')
+        production.set_index(["station", "time"], inplace=True)
+
+        production = TimeSeries.average_to_upper_freq(
+                       production,
+                       freq='30min', 
+                       tz='Europe/Paris',
+                       index_name='time'
+                   )
+
+        dataset = pd.merge(stations, production, how='inner', left_index=True, right_index=True)
+
+        # get weather for wind and solar
+        if source in ["wind", "solar"]:
+            weather = pd.read_csv(os.path.join(
+                TestUtils.EXAMPLE_D_DIR, source, "weather_forecast_" + source + ".csv")
+            )
+            weather['time'] = pd.to_datetime(weather['time'])
+            weather['time'] = TimeSeries.align_timezone(weather['time'], tzinfo='Europe/Paris')
+            weather.set_index(["station", "time"], inplace=True)
+
+            weather = TimeSeries.interpolate_freq_to_sub_freq_data(
+                   weather,
+                   freq='30min', 
+                   tz='Europe/Paris',
+                   index_name='time',
+                   method="linear"
+               )
+        
+            dataset = pd.merge(dataset, weather, how='inner', left_index=True, right_index=True)
+  
+        # featurize for solar
+        if source == "solar":
+            dataset = DatetimeFeature.split_datetime(
+                dataset, split_list=['minuteofday', 'dayofyear']
+            )
+            
+            dataset = DatetimeFeature.encode_cyclic_datetime_index(
+                dataset, split_list=['minuteofday', 'dayofyear']
+            )
+      
+        # compute load factor
+        dataset = PowerStations.compute_load_factor(
+               dataset, 
+               installed_capacity_kw='installed_capacity_kw', 
+               power_kw='power_kw',
+               drop_power_kw=True
+           )     
+
+        return dataset
+
+    @staticmethod
+    def get_example_d_train_test_sets(source):
+
+        # read the full dataset
+        dataset = TestUtils.read_example_d_dataset(source)
+        target_col = 'load_factor'
+
+        # lets create the input data for our forecast
+        test_set = dataset[dataset.index.get_level_values(1) >= pd.to_datetime('2021-01-02 00:00:00+01:00')]
+        test_set = test_set.drop(columns=target_col)
+
+        # let's create the input train dataset
+        train_set = dataset[dataset.index.get_level_values(1) < pd.to_datetime('2021-01-01 00:00:00+01:00')]
+        
+        # assert train_set.shape == (66518, 4)
+        # assert test_set.shape == (1287, 3)
+
+        return train_set, test_set, target_col

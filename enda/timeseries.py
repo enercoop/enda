@@ -184,6 +184,7 @@ class TimeSeries:
             tz: [str, datetime.tzinfo],
             index_name: str = None,
             method: str = 'linear',
+            enforce_single_freq=True
             ):
         '''
         Interpolate dataframe data on a smaller frequency than the one initially defined 
@@ -200,13 +201,14 @@ class TimeSeries:
 
         if type(df.index) != pd.DatetimeIndex:
             raise TypeError("The dataframe index must be a DatetimeIndex")
-            
-        freq_original = TimeSeries.get_timeseries_frequency(df.index)
-        if freq_original is None:
-            raise ValueError("We do not interpolate a dataframe with no frequency")
         
-        if pd.to_timedelta(freq).total_seconds() > pd.to_timedelta(freq_original).total_seconds():
-            raise ValueError("Cannot interpolate on a frequency greater than the original one")
+        if enforce_single_freq:
+            freq_original = TimeSeries.get_timeseries_frequency(df.index)
+            if freq_original is None:
+                raise ValueError("We do not interpolate a dataframe with no frequency")
+            
+            if pd.to_timedelta(freq).total_seconds() > pd.to_timedelta(freq_original).total_seconds():
+                raise ValueError("Cannot interpolate on a frequency greater than the original one")
 
         if df.index.tzinfo is None:
             df.index = pd.to_datetime(df.index).tz_localize(tz)
@@ -225,8 +227,8 @@ class TimeSeries:
     def forward_fill_final_record(
             df: pd.DataFrame,
             *,
-            gap_frequency: str,
-            cut_off_frequency=None):
+            gap_frequency: [str, pd.Timedelta],
+            cut_off_frequency: [str, pd.Timedelta] = None):
         '''
         Forward-fill the final record of a dataframe whose DatetimeIndex has a frequency freq
         The new final index of the resulting dataframe is determined using the parameter 
@@ -242,28 +244,43 @@ class TimeSeries:
         1. Given df:      
         time_index                value
         2021-01-01 00:00:00+01:00 1
-        2021-01-01 00:12:00+01:00 2
+        2021-01-01 12:00:00+01:00 2
         2021-01-02 00:00:00+01:00 3
 
-        extend_final_record(df, extend_frequency='1D'):
+        forward_fill_final_record(df, extend_frequency='1D'):
         2021-01-01 00:00:00+01:00 1
-        2021-01-01 00:12:00+01:00 2
+        2021-01-01 12:00:00+01:00 2
         2021-01-02 00:00:00+01:00 3
-        2021-01-02 00:12:00+01:00 3
+        2021-01-02 12:00:00+01:00 3
 
         2. Given df:      
         time_index                value
-        2021-01-01 00:19:00+01:00 1
-        2021-01-01 00:20:00+01:00 2
-        2021-01-01 00:21:00+01:00 3
-        2021-01-01 00:22:00+01:00 4
+        2021-01-01 19:00:00+01:00 1
+        2021-01-01 20:00:00+01:00 2
+        2021-01-01 21:00:00+01:00 3
+        2021-01-01 22:00:00+01:00 4
 
-        extend_final_record(df, extend_frequency='3H', cut_off_frequency='1D'):
-        2021-01-01 00:19:00+01:00 1
-        2021-01-01 00:20:00+01:00 2
-        2021-01-01 00:21:00+01:00 3
-        2021-01-01 00:22:00+01:00 4
-        2021-01-01 00:23:00+01:00 4
+        forward_fill_final_record(df, extend_frequency='3H', cut_off_frequency=None):
+        2021-01-01 19:00:00+01:00 1
+        2021-01-01 20:00:00+01:00 2
+        2021-01-01 21:00:00+01:00 3
+        2021-01-01 22:00:00+01:00 4
+        2021-01-01 23:00:00+01:00 4
+        2021-01-02 00:00:00+01:00 4
+
+        3. Given df:      
+        time_index                value
+        2021-01-01 19:00:00+01:00 1
+        2021-01-01 20:00:00+01:00 2
+        2021-01-01 21:00:00+01:00 3
+        2021-01-01 22:00:00+01:00 4
+
+        forward_fill_final_record(df, extend_frequency='3H', cut_off_frequency='1D'):
+        2021-01-01 19:00:00+01:00 1
+        2021-01-01 20:00:00+01:00 2
+        2021-01-01 21:00:00+01:00 3
+        2021-01-01 22:00:00+01:00 4
+        2021-01-01 23:00:00+01:00 4
 
         :param df: input dataframe to be extended
         :param gap_frequency: the frequency to use to extend the final record 
@@ -349,7 +366,9 @@ class TimeSeries:
             *,
             freq: [str, pd.Timedelta],
             tz: [str, datetime.tzinfo],
-            index_name: str = None):
+            index_name: str = None, 
+            enforce_single_freq=True
+            ):
         """
         Upsample data provided in a given dataframe with a DatetimeIndex, or a two-levels 
         compatible Multiindex.         
@@ -372,9 +391,10 @@ class TimeSeries:
         if type(df.index) != pd.DatetimeIndex:
             raise TypeError("The dataframe index must be a DatetimeIndex")
 
-        freq_original = TimeSeries.get_timeseries_frequency(df.index)
-        if pd.to_timedelta(freq).total_seconds() < pd.to_timedelta(freq_original).total_seconds():
-            raise ValueError("The required frequency is smaller than the original one")
+        if enforce_single_freq:
+            freq_original = TimeSeries.get_timeseries_frequency(df.index)
+            if pd.to_timedelta(freq).total_seconds() < pd.to_timedelta(freq_original).total_seconds():
+                raise ValueError("The required frequency is smaller than the original one")
 
         if df.index.tzinfo is None:
             df.index = pd.to_datetime(df.index).tz_localize(tz)

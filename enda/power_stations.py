@@ -12,7 +12,7 @@ class PowerStations:
     Other columns describe power_station characteristics (used as features).
 
     All functions are meant to handle a set of station datapoints, that are considered as 
-    records (samples) for the standard power plant algorithm. 
+    records (samples) for the power plant algorithms. 
     """
 
     # ------ Check
@@ -40,13 +40,12 @@ class PowerStations:
         # Check date start and end using Contracts
         Contracts.check_contracts_dates(df, date_start_col, date_end_exclusive_col, is_naive)
 
-
     # ------ Build daily dataframes
 
     @staticmethod
     def __station_to_events(stations, date_start_col, date_end_exclusive_col):
         '''
-        This function is the same than Contracts.__contract_to_event()
+        This function is basically the same as Contracts.__contract_to_event()
         '''
 
         # check that no column is named "event_type" or "event_date"
@@ -87,7 +86,7 @@ class PowerStations:
     ): 
         '''
         This function creates a daily dataframe from a power station contracts dataframe.
-        It checks the provided datframe is consistent (dates)
+        It checks the provided dataframe is consistent (dates)
         '''
 
         for c in ["date", "event_date"]:
@@ -192,7 +191,6 @@ class PowerStations:
             df_new = pd.concat([df_new, data], axis=0)
 
         return df_new
-
 
     # ------ Outages
 
@@ -300,7 +298,6 @@ class PowerStations:
                 df_stations.loc[mask, installed_capacity_col] 
     
         return df_stations.set_index([key_col_stations, time_col_stations])
-
 
     # ------ Load factor
 

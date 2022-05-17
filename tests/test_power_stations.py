@@ -20,11 +20,7 @@ class TestPowerStations(unittest.TestCase):
         logging.disable(logging.NOTSET)
 
     EXAMPLE_D_DIR = os.path.join(pathlib.Path(__file__).parent.absolute(), "example_d")
-    STATIONS_PATH = os.path.join(EXAMPLE_D_DIR, "wind_stations.csv")
-
-    # def test_read_contracts_from_file(self):
-    #     stations = Contracts.read_contracts_from_file(TestPowerStations.STATIONS_PATH)
-    #     self.assertEqual((5, 4), stations.shape)
+    STATIONS_PATH = os.path.join(EXAMPLE_D_DIR, "wind", "stations_wind.csv")
 
     def test_check_stations(self):
 
@@ -98,7 +94,6 @@ class TestPowerStations(unittest.TestCase):
         self.assertEqual(stations.loc[['eo_4'], "installed_capacity_kw"].max(), 3750.)
         self.assertEqual(stations.index.get_level_values(0).nunique(), 4)
 
-
     def test_get_stations_between_dates(self):
         
         # test with a daily frequency
@@ -108,7 +103,7 @@ class TestPowerStations(unittest.TestCase):
         stations = PowerStations.get_stations_between_dates(
             stations=stations, 
             start_datetime=pd.to_datetime("2020-02-18"), 
-            end_datetime_exclusive= pd.to_datetime("2020-02-20")
+            end_datetime_exclusive=pd.to_datetime("2020-02-20")
         )
         
         # print(stations.loc[(['eo_4'], [start_datetime]), 
@@ -148,7 +143,6 @@ class TestPowerStations(unittest.TestCase):
         self.assertEqual(stations.iloc[[300], 0].item(), 3750.)
         self.assertEqual(stations.iloc[[-1], 0].item(), 3000.)
 
-
     def test_compute_load_factor(self):
         
         # test compute_load_factor with default arguments
@@ -157,7 +151,7 @@ class TestPowerStations(unittest.TestCase):
         stations = PowerStations.get_stations_between_dates(
             stations=stations, 
             start_datetime=pd.to_datetime("2020-02-18"), 
-            end_datetime_exclusive= pd.to_datetime("2020-02-20")
+            end_datetime_exclusive=pd.to_datetime("2020-02-20")
         )
 
         # add a dummy 'power_kw' column to the dataframe 
@@ -178,7 +172,6 @@ class TestPowerStations(unittest.TestCase):
         self.assertEqual(final_stations.iloc[[0], 1].item(), 0)
         self.assertEqual(final_stations.iloc[[-2], 1].item(), 0.0008)
         self.assertEqual(final_stations.iloc[[-1], 1].item(), 0.001)
-
            
         final_stations = PowerStations.compute_load_factor(
             stations, 
@@ -198,7 +191,6 @@ class TestPowerStations(unittest.TestCase):
         self.assertEqual(final_stations.iloc[[-2], 2].item(), 0.0008)
         self.assertEqual(final_stations.iloc[[-1], 2].item(), 0.001)
 
-
     def test_compute_power_kw_from_load_factor(self):
         
         # test compute_power_kw with default arguments
@@ -207,7 +199,7 @@ class TestPowerStations(unittest.TestCase):
         stations = PowerStations.get_stations_between_dates(
             stations=stations, 
             start_datetime=pd.to_datetime("2020-02-18"), 
-            end_datetime_exclusive= pd.to_datetime("2020-02-20")
+            end_datetime_exclusive=pd.to_datetime("2020-02-20")
         )
 
         # add a dummy 'load_kw' column to the dataframe 
@@ -228,8 +220,7 @@ class TestPowerStations(unittest.TestCase):
         self.assertEqual(final_stations.iloc[[0], 1].item(), 0)
         self.assertEqual(final_stations.iloc[[-2], 1].item(), 3)
         self.assertEqual(final_stations.iloc[[-1], 1].item(), 3)
-
-           
+        
         final_stations = PowerStations.compute_power_kw_from_load_factor(
             stations, 
             installed_capacity_kw="installed_capacity_kw", 
