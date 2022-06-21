@@ -96,14 +96,13 @@ class PowerStations:
 
         cls.check_stations(stations, station_col, date_start_col, date_end_exclusive_col)
         
-        # get an event-like dataframe, using the end date of 
+        # get an event-like dataframe
         events = cls.__station_to_events(stations, date_start_col, date_end_exclusive_col)
 
         # remove events after max_date if they are not wanted
         if max_date_exclusive is not None:
             events = events[events["event_date"] <= max_date_exclusive]
 
-        # other_columns = set(stations.columns) - set(not_summable_columns) - set([station_col, date_start_col, date_end_exclusive_col])
         other_columns = set(stations.columns) - set([station_col, date_start_col, date_end_exclusive_col])
         for c in other_columns:
             events[c] = events.apply(lambda row: row[c] if row["event_type"] == "start" else 0, axis=1)
@@ -234,70 +233,156 @@ class PowerStations:
         return df
 
     @staticmethod
+    def integrate_availability_from_outages(
+            df_stations, 
+            df_outages,
+            station_col, 
+            time_start_col, 
+            time_end_exclusive_col, 
+            pct_outages_col=None,
+            availability_col=None 
+            ):
+        '''
+        This function starts from a multi-indexed dataframe with stations-timeseries. 
+        It takes another unindexed dataframe containing the detail of the shutdowns 
+        and outages for the stations. 
+        It integrates to the station-timeseries data an extra column that describe the 
+        availability of the stations.  
+
+        Conditions:
+        - The stations ID column must be present in both dataframes.
+        - df_stations must have a frequency. This condition is not strictly necessary
+          to integrate outages a priori, but in our applications, it's almost always the case.
+        - df_outages must have time_start/time_end fields (the length of the shutdown).
+
+        :param df_stations: the dataframe which contains the stations features as timeseries
+        :param df_outages: the outages unindexed dataframe
+        :station_col: the ID of the stations
+        :time_start_col: the start time of the outage
+        :time_end_exclusive_col: the end time of the outage
+        :pct_outage_col: name of the outage column.
+        :availability_col: name of the availability column in the new dataframe
+        '''
+
+        # check df_stations
+        if not isinstance(df_stations.index, pd.MultiIndex):
+            raise TypeError("stations must be multiindexed dataframe")
+    
+        if len(df_stations.index.levels) != 2:
+            raise TypeError("The provided multi-indexed dataframe must be a two-levels one")
+    
+        if not isinstance(df_stations.index.levels[1], pd.DatetimeIndex):
+            raise TypeError("The second index of the dataframe should be a pd.DatetimeIndex, "
+                            f"but {df_stations.index.levels[1].dtype} is found")
+        
+        # check df_outages
+        if station_col not in df_outages.columns:
+            raise ValueError(f"Station column {station_col} is not present in outages")
+            
+        if time_start_col not in df_outages.columns:
+            raise ValueError(f"Time start column {time_start_col} is not present in outages")
+            
+        if time_end_exclusive_col not in df_outages.columns:
+            raise ValueError(f"Time end column {time_end_exclusive_col} is not present in outages")
+
+        # reset the availability column 
+        if availability_col is None:
+            if 'availability' in df_stations.columns: 
+                raise ValueError("'availability' is a reserved keyword for this function")
+            availability_col = 'availability'
+
+        df_stations[availability_col] = 1
+
+        # loop over outages to set the availability
+        for index, outage in df_outages.iterrows():
+            mask = (df_stations.index.get_level_values(0) == outage[station_col])\
+                   & (df_stations.index.get_level_values(1) >= outage[time_start_col])\
+                   & (df_stations.index.get_level_values(1) < outage[time_end_exclusive_col])
+            
+            availability = 0 if outage[pct_outages_col] is None else 1 - (outage[pct_outages_col] / 100.)
+            if abs(availability) < 1e-6:
+                availability = 0
+            df_stations.loc[mask, availability_col] = availability
+           
+        return df_stations
+
+    @staticmethod
+    def reset_installed_capacity(
+            df, 
+            installed_capacity_kw,
+            stations_availability,
+            drop_availability=True):
+        '''
+        This function is meant to reset the installed capacity of a station using 
+        a helper column. The helper column stores number between 0 and 1 which 
+        to detail the availability of the station. 
+        :param df: the dataframe to be changed. 
+        :param installed_capacity_kw: the column of df that contains the installed_capacity in kw
+        :param load_factor_col: name of the availaibility column
+        :param drop_availability: boolean flag which indicates whether the availability
+                                   column shall be dropped. 
+        '''
+
+        for c in [installed_capacity_kw, stations_availability]:
+            if c not in df.columns:
+                raise ValueError(f"Required column not found: {c}")
+
+        if df[stations_availability].isna().any():
+            raise ValueError(f"{stations_availability} column should not contain NaN")
+
+        max_value = df[stations_availability].max()
+        if df[stations_availability].max() > 1:
+            raise ValueError(f"{stations_availability} column should contain values"
+                             f" between 0 and 1, found: {max_value}")
+
+        min_value = df[stations_availability].min()
+        if df[stations_availability].min() < 0:
+            raise ValueError(f"{stations_availability} column should contain values"
+                             f" between 0 and 1, found: {min_value}")
+
+        df[installed_capacity_kw] = df[installed_capacity_kw] * df[stations_availability]
+
+        if drop_availability:
+            df = df.drop(columns=stations_availability)
+
+        return df
+
+    @staticmethod
     def integrate_outages(
-                stations, 
-                outages,
+                df_stations, 
+                df_outages,
                 station_col, 
                 time_start_col, 
                 time_end_exclusive_col, 
                 installed_capacity_col,
                 pct_outages_col=None):
         '''
-        This function integrates shutdown and outages in the stations dataframe.
-        The column that describes the stations must be present in both dataframes.
-        stations must be a multiindexed time-series. 
-        events must have time_start/time_end fields (the length of the shutdown).
-
-        If a feature column is present in both dataframes, we integrate the event change into 
-        the 
-
-        :param stations: the dataframe which contains the stations definition over a period of time 
-        :param events: the events dataframe
+        This function makes successive calls to integrate_availability_from_outages() 
+        and to reset_installed_capacity(). 
         '''
-        # check stations
-        if not isinstance(stations.index, pd.MultiIndex):
-            raise TypeError("stations must be multiindexed dataframe")
-    
-        if len(stations.index.levels) != 2:
-            raise TypeError("The provided multi-indexed dataframe must be a two-levels one")
-    
-        if not isinstance(stations.index.levels[1], pd.DatetimeIndex):
-            raise TypeError("The second index of the dataframe should be a pd.DatetimeIndex, "
-                            f"but {stations.index.levels[1].dtype} is found")
-        
-        if installed_capacity_col not in stations.columns:
-            raise ValueError(f"Installed capacity {installed_capacity_col} is not present in stations")
-            
-        # check outages
-        if station_col not in outages.columns:
-            raise ValueError(f"Station column {station_col} is not present in outages")
-            
-        if time_start_col not in outages.columns:
-            raise ValueError(f"Time start column {time_start_col} is not present in outages")
-            
-        if time_end_exclusive_col not in outages.columns:
-            raise ValueError(f"Time end column {time_end_exclusive_col} is not present in outages")
-            
-        if (pct_outages_col is not None) and (pct_outages_col not in outages.columns):
-            raise ValueError(f"Pct outage {pct_outages_col} is not present in outages")
-        
-        # process
-        key_col_stations = stations.index.levels[0].name
-        time_col_stations = stations.index.levels[1].name
-        
-        df_stations = stations.reset_index()
 
-        # loop over outages
-        for index, outage in outages.iterrows():
-            mask = (df_stations[key_col_stations] == outage[station_col])\
-                   & (df_stations[time_col_stations] >= outage[time_start_col])\
-                   & (df_stations[time_col_stations] < outage[time_end_exclusive_col])
-            
-            outage_pct = 100 if outage[pct_outages_col] is None else outage[pct_outages_col]
-            df_stations.loc[mask, installed_capacity_col] = (100 - outage_pct) *\
-                df_stations.loc[mask, installed_capacity_col] 
-    
-        return df_stations.set_index([key_col_stations, time_col_stations])
+        # check station availability_col
+        if "availability" in df_stations.columns: 
+            raise ValueError("'availability' is a reserved keyword for this function")
+
+        df = PowerStations.integrate_availability_from_outages(
+                df_stations=df_stations, 
+                df_outages=df_outages,
+                station_col=station_col, 
+                time_start_col=time_start_col, 
+                time_end_exclusive_col=time_end_exclusive_col, 
+                installed_capacity_col=installed_capacity_col,
+                pct_outages_col=pct_outages_col,
+                availability_col="availability_col"
+                )
+        
+        df = PowerStations.reset_installed_capacity(
+            df=df, 
+            installed_capacity_kw=installed_capacity_col,
+            stations_availability='availability_col',
+            drop_availability=True)
+
+        return df
 
     # ------ Load factor
 
@@ -318,7 +403,6 @@ class PowerStations:
                               column shall be dropped. 
         '''
 
-        df = df.copy()
         for c in [installed_capacity_kw, power_kw]:
             if c not in df.columns:
                 raise ValueError("Required column not found : {}".format(c))
