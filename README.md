@@ -10,7 +10,7 @@ Its main goal is to help [Rescoop.eu](https://www.rescoop.eu/) members build var
 ## Main Features
 Here are some things **enda** does well :
 
-  - Provide robust machine learning algorithms for short-term electricty load (and soon production) forecasts, developed by Enercoop and originally based on Komi Nagbe's thesis (http://www.theses.fr/s148364).
+  - Provide robust machine learning algorithms for short-term electricty load and production forecasts, developed by Enercoop. The load forecast was originally based on Komi Nagbe's thesis (http://www.theses.fr/s148364).
   - Manipulate **contracts** data coming from your ERP and turn it into timeseries you can use for analysis, visualisation and machine learning.  
   - Timeseries-specific detection of missing data, like time gaps and frequency changes.
   - Date-time feature engineering robust to timezone hazards.
