@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from pandas.api.types import is_string_dtype
 from enda.timeseries import TimeSeries
@@ -291,6 +292,7 @@ class PowerStations:
                 raise ValueError("'availability' is a reserved keyword for this function")
             availability_col = 'availability'
 
+        df_stations = df_stations.copy(deep=True)
         df_stations[availability_col] = 1
 
         # loop over outages to set the availability
@@ -371,7 +373,6 @@ class PowerStations:
                 station_col=station_col, 
                 time_start_col=time_start_col, 
                 time_end_exclusive_col=time_end_exclusive_col, 
-                installed_capacity_col=installed_capacity_col,
                 pct_outages_col=pct_outages_col,
                 availability_col="availability_col"
                 )
@@ -407,13 +408,9 @@ class PowerStations:
             if c not in df.columns:
                 raise ValueError("Required column not found : {}".format(c))
         
-        def load_factor_manage_no_capacity(row):
-            if abs(row[installed_capacity_kw]) < 1e-3:
-                return 0 
-            else:
-                return row[power_kw] / row[installed_capacity_kw]
-
-        df[load_factor_col] = df.apply(load_factor_manage_no_capacity, axis=1)
+        df[load_factor_col] = np.where(df[installed_capacity_kw] < 1e-5, 
+                                       0, 
+                                       df[power_kw] / df[installed_capacity_kw])
 
         if drop_power_kw:
             df = df.drop(columns=power_kw)
