@@ -86,7 +86,11 @@ class PowerPredictor():
                 prod_estimator = copy.deepcopy(estimator)
                 self.prod_estimators[station_id] = prod_estimator
                 
-    def predict(self, df: pd.DataFrame, target_col: str, is_positive: bool = False):
+    def predict(self, 
+                df: pd.DataFrame, 
+                target_col: str, 
+                is_positive: bool = False, 
+                is_normally_clamped: bool = False):
         '''
         Predict target_column values once train() has been called. 
         :param df: the forecast two-levels multiindexed dataframe
@@ -119,9 +123,13 @@ class PowerPredictor():
                     data[target_col] = 0
                     data = data.loc[:, [target_col]]
             
-            if is_positive:
-                # reset to 0 negative values in case
+            if is_positive or is_normally_clamped:
+                # reset to 0 negative values
                 data.loc[(data[target_col] < 0), target_col] = 0
+
+            if is_normally_clamped: 
+                # reset to 1 values greater than 1
+                data.loc[(data[target_col] > 1), target_col] = 1
 
             data[key_col] = station_id
             data = data.reset_index().set_index([key_col, time_col])
