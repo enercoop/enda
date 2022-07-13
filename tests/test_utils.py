@@ -138,8 +138,8 @@ class TestUtils:
         )
         
         stations = PowerStations.integrate_outages(
-            stations=stations,   
-            outages=outages, 
+            df_stations=stations,   
+            df_outages=outages, 
             station_col="station",
             time_start_col="time_start",
             time_end_exclusive_col="time_end", 
