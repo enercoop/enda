@@ -141,7 +141,7 @@ class PowerStations:
         :return: a station portfolio with characteristics between date_start and date_end. 
         """
 
-        df = stations.copy(deep=True)
+        df = stations.copy()
 
         if not isinstance(df.index, pd.MultiIndex):
             raise TypeError("daily_stations must be a MultiIndex")
@@ -292,7 +292,7 @@ class PowerStations:
                 raise ValueError("'availability' is a reserved keyword for this function")
             availability_col = 'availability'
 
-        df_stations = df_stations.copy(deep=True)
+        df_stations = df_stations.copy()
         df_stations[availability_col] = 1
 
         # loop over outages to set the availability
@@ -342,6 +342,7 @@ class PowerStations:
             raise ValueError(f"{stations_availability} column should contain values"
                              f" between 0 and 1, found: {min_value}")
 
+        df = df.copy()
         df[installed_capacity_kw] = df[installed_capacity_kw] * df[stations_availability]
 
         if drop_availability:
@@ -403,6 +404,7 @@ class PowerStations:
         :param drop_power_kw: boolean flag which indicates whether the power  
                               column shall be dropped. 
         '''
+        df = df.copy()
 
         for c in [installed_capacity_kw, power_kw]:
             if c not in df.columns:
