@@ -104,9 +104,10 @@ class Calendar:
         public_holidays.index = pd.to_datetime(public_holidays.index)
         public_holidays = public_holidays[~public_holidays.index.duplicated(keep='first')]  # 2008-05-01
 
-        public_holidays['public_holiday'] = 1
+        public_holidays['public_holiday'] = True
         public_holidays = public_holidays.asfreq('D')
-        public_holidays = public_holidays.fillna(0)
+        public_holidays = public_holidays.fillna(False)
+        public_holidays['public_holiday'] = public_holidays['public_holiday'].astype(int)
 
         return public_holidays[['public_holiday']]
 
@@ -128,6 +129,7 @@ class Calendar:
         school_holidays['nb_school_areas_off'] = school_holidays.sum(axis=1)
         school_holidays = school_holidays.asfreq('D')
         school_holidays = school_holidays.fillna(0)
+        school_holidays['nb_school_areas_off'] = school_holidays['nb_school_areas_off'].astype(int)
 
         return school_holidays[['nb_school_areas_off']]
 
