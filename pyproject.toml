@@ -1,0 +1,41 @@
+[tool.poetry]
+authors = ["Enercoop <team-data@enercoop.org>"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+description = "Tools to manipulate energy time-series and contracts, and to perform forecasts."
+exclude = ["tests"]
+license = "MIT"
+name = "enda"
+packages = [
+  {include = "enda"},
+]
+readme = "README.md"
+repository = "https://github.com/enercoop/enda"
+version = "0.0.8"
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/enercoop/enda/issues"
+
+[tool.poetry.dependencies]
+python = ">=3.7.3,<3.11"
+scikit-learn = "^1.0.2"
+joblib = "^1.3.0"
+pandas = "^1.3.5"
+h2o = "^3.40.0.4"
+statsmodels = "^0.13.5"
+matplotlib = "^3.5.3"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+twine = "^4.0.2"
+setuptools = "^68.0.0"
+wheel = "^0.40.0"
+ipykernel = "^6.16.2"
+tox = "^4.6.3"
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
