@@ -31,6 +31,9 @@ numpy = "^1.25.1"
 bottleneck = "^1.3.7"
 numexpr = "^2.8.4"
 seaborn = "^0.12.2"
+jours-feries-france = "^0.7.0"
+vacances-scolaires-france = "^0.10.0"
+unidecode = "^1.3.6"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
@@ -40,11 +43,6 @@ wheel = "^0.40.0"
 ipykernel = "^6.16.2"
 tox = "^4.6.3"
 
-
-[tool.poetry.group.guides.dependencies]
-jours-feries-france = "^0.7.0"
-vacances-scolaires-france = "^0.10.0"
-unidecode = "^1.3.6"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
