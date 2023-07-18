@@ -1,4 +1,5 @@
 import pandas
+
 from enda.estimators import EndaEstimator
 
 
@@ -22,5 +23,7 @@ class EndaSklearnEstimator(EndaEstimator):
 
     def predict(self, df: pandas.DataFrame, target_col: str):
         a = self.model.predict(df)  # numpy array
-        s = pandas.Series(a, name=target_col, index=df.index)  # pandas series with correct name and index
+        s = pandas.Series(
+            a, name=target_col, index=df.index
+        )  # pandas series with correct name and index
         return s.to_frame()

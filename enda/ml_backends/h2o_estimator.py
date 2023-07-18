@@ -1,16 +1,20 @@
-import pandas
-from enda.estimators import EndaEstimator
 import os
-import tempfile
 import shutil
+import tempfile
 import warnings
+
+import pandas
+
+from enda.estimators import EndaEstimator
 
 try:
     import h2o
     import h2o.exceptions
 except ImportError:
-    raise ImportError("h2o is required is you want to use this enda's H2OEstimator. "
-                      "Try: pip install h2o>=3.32.0.3")
+    raise ImportError(
+        "h2o is required is you want to use this enda's H2OEstimator. "
+        "Try: pip install h2o>=3.32.0.3"
+    )
 
 
 class EndaH2OEstimator(EndaEstimator):
@@ -32,39 +36,60 @@ class EndaH2OEstimator(EndaEstimator):
         self.__model_binary = None
 
     def train(self, df: pandas.DataFrame, target_col: str):
-        x = [c for c in df.columns if c != target_col]  # for H20, x is the list of features
+        x = [
+            c for c in df.columns if c != target_col
+        ]  # for H20, x is the list of features
         y = target_col  # for H20, y is the name of the target
-        training_frame = h2o.H2OFrame(df)  # H20 training frame containing both features and target
+        training_frame = h2o.H2OFrame(
+            df
+        )  # H20 training frame containing both features and target
         self.model.train(x, y, training_frame)
 
     def predict(self, df: pandas.DataFrame, target_col: str):
         test_data = h2o.H2OFrame(df)  # convert to H20 Frame
         forecast = self.model.predict(test_data)  # returns an H20Frame named 'predict'
-        forecast = forecast.as_data_frame().rename(columns={'predict': target_col})  # convert to pandas and rename
-        forecast.index = df.index  # put back the correct index (typically a pandas.DatetimeIndex)
+        forecast = forecast.as_data_frame().rename(
+            columns={"predict": target_col}
+        )  # convert to pandas and rename
+        forecast.index = (
+            df.index
+        )  # put back the correct index (typically a pandas.DatetimeIndex)
         return forecast
 
     # All below is just for model persistence : to comply with pickle and deepcopy.
 
-    __tmp_file_path_1 = os.path.join(tempfile.gettempdir(), "__h2o_estimator_tmp_file_1_136987")
-    __tmp_file_path_2 = os.path.join(tempfile.gettempdir(), "__h2o_estimator_tmp_file_2_136987")
+    __tmp_file_path_1 = os.path.join(
+        tempfile.gettempdir(), "__h2o_estimator_tmp_file_1_136987"
+    )
+    __tmp_file_path_2 = os.path.join(
+        tempfile.gettempdir(), "__h2o_estimator_tmp_file_2_136987"
+    )
 
     @staticmethod
     def __h2o_model_to_binary(h2o_model):
-
         # save h2o model to tmp file
         try:
-            model_path_from_h2o = h2o.save_model(h2o_model, path=EndaH2OEstimator.__tmp_file_path_1, force=True)
+            model_path_from_h2o = h2o.save_model(
+                h2o_model, path=EndaH2OEstimator.__tmp_file_path_1, force=True
+            )
         except (h2o.exceptions.H2OResponseError, TypeError) as e:
-            raise ValueError("Problem getting the model from h2o server. Train the model first. "
-                             "Cannot access model binary before training (for pickle or deepcopy or other uses).", e)
-        
+            raise ValueError(
+                "Problem getting the model from h2o server. Train the model first. "
+                "Cannot access model binary before training (for pickle or deepcopy or other uses).",
+                e,
+            )
+
         # model can be saved in __tmp_file_path_1, or in private/__tmp_file_path_1
-        potential_startswith = [EndaH2OEstimator.__tmp_file_path_1, 
-                                "/private" + EndaH2OEstimator.__tmp_file_path_1]
+        potential_startswith = [
+            EndaH2OEstimator.__tmp_file_path_1,
+            "/private" + EndaH2OEstimator.__tmp_file_path_1,
+        ]
         if not model_path_from_h2o.startswith(tuple(potential_startswith)):
-            warnings.warn("Expected model_path_from_h2o={} to start with {}"
-                          .format(model_path_from_h2o, EndaH2OEstimator.__tmp_file_path_1))
+            warnings.warn(
+                "Expected model_path_from_h2o={} to start with {}".format(
+                    model_path_from_h2o, EndaH2OEstimator.__tmp_file_path_1
+                )
+            )
 
         # last step actually made a folder and a file inside (at path 'model_path_from_h2o')
         # but we must keep the file inside to read it later,
@@ -73,7 +98,7 @@ class EndaH2OEstimator(EndaEstimator):
         shutil.rmtree(EndaH2OEstimator.__tmp_file_path_1)
 
         # read the tmp file as binary
-        with open(EndaH2OEstimator.__tmp_file_path_2, mode='rb') as file:
+        with open(EndaH2OEstimator.__tmp_file_path_2, mode="rb") as file:
             binary = file.read()
 
         # cleanup tmp file
@@ -83,9 +108,8 @@ class EndaH2OEstimator(EndaEstimator):
 
     @staticmethod
     def __h2o_model_from_binary(binary):
-
         # save binary to tmp file
-        with open(EndaH2OEstimator.__tmp_file_path_2, mode='wb') as file:
+        with open(EndaH2OEstimator.__tmp_file_path_2, mode="wb") as file:
             file.write(binary)
 
         # load H2O model from the file
@@ -102,7 +126,7 @@ class EndaH2OEstimator(EndaEstimator):
         self.__model_binary = EndaH2OEstimator.__h2o_model_to_binary(self.model)
         state = self.__dict__.copy()
         # Remove the un-picklable entry : 'model', but keep the picklable entry: __model_binary
-        del state['model']
+        del state["model"]
         return state
 
     def __setstate__(self, state):
