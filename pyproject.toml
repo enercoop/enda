@@ -14,37 +14,92 @@ packages = [
 ]
 readme = "README.md"
 repository = "https://github.com/enercoop/enda"
-version = "0.0.8"
+version = "0.1.0"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/enercoop/enda/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.11"
-scikit-learn = "^1.0.2"
-joblib = "^1.3.0"
-pandas = "^1.3.5"
 h2o = "^3.40.0.4"
-statsmodels = "^0.13.5"
-matplotlib = "^3.5.3"
-numpy = "^1.25.1"
-bottleneck = "^1.3.7"
-numexpr = "^2.8.4"
-seaborn = "^0.12.2"
-jours-feries-france = "^0.7.0"
-vacances-scolaires-france = "^0.10.0"
-unidecode = "^1.3.6"
+pandas = ">=1.0.0,<2.0.0"
+python = ">=3.7.3,<3.11"
+scikit-learn = "^1.0.2"
+statsmodels = "<=0.13.5"
+
+[tool.poetry.group.examples.dependencies]
+bottleneck = {version = "^1.3.7", extras = ["examples", "all"]}
+joblib = {version = "^1.3.0", extras = ["examples", "all"]}
+jours-feries-france = {version = "^0.7.0", extras = ["examples", "all"]}
+matplotlib = {version = "^3.5.3", extras = ["examples", "all"]}
+numexpr = {version = "^2.8.4", extras = ["examples", "all"]}
+numpy = {version = "^1.18", extras = ["examples", "all"]}
+seaborn = {version = "^0.12.2", extras = ["examples", "all"]}
+unidecode = {version = "^1.3.6", extras = ["examples", "all"]}
+vacances-scolaires-france = {version = "^0.10.0", extras = ["examples", "all"]}
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.3.0"
-twine = "^4.0.2"
-setuptools = "^68.0.0"
-wheel = "^0.40.0"
-ipykernel = "^6.16.2"
-tox = "^4.6.3"
-pre-commit = "^3.3.3"
+black = {version = "^23.3.0", extras = ["dev", "all"]}
+ipykernel = {version = "^6.16.2", extras = ["dev", "all"]}
+pre-commit = {version = "<3.3.3", extras = ["dev", "all"]}
+pytest = {version = "^7.4.0", extras = ["dev", "all"]}
+setuptools = {version = "^68.0.0", extras = ["dev", "all"]}
+tox = {version = "^4.6.3", extras = ["dev", "all"]}
+twine = {version = "^4.0.2", extras = ["dev", "all"]}
+wheel = {version = "^0.40.0", extras = ["dev", "all"]}
+coverage = {version = "^7.2.7", extras = ["dev"]}
 
+[tool.poetry.extras]
+all = [
+  "black",
+  "ipykernel",
+  "pre-commit",
+  "setuptools",
+  "tox",
+  "twine",
+  "wheel",
+  "bottleneck",
+  "h2o",
+  "joblib",
+  "jours-feries-france",
+  "matplotlib",
+  "numexpr",
+  "numpy",
+  "scikit-learn",
+  "seaborn",
+  "statsmodels",
+  "unidecode",
+  "vacances-scolaires-france",
+]
+dev = [
+  "black",
+  "ipykernel",
+  "pre-commit",
+  "setuptools",
+  "tox",
+  "twine",
+  "wheel",
+  "coverage",
+]
+examples = [
+  "bottleneck",
+  "h2o",
+  "joblib",
+  "jours-feries-france",
+  "matplotlib",
+  "numexpr",
+  "numpy",
+  "scikit-learn",
+  "seaborn",
+  "statsmodels",
+  "unidecode",
+  "vacances-scolaires-france",
+]
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+requires = ["poetry-core", "oldest-supported-numpy"]
+
+[[tool.poetry_bumpversion.replacements]]
+files = ["enda/__init__.py"]
+replace = '__version__ = "{new_version}"'
+search = '__version__ = "{current_version}"'
