@@ -27,26 +27,27 @@ scikit-learn = "^1.0.2"
 statsmodels = "<=0.13.5"
 
 [tool.poetry.group.examples.dependencies]
-bottleneck = {version = "^1.3.7", extras = ["examples", "all"]}
-joblib = {version = "^1.3.0", extras = ["examples", "all"]}
-jours-feries-france = {version = "^0.7.0", extras = ["examples", "all"]}
-matplotlib = {version = "^3.5.3", extras = ["examples", "all"]}
-numexpr = {version = "^2.8.4", extras = ["examples", "all"]}
-numpy = {version = "^1.18", extras = ["examples", "all"]}
-seaborn = {version = "^0.12.2", extras = ["examples", "all"]}
-unidecode = {version = "^1.3.6", extras = ["examples", "all"]}
-vacances-scolaires-france = {version = "^0.10.0", extras = ["examples", "all"]}
+bottleneck = {version = "^1.3.7"}
+joblib = {version = "^1.3.0"}
+jours-feries-france = {version = "^0.7.0"}
+matplotlib = {version = "^3.5.3"}
+numexpr = {version = "^2.8.4"}
+numpy = {version = "^1.18"}
+seaborn = {version = "^0.12.2"}
+unidecode = {version = "^1.3.6"}
+vacances-scolaires-france = {version = "^0.10.0"}
 
 [tool.poetry.group.dev.dependencies]
-black = {version = "^23.3.0", extras = ["dev", "all"]}
-ipykernel = {version = "^6.16.2", extras = ["dev", "all"]}
-pre-commit = {version = "<3.3.3", extras = ["dev", "all"]}
-pytest = {version = "^7.4.0", extras = ["dev", "all"]}
-setuptools = {version = "^68.0.0", extras = ["dev", "all"]}
-tox = {version = "^4.6.3", extras = ["dev", "all"]}
-twine = {version = "^4.0.2", extras = ["dev", "all"]}
-wheel = {version = "^0.40.0", extras = ["dev", "all"]}
-coverage = {version = "^7.2.7", extras = ["dev"]}
+black = {version = "^23.3.0"}
+coverage = {version = "^7.2.7"}
+ipykernel = {version = "^6.16.2"}
+pre-commit = {version = "<3.3.3"}
+pytest = {version = "^7.4.0"}
+setuptools = {version = "^68.0.0"}
+tox = {version = "^4.6.3"}
+twine = {version = "^4.0.2"}
+wheel = {version = "^0.40.0"}
+isort = "<5.12.0"
 
 [tool.poetry.extras]
 all = [
@@ -69,6 +70,7 @@ all = [
   "statsmodels",
   "unidecode",
   "vacances-scolaires-france",
+  "coverage",
 ]
 dev = [
   "black",
