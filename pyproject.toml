@@ -20,7 +20,7 @@ version = "0.1.0"
 "Bug Tracker" = "https://github.com/enercoop/enda/issues"
 
 [tool.poetry.dependencies]
-h2o = "^3.40.0.4"
+h2o = "^3.42.0.4"
 pandas = ">=1.0.0,<2.0.0"
 python = ">=3.7.3,<3.11"
 scikit-learn = "^1.0.2"

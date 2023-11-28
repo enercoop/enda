@@ -381,6 +381,34 @@ class EndaEstimatorWithFallback(EndaEstimator):
         result = result.to_frame(target_col)
         return result
 
+    @staticmethod
+    def _get_model_name_and_params(model):
+        name = model.model.__class__.__name__
+        params = model.model.get_params()
+        return name, params
+
+    def get_model_params(self):
+        d = {}
+
+        d["estimator_with"] = {"base_estimators": {}, "final_estimators": {}}
+        d["estimator_without"] = {"base_estimators": {}, "final_estimators": {}}
+
+        for _, v in self.estimator_with.base_estimators.items():
+            n, p = self._get_model_name_and_params(v)
+            d["estimator_with"]["base_estimators"][n] = p
+
+        for _, v in self.estimator_without.base_estimators.items():
+            n, p = self._get_model_name_and_params(v)
+            d["estimator_without"]["base_estimators"][n] = p
+
+        n, p = self._get_model_name_and_params(self.estimator_with.final_estimator)
+        d["estimator_with"]["final_estimators"][n] = p
+
+        n, p = self._get_model_name_and_params(self.estimator_without.final_estimator)
+        d["estimator_without"]["final_estimators"][n] = p
+
+        return d
+
 
 class EndaEstimatorRecopy(EndaEstimator):
     """
