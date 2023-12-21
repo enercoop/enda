@@ -27,5 +27,3 @@ repos:
 fail_fast: false
 files: ".*"
 exclude: "desktop.ini" # Windows
-# default_language_version:
-#   python: python3.8
