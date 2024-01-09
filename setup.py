@@ -12,7 +12,6 @@ with open(os.path.join(HERE, "README.md"), "r") as f:
 setup(
     name="enda",
     version="0.0.8",
-
     description="Tools to manipulate energy time-series and contracts, and to perform forecasts.",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -23,16 +22,11 @@ setup(
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Operating System :: OS Independent"
+        "Operating System :: OS Independent",
     ],
-    project_urls={
-        "Bug Tracker": "https://github.com/enercoop/enda/issues"
-    },
-
+    project_urls={"Bug Tracker": "https://github.com/enercoop/enda/issues"},
     packages=find_packages(exclude=("tests",)),
     include_package_data=True,
-    python_requires='>=3.7.3',
-    install_requires=[
-        "pandas>=1.0.0"
-    ]
+    python_requires=">=3.7.3",
+    install_requires=["pandas>=1.0.0"],
 )
