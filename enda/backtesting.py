@@ -36,12 +36,25 @@ class BackTesting:
                 == start_eval_datetime.second == start_eval_datetime.microsecond == 0):
             raise ValueError("start_eval_datetime must be datetime with only years, months or days (not more precise),"
                              f" but given: {type(start_eval_datetime)}, {start_eval_datetime}")
+        if not (
+            start_eval_datetime.hour
+            == start_eval_datetime.minute
+            == start_eval_datetime.second
+            == start_eval_datetime.microsecond
+            == 0
+        ):
+            raise ValueError(
+                "start_eval_datetime must be datetime with only years, months or days (not more precise),"
+                " but given: {}, {}".format(
+                    type(start_eval_datetime), start_eval_datetime
+                )
+            )
 
         # initialize date-times: end_train, start_test and end_test
         if gap_days_between_train_and_eval > 0:
             end_train = TimezoneUtils.add_interval_to_day_dt(
                 start_eval_datetime,
-                relativedelta(days=-gap_days_between_train_and_eval)
+                relativedelta(days=-gap_days_between_train_and_eval),
             )
         else:
             end_train = start_eval_datetime
@@ -50,7 +63,6 @@ class BackTesting:
         end_test = TimezoneUtils.add_interval_to_day_dt(start_test, train_interval)
 
         if isinstance(df.index, pd.DatetimeIndex):
-
             if str(df.index.tz) != str(start_eval_datetime.tzinfo):
                 raise ValueError(f"df.index (tzinfo={df.index.tz}) and start_eval_datetime "
                                  f"(tzinfo={start_eval_datetime.tzinfo}) must have the same tzinfo.")
@@ -61,17 +73,26 @@ class BackTesting:
 
             # go through the dataset and yield pairs of (train set, test set)
             while start_test < df.index.max():
-                yield df[df.index < end_train], df[(df.index >= start_test) & (df.index < end_test)]
+                yield df[df.index < end_train], df[
+                    (df.index >= start_test) & (df.index < end_test)
+                ]
 
-                end_train = TimezoneUtils.add_interval_to_day_dt(end_train, train_interval)
-                start_test = TimezoneUtils.add_interval_to_day_dt(start_test, train_interval)
-                end_test = TimezoneUtils.add_interval_to_day_dt(end_test, train_interval)
+                end_train = TimezoneUtils.add_interval_to_day_dt(
+                    end_train, train_interval
+                )
+                start_test = TimezoneUtils.add_interval_to_day_dt(
+                    start_test, train_interval
+                )
+                end_test = TimezoneUtils.add_interval_to_day_dt(
+                    end_test, train_interval
+                )
 
         elif isinstance(df.index, pd.MultiIndex):
-
             if len(df.index.levels) != 2:
-                raise TypeError("The provided multi-indexed dataframe must be a two-levels one, the "
-                                "second one being the date index.")
+                raise TypeError(
+                    "The provided multi-indexed dataframe must be a two-levels one, the "
+                    "second one being the date index."
+                )
 
             if not isinstance(df.index.levels[1], pd.DatetimeIndex):
                 raise TypeError(f"The second index of the dataframe should be a pd.DatetimeIndex, but given"
@@ -89,13 +110,22 @@ class BackTesting:
 
             # go through the dataset and yield pairs of (train set, test set)
             while start_test < df.index.get_level_values(time_col).max():
-                yield df[df.index.get_level_values(time_col) < end_train], \
-                    df[(df.index.get_level_values(time_col) >= start_test)
-                       & (df.index.get_level_values(time_col) < end_test)]
+                yield df[df.index.get_level_values(time_col) < end_train], df[
+                    (df.index.get_level_values(time_col) >= start_test)
+                    & (df.index.get_level_values(time_col) < end_test)
+                ]
 
-                end_train = TimezoneUtils.add_interval_to_day_dt(end_train, train_interval)
-                start_test = TimezoneUtils.add_interval_to_day_dt(start_test, train_interval)
-                end_test = TimezoneUtils.add_interval_to_day_dt(end_test, train_interval)
+                end_train = TimezoneUtils.add_interval_to_day_dt(
+                    end_train, train_interval
+                )
+                start_test = TimezoneUtils.add_interval_to_day_dt(
+                    start_test, train_interval
+                )
+                end_test = TimezoneUtils.add_interval_to_day_dt(
+                    end_test, train_interval
+                )
 
         else:
-            raise ValueError("df must have a pandas.DatetimeIndex index, even if it's a MultiIndex")
+            raise ValueError(
+                "df must have a pandas.DatetimeIndex index, even if it's a MultiIndex"
+            )

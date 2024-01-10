@@ -3,7 +3,6 @@ import pandas as pd
 
 
 class TimezoneUtils:
-
     @staticmethod
     def is_timezone_aware(dt: pd.Timestamp) -> bool:
         return dt.tzinfo is not None and dt.tzinfo.utcoffset(dt) is not None
@@ -22,13 +21,29 @@ class TimezoneUtils:
        :param interval: an interval of type relativedelta not more precise than a day
        """
 
-        if not (day_dt.hour == day_dt.minute == day_dt.second == day_dt.microsecond == 0):
-            raise ValueError("day_dt must be datetime with only years, months or days (not more precise),"
-                             " but given: {}, {}".format(type(day_dt), day_dt))
-        if not (isinstance(interval, relativedelta)
-                and interval.hours == interval.minutes == interval.seconds == interval.microseconds == 0):
-            raise(ValueError("Interval must be a relativedelta with only years, months or days "
-                             "(not more precise), but given: {}, {}".format(type(interval), interval)))
+        if not (
+            day_dt.hour == day_dt.minute == day_dt.second == day_dt.microsecond == 0
+        ):
+            raise ValueError(
+                "day_dt must be datetime with only years, months or days (not more precise),"
+                " but given: {}, {}".format(type(day_dt), day_dt)
+            )
+        if not (
+            isinstance(interval, relativedelta)
+            and interval.hours
+            == interval.minutes
+            == interval.seconds
+            == interval.microseconds
+            == 0
+        ):
+            raise (
+                ValueError(
+                    "Interval must be a relativedelta with only years, months or days "
+                    "(not more precise), but given: {}, {}".format(
+                        type(interval), interval
+                    )
+                )
+            )
 
         tz = day_dt.tzinfo
         day_naive = day_dt.replace(tzinfo=None)

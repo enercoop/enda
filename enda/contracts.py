@@ -91,7 +91,10 @@ class Contracts:
             raise ValueError(f"There are NaN values in these rows:\n{rows_with_nan_date_start}")
 
         contracts_with_end = df.dropna(subset=[date_end_exclusive_col])
-        not_ok = contracts_with_end[date_start_col] >= contracts_with_end[date_end_exclusive_col]
+        not_ok = (
+            contracts_with_end[date_start_col]
+            >= contracts_with_end[date_end_exclusive_col]
+        )
         if not_ok.sum() >= 1:
             raise ValueError(f"Some ending date happens before starting date:\n{contracts_with_end[not_ok]}")
 
@@ -103,17 +106,25 @@ class Contracts:
                 raise ValueError(f"contracts has a column named {c}, but this name is reserved in this"
                                  "function; rename your column.")
 
-        columns_to_keep = [c for c in contracts.columns if c not in [date_start_col, date_end_exclusive_col]]
+        columns_to_keep = [
+            c
+            for c in contracts.columns
+            if c not in [date_start_col, date_end_exclusive_col]
+        ]
         events_columns = ["event_type", "event_date"] + columns_to_keep
 
         # compute "contract start" and "contract end" events
-        start_contract_events = contracts.copy(deep=True)  # all contracts must have a start date
+        start_contract_events = contracts.copy(
+            deep=True
+        )  # all contracts must have a start date
         start_contract_events["event_type"] = "start"
         start_contract_events["event_date"] = start_contract_events[date_start_col]
         start_contract_events = start_contract_events[events_columns]
 
         # for "contract end" events, only keep contracts with an end date (NaT = contract is not over)
-        end_contract_events = contracts[contracts[date_end_exclusive_col].notna()].copy(deep=True)
+        end_contract_events = contracts[contracts[date_end_exclusive_col].notna()].copy(
+            deep=True
+        )
         end_contract_events["event_type"] = "end"
         end_contract_events["event_date"] = end_contract_events[date_end_exclusive_col]
         end_contract_events = end_contract_events[events_columns]
@@ -184,14 +195,16 @@ class Contracts:
 
         # for each column to sum, replace the value by their "increment" (+X if contract starts; -X if contract ends)
         for c in columns_to_sum:
-            events[c] = events.apply(lambda row: row[c] if row["event_type"] == "start" else -row[c], axis=1)
+            events[c] = events.apply(
+                lambda row: row[c] if row["event_type"] == "start" else -row[c], axis=1
+            )
 
         # group events by day and sum the individual contract increments of columns_to_sum to have daily increments
         df_by_day = events.groupby(["event_date"]).sum()
 
         # add days that have no increment (with NA values), else the result can have gaps
         # new "NA" increments = no contract start or end event that day = increment is 0
-        df_by_day = df_by_day.asfreq('D').fillna(0)
+        df_by_day = df_by_day.asfreq("D").fillna(0)
 
         # compute cumulative sums of daily increments to get daily totals
         portfolio = df_by_day.cumsum(axis=0)
@@ -221,8 +234,10 @@ class Contracts:
             raise TypeError(f"The index of daily_portfolio should be a pd.DatetimeIndex, but given {df.index.dtype}")
 
         if df.index.freq is None:
-            raise ValueError("portfolio.index needs to have a freq. "
-                             "Maybe try to set one using df.index.inferred_freq")
+            raise ValueError(
+                "portfolio.index needs to have a freq. "
+                "Maybe try to set one using df.index.inferred_freq"
+            )
 
         freq = df.index.freq
 
@@ -232,15 +247,18 @@ class Contracts:
 
         if start_datetime is not None and df.index.min() > start_datetime:
             # add days with empty portfolio at the beginning
-            df = df.append(pd.Series(name=start_datetime, dtype='object'))
+            df = df.append(pd.Series(name=start_datetime, dtype="object"))
             df.sort_index(inplace=True)  # put the new row first
             df = df.asfreq(freq).fillna(0)
 
-        if end_datetime_exclusive is not None and df.index.max() < end_datetime_exclusive:
+        if (
+            end_datetime_exclusive is not None
+            and df.index.max() < end_datetime_exclusive
+        ):
             # add days at the end, with the same portfolio as the last available day
-            df = df.append(pd.Series(name=end_datetime_exclusive, dtype='object'))
+            df = df.append(pd.Series(name=end_datetime_exclusive, dtype="object"))
             df.sort_index(inplace=True)  # make sure this new row is last
-            df = df.asfreq(freq, method='ffill')
+            df = df.asfreq(freq, method="ffill")
 
         # remove dates outside desired range
         df = df[(df.index >= start_datetime) & (df.index < end_datetime_exclusive)]
@@ -283,7 +301,7 @@ class Contracts:
             end=end_forecast_date_exclusive,
             freq=freq,
             name=portfolio_df.index.name,
-            closed='left'
+            closed="left",
         )
 
         if tzinfo is not None:
@@ -292,7 +310,11 @@ class Contracts:
         predictions = []
 
         for c in portfolio_df.columns:
-            epoch_column = "seconds_since_epoch_" if c != "seconds_since_epoch_" else "seconds_since_epoch__"
+            epoch_column = (
+                "seconds_since_epoch_"
+                if c != "seconds_since_epoch_"
+                else "seconds_since_epoch__"
+            )
 
             train_set = portfolio_df[[c]].copy(deep=True)
             train_set[epoch_column] = train_set.index.astype(np.int64) // 10 ** 9
@@ -306,7 +328,7 @@ class Contracts:
             lr.train(train_set, target_col=c)
             predictions.append(lr.predict(test_set, target_col=c))
 
-        return pd.concat(predictions, axis=1, join='outer')
+        return pd.concat(predictions, axis=1, join="outer")
 
     @classmethod
     def forecast_portfolio_holt(cls,
@@ -355,8 +377,10 @@ class Contracts:
             raise ValueError(f"portfolio_df should have a pandas.DatetimeIndex, but given {portfolio_df.index.dtype}")
 
         if portfolio_df.index.freq is None:
-            raise ValueError("Input portfolio_df must have a frequency. "
-                             "Maybe try to set it using pandas.index.inferred_freq")
+            raise ValueError(
+                "Input portfolio_df must have a frequency. "
+                "Maybe try to set it using pandas.index.inferred_freq"
+            )
 
         # only keep portfolio data before the start_forecast_date
         freq = portfolio_df.index.freq
@@ -366,12 +390,10 @@ class Contracts:
         pf = pf[pf.index <= start_forecast_date]
 
         end_forecast_date = TimezoneUtils.add_interval_to_day_dt(
-            day_dt=start_forecast_date,
-            interval=relativedelta(days=nb_days)
+            day_dt=start_forecast_date, interval=relativedelta(days=nb_days)
         )
         date_past_days_ago = TimezoneUtils.add_interval_to_day_dt(
-            day_dt=start_forecast_date,
-            interval=relativedelta(days=-past_days)
+            day_dt=start_forecast_date, interval=relativedelta(days=-past_days)
         )
 
         # only keep recent data to determine the trends
@@ -382,7 +404,7 @@ class Contracts:
             end_forecast_date,
             freq=freq,
             name=pf.index.name,
-            closed='left'
+            closed="left",
         )
         if tzinfo is not None:
             future_index = future_index.tz_convert(tzinfo)
@@ -390,7 +412,11 @@ class Contracts:
         # holt needs a basic integer index
         pf = pf.reset_index(drop=True)
         # forecast each column (all columns are measures)
-        result = pf.apply(lambda x: Holt(x, **holt_init_params).fit(**holt_fit_params).forecast(len(future_index)))
+        result = pf.apply(
+            lambda x: Holt(x, **holt_init_params)
+            .fit(**holt_fit_params)
+            .forecast(len(future_index))
+        )
         result = result.round(1)
         result.index = future_index
 
