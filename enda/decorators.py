@@ -15,12 +15,12 @@ def handle_multiindex(func):
     @functools.wraps(func)
     def wrapper_handle_multiindex(*args, **kwargs):
 
-        if 'df' in kwargs.keys(): 
+        if 'df' in kwargs.keys():
             df = kwargs['df']
         else:
             df = args[0]
-        
-        # if it is a single indexed dataframe, call the function directly 
+
+        # if it is a single indexed dataframe, call the function directly
         if not isinstance(df.index, pd.MultiIndex):
             return func(*args, **kwargs)
 
@@ -34,17 +34,17 @@ def handle_multiindex(func):
                             .format(df.index.levels[1].dtype))
 
         # and for now, we cannot accept no-key arguments excpet df for a multiindex
-        if ('df' in kwargs.keys() and len(args) > 0) or ('df' not in kwargs.keys() and len(args) != 1): 
+        if ('df' in kwargs.keys() and len(args) > 0) or ('df' not in kwargs.keys() and len(args) != 1):
             raise NotImplementedError("The function with multi-index dataframes as input only works "
                                       "using keyword-only arguments (except for 'df' argument)")
 
         key_col = df.index.levels[0].name
-        date_col = df.index.levels[1].name 
-        
+        date_col = df.index.levels[1].name
+
         df_new = pd.DataFrame()
         for key, data in df.groupby(level=0, sort=False):
             data = data.reset_index().set_index(date_col).drop(columns=[key_col])
-            args_decorator = (data,) 
+            args_decorator = (data,)
             kwargs_decorator = {x: kwargs[x] for x in kwargs.keys() if x != 'df'}
             data = func(*args_decorator, **kwargs_decorator)
             if not isinstance(data, pd.DataFrame):
@@ -54,7 +54,7 @@ def handle_multiindex(func):
             data[key_col] = key
             data = data.reset_index().set_index([key_col, new_date_col])
             df_new = pd.concat([df_new, data], axis=0)
-        
+
         return df_new
-    
+
     return wrapper_handle_multiindex

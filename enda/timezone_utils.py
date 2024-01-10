@@ -1,24 +1,25 @@
 from dateutil.relativedelta import relativedelta
+import pandas as pd
 
 
 class TimezoneUtils:
 
     @staticmethod
-    def is_timezone_aware(dt):
+    def is_timezone_aware(dt: pd.Timestamp) -> bool:
         return dt.tzinfo is not None and dt.tzinfo.utcoffset(dt) is not None
 
     @classmethod
-    def add_interval_to_day_dt(cls, day_dt, interval):
+    def add_interval_to_day_dt(cls, day_dt: pd.Timestamp, interval: relativedelta) -> pd.Timestamp:
         """ Adds an interval (not more precise than a day) to a day,
         correctly dealing with timezone-aware (and naive) day_dt;
         works around daylight savings time changes.
 
        Normally, to add an interval to a day which is not timezone aware, simply use:
            day_dt + interval.
-       This does not work properly for timezone-aware days so we added this function.
+       This does not work properly for timezone-aware days, so we added this function.
 
        :param day_dt: a timezone_aware datetime which is a day (hour=minute=seconds=microsecond=0)
-       :param interval: a interval of type relativedelta not more precise than a day
+       :param interval: an interval of type relativedelta not more precise than a day
        """
 
         if not (day_dt.hour == day_dt.minute == day_dt.second == day_dt.microsecond == 0):

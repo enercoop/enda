@@ -1,4 +1,4 @@
-import pandas
+import pandas as pd
 
 
 class Scoring:
@@ -7,7 +7,7 @@ class Scoring:
     predictions_df must include the 'target' column and the predictions in all other columns
     """
 
-    def __init__(self, predictions_df: pandas.DataFrame, target: str, 
+    def __init__(self, predictions_df: pd.DataFrame, target: str,
                  normalizing_col: str = None):
 
         self.predictions_df = predictions_df
@@ -20,7 +20,7 @@ class Scoring:
             raise ValueError("predictions_df must have at least 2 columns (1 target and 1 prediction)")
 
         algo_names = list([c for c in self.predictions_df.columns if c not in
-                          [self.target, self.normalizing_col]])
+                           [self.target, self.normalizing_col]])
 
         error_df = self.predictions_df.copy(deep=True)
         for x in algo_names:
@@ -28,44 +28,44 @@ class Scoring:
         error_df = error_df[algo_names]
         self.error_df = error_df
 
-        self.pct_error_df = self.error_df.div(self.predictions_df[self.target], axis=0)*100
+        self.pct_error_df = self.error_df.div(self.predictions_df[self.target], axis=0) * 100
 
-    def error(self):
+    def error(self) -> pd.DataFrame:
         return self.error_df
 
-    def mean_error(self):
+    def mean_error(self) -> pd.DataFrame:
         return self.error().mean()
 
-    def absolute_error(self):
+    def absolute_error(self) -> pd.DataFrame:
         return self.error().abs()
 
-    def absolute_error_statistics(self):
+    def absolute_error_statistics(self) -> pd.DataFrame:
         return self.error().describe(percentiles=[0.5, 0.75, 0.9, 0.95, 0.99])
 
-    def mean_absolute_error(self):
+    def mean_absolute_error(self) -> pd.DataFrame:
         return self.absolute_error().mean()
 
-    def mean_absolute_error_by_month(self):
+    def mean_absolute_error_by_month(self) -> pd.DataFrame:
         abs_error = self.absolute_error()
         return abs_error.groupby(abs_error.index.month).mean()
 
-    def percentage_error(self):
+    def percentage_error(self) -> pd.DataFrame:
         return self.pct_error_df
 
-    def absolute_percentage_error(self):
+    def absolute_percentage_error(self) -> pd.DataFrame:
         return self.percentage_error().abs()
 
-    def absolute_percentage_error_statistics(self):
+    def absolute_percentage_error_statistics(self) -> pd.DataFrame:
         return self.absolute_percentage_error().describe(percentiles=[0.5, 0.75, 0.9, 0.95, 0.99])
 
-    def mean_absolute_percentage_error(self):
+    def mean_absolute_percentage_error(self) -> pd.DataFrame:
         return self.absolute_percentage_error().mean()
 
-    def mean_absolute_percentage_error_by_month(self):
+    def mean_absolute_percentage_error_by_month(self) -> pd.DataFrame:
         abs_percentage_error = self.absolute_percentage_error()
         return abs_percentage_error.groupby(abs_percentage_error.index.month).mean()
 
-    def normalized_absolute_error(self):
+    def normalized_absolute_error(self) -> pd.DataFrame:
         if self.normalizing_col is None:
             raise ValueError("Cannot use this function without defining normalizing_col in Scoring")
-        return self.error_df.abs().div(self.predictions_df[self.normalizing_col], axis=0) 
+        return self.error_df.abs().div(self.predictions_df[self.normalizing_col], axis=0)

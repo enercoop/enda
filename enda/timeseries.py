@@ -9,7 +9,7 @@ from enda.decorators import handle_multiindex
 class TimeSeries:
 
     @classmethod
-    def align_timezone(cls, time_series: pd.Series, tzinfo: [str, pytz.timezone]):
+    def align_timezone(cls, time_series: pd.Series, tzinfo: [str, pytz.timezone]) -> pd.DatetimeIndex:
         """
         Sometimes a time_series is of pandas type "object" just because the time-zone information
         is not well read initially.
@@ -43,10 +43,10 @@ class TimeSeries:
     @classmethod
     def find_missing_and_extra_periods(
             cls,
-            dti,
+            dti: pd.DatetimeIndex,
             expected_freq=None,
             expected_start_datetime=None,
-            expected_end_datetime=None):
+            expected_end_datetime=None) -> (pd.Timedelta, ):
         """
         Check for missing and extra data points
         :param dti: a series of type DatetimeIndex, in ascending order and without duplicates or NaNs

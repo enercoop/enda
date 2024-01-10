@@ -1,6 +1,6 @@
 import abc
 from collections import OrderedDict
-import pandas
+import pandas as pd
 import typing
 
 
@@ -26,16 +26,16 @@ class EndaEstimator(metaclass=abc.ABCMeta):
     @classmethod
     def __subclasshook__(cls, subclass):
         return (
-            hasattr(subclass, 'train') and callable(subclass.train) and
-            hasattr(subclass, 'predict') and callable(subclass.predict))
+                hasattr(subclass, 'train') and callable(subclass.train) and
+                hasattr(subclass, 'predict') and callable(subclass.predict))
 
     @abc.abstractmethod
-    def train(self, df: pandas.DataFrame, target_col: str):
+    def train(self, df: pd.DataFrame, target_col: str):
         """Trains the estimator using the given data."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def predict(self, df: pandas.DataFrame, target_col: str) -> pandas.DataFrame:
+    def predict(self, df: pd.DataFrame, target_col: str) -> pd.DataFrame:
         """ Predicts and returns a dataframe with just 1 column: target_col_name """
         raise NotImplementedError
 
@@ -73,28 +73,28 @@ class EndaNormalizedEstimator(EndaEstimator):
         self.normalisation_col = normalization_col
         self.columns_to_normalize = columns_to_normalize
 
-    def check_normalization_col(self, df: pandas.DataFrame):
+    def check_normalization_col(self, df: pd.DataFrame):
         zeros_df = df[df[self.normalisation_col] <= 0]
         if not zeros_df.empty:
             raise ValueError("Normalisation_col '{}' : zeros found\n{}".format(self.normalisation_col, zeros_df))
 
-    def normalize(self, df: pandas.DataFrame):
+    def normalize(self, df: pd.DataFrame) -> pd.DataFrame:
         self.check_normalization_col(df)
         df_norm = df.copy(deep=True)
 
         if self.columns_to_normalize:
             for c in df.columns:
                 if c in self.columns_to_normalize:
-                    df_norm[c] = df_norm[c]/df[self.normalisation_col]
+                    df_norm[c] = df_norm[c] / df[self.normalisation_col]
 
         # always normalize the target if it is in the df (present in train mode, not in predict mode)
         if self.target_col in df.columns:
-            df_norm[self.target_col] = df_norm[self.target_col]/df[self.normalisation_col]
+            df_norm[self.target_col] = df_norm[self.target_col] / df[self.normalisation_col]
 
         df_norm.drop(columns=self.normalisation_col, inplace=True)
         return df_norm
 
-    def train(self, df: pandas.DataFrame, target_col: str = None, drop_where_normalization_under_zero: bool = False):
+    def train(self, df: pd.DataFrame, target_col: str = None, drop_where_normalization_under_zero: bool = False):
         if target_col and self.target_col != target_col:
             raise ValueError("target should be None or {}, but given: {}".format(self.target_col, target_col))
 
@@ -103,7 +103,7 @@ class EndaNormalizedEstimator(EndaEstimator):
         df_norm = self.normalize(df)
         self.inner_estimator.train(df_norm, self.target_col)
 
-    def predict(self, df: pandas.DataFrame, target_col: str = None):
+    def predict(self, df: pd.DataFrame, target_col: str = None) -> pd.DataFrame:
         if target_col and self.target_col != target_col:
             raise ValueError("target should be None or '{}', but given: '{}'".format(self.target_col, target_col))
 
@@ -154,7 +154,7 @@ class EndaStackingEstimator(EndaEstimator):
         self.final_estimator = final_estimator
         self.base_stack_split_pct = base_stack_split_pct
 
-    def train(self, df: pandas.DataFrame, target_col: str, base_stack_split_pct: [float, None] = None):
+    def train(self, df: pd.DataFrame, target_col: str, base_stack_split_pct: [float, None] = None):
 
         split_pct = base_stack_split_pct if base_stack_split_pct else self.base_stack_split_pct
 
@@ -165,7 +165,7 @@ class EndaStackingEstimator(EndaEstimator):
         # re-train base estimators with the full dataset
         self.train_base_estimators(df, target_col)
 
-    def train_final_estimator(self, df, target_col, split_pct):
+    def train_final_estimator(self, df: pd.DataFrame, target_col: str, split_pct: float):
         """
         Trains the final estimator used for stacking.
 
@@ -174,7 +174,7 @@ class EndaStackingEstimator(EndaEstimator):
         """
 
         # split the training frame : ,
-        split_int = int(df.shape[0] * (1-split_pct))
+        split_int = int(df.shape[0] * (1 - split_pct))
         split_idx = df.index[split_int]
 
         df_base_estimators = df[df.index < split_idx]  # one part to train the base estimators
@@ -195,7 +195,7 @@ class EndaStackingEstimator(EndaEstimator):
 
         self.final_estimator.train(base_predictions, target_col)
 
-    def predict_base_estimators(self, df, target_col):
+    def predict_base_estimators(self, df: pd.DataFrame, target_col: str) -> pd.DataFrame:
         """
         :return: a Dataframe with the prediction of each base estimator in each column (on several rows).
         Each column's name is the estimator_id given on initialisation.
@@ -213,7 +213,7 @@ class EndaStackingEstimator(EndaEstimator):
             estimator_predict.rename(columns={target_col: estimator_id}, inplace=True)
             estimator_dfs.append(estimator_predict)
 
-        predict_df = pandas.concat(estimator_dfs, axis=1, join='outer')
+        predict_df = pd.concat(estimator_dfs, axis=1, join='outer')
 
         if predict_df.shape[0] != df.shape[0]:
             raise ValueError("Given {} values to predict, but predicted {}"
@@ -221,11 +221,11 @@ class EndaStackingEstimator(EndaEstimator):
 
         return predict_df
 
-    def train_base_estimators(self, df, target_col):
+    def train_base_estimators(self, df: pd.DataFrame, target_col: str):
         for estimator_id, estimator in self.base_estimators.items():
             estimator.train(df, target_col)
 
-    def predict(self, df: pandas.DataFrame, target_col: str):
+    def predict(self, df: pd.DataFrame, target_col: str) -> pd.DataFrame:
         base_predictions = self.predict_base_estimators(df, target_col)
         prediction = self.final_estimator.predict(base_predictions, target_col)
 
@@ -265,7 +265,7 @@ class EndaEstimatorWithFallback(EndaEstimator):
         self.estimator_with = estimator_with
         self.estimator_without = estimator_without
 
-    def train(self, df: pandas.DataFrame, target_col: str):
+    def train(self, df: pd.DataFrame, target_col: str):
         """
         Trains the two estimators : estimator_with and estimator_without the 'column_name'
         """
@@ -275,7 +275,7 @@ class EndaEstimatorWithFallback(EndaEstimator):
         # train the "estimator_without" without resilient_column
         self.estimator_without.train(df.drop(columns=[self.resilient_column]), target_col)
 
-    def predict_both(self, df: pandas.DataFrame, target_col: str):
+    def predict_both(self, df: pd.DataFrame, target_col: str) -> (pd.DataFrame, pd.DataFrame):
         df_with = df[df[self.resilient_column].notna()]  # only keeps rows where resilient_column is not NaN
         prediction_with = self.estimator_with.predict(df_with, target_col)
         if prediction_with.shape[0] != df.shape[0]:
@@ -295,7 +295,7 @@ class EndaEstimatorWithFallback(EndaEstimator):
 
         return prediction_with, prediction_without
 
-    def predict(self, df: pandas.DataFrame, target_col: str) -> pandas.DataFrame:
+    def predict(self, df: pd.DataFrame, target_col: str) -> pd.DataFrame:
         predict_with, predict_without = self.predict_both(df, target_col)
 
         # keep prediction with column_name when available, else take the prediction of the estimator without it
@@ -312,18 +312,18 @@ class EndaEstimatorRecopy(EndaEstimator):
     It simply recopies the most recent data on a daily basis. 
     """
 
-    def __init__(self, period: [str, pandas.Timedelta] = None, key_col: str = None):
+    def __init__(self, period: [str, pd.Timedelta] = None):
 
         '''
         Set up the attribute data that will store the dataframe
         :param period: The period on which past data should be averaged to be used as future value.
-                       It must be convertible to a pandas.Timedelta object, eg '1D', '2H', etc...
+                       It must be convertible to a pd.Timedelta object, eg '1D', '2H', etc...
                        If nothing is provided, the last past value is used in the future    
         '''
-        self.period = pandas.to_timedelta(period) if period is not None else None
+        self.period = pd.to_timedelta(period) if period is not None else None
         self.training_data = None
-    
-    def train(self, df: pandas.DataFrame, target_col: str):
+
+    def train(self, df: pd.DataFrame, target_col: str):
         '''
         This function keeps the more recent data of the input dataframe,
         and stores it in the attribute training_data. If a period has been 
@@ -334,42 +334,42 @@ class EndaEstimatorRecopy(EndaEstimator):
         :param target_col: the target column 
         '''
 
-        if type(df.index) != pandas.DatetimeIndex:
+        if type(df.index) != pd.DatetimeIndex:
             raise ValueError("Index should be of type DatetimeIndex")
 
-        if target_col not in df.columns: 
+        if target_col not in df.columns:
             raise ValueError(f"Target column {target_col} not found in the training dataframe")
-            
+
         if self.period is None:
             self.training_data = (
                 df.sort_index()
-                  .iloc[-1, df.columns.get_indexer([target_col])]
-                )
-            
+                .iloc[-1, df.columns.get_indexer([target_col])]
+            )
+
         else:
             # the training dataframe must have a well-defined frequency
             self.training_data = (
-                df.iloc[df.index > df.index.max() - self.period, 
-                        df.columns.get_indexer([target_col])
-                        ]
+                df.iloc[df.index > df.index.max() - self.period,
+                df.columns.get_indexer([target_col])
+                ]
                 .mean()
-                )     
+            )
 
-    def predict(self, df: pandas.DataFrame, target_col: str):
+    def predict(self, df: pd.DataFrame, target_col: str) -> pd.DataFrame:
         '''
         Make a prediction just copying the retained information.
         :param df: The input forecast dataframe, with a single DatetimeIndex 
         :param target_col: the target column 
         '''
 
-        if self.training_data is None: 
+        if self.training_data is None:
             raise ValueError("There is no training dataset defined. Must call 'train' before 'predict'")
 
         if not isinstance(df.index, type(self.training_data.index)):
             raise ValueError("Forecast dataset index should be of same type of input dataset")
-           
+
         df_predict = df.copy(deep=True)
-        
+
         df_predict[target_col] = self.training_data[target_col]
-        
+
         return df_predict.loc[:, [target_col]]

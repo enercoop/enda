@@ -1,3 +1,5 @@
+"""This module contains methods useful to handle contracts data"""
+
 import pandas as pd
 from pandas.api.types import is_string_dtype, is_datetime64_dtype
 from dateutil.relativedelta import relativedelta
@@ -10,10 +12,10 @@ class Contracts:
     """
     A class to help handle contracts data.
 
-    contracts : a dataframe with a contract or sub-contract on each row.
+    contracts : a dataframe with a contract or subcontract on each row.
         A contract row has fixed-values between two dates. In some systems, some values of a contract can change over
         time, for instance the "subscribed power" of an electricity consumption contract.
-        Different ERPs can handle it in different ways, for instance with "sub-contracts" inside a contract
+        Different ERPs can handle it in different ways, for instance with "subcontracts" inside a contract
         or with contract "amendments".
         Here each row is a period between two dates where all the values of the contract are fixed.
 
@@ -39,10 +41,10 @@ class Contracts:
 
     @classmethod
     def read_contracts_from_file(cls,
-                                 file_path,
-                                 date_start_col="date_start",
-                                 date_end_exclusive_col="date_end_exclusive",
-                                 date_format="%Y-%m-%d"):
+                                 file_path: str,
+                                 date_start_col: str = "date_start",
+                                 date_end_exclusive_col: str = "date_end_exclusive",
+                                 date_format: str = "%Y-%m-%d") -> pd.DataFrame:
         """
         Reads contracts from a file. This will convert start and end date columns into dtype=datetime64 (tz-naive)
         :param file_path: where the source file is located.
@@ -60,43 +62,46 @@ class Contracts:
         return df
 
     @staticmethod
-    def check_contracts_dates(df, date_start_col, date_end_exclusive_col, is_naive=True):
+    def check_contracts_dates(df: pd.DataFrame, date_start_col: str, date_end_exclusive_col: str,
+                              is_naive: bool = True):
         """
-        Checks that the two columns are present, with dtype=datetime64 (tz-naive)
-        Checks that date_start is always present.
+        Checks that the two columns are present.
+        Checks that date_start does not have any null value.
         A date_end_exclusive==NaT means that the contract has no limited duration.
         Checks that date_start < date_end_exclusive when date_end_exclusive is set
+        If is_naive is set to True, check that timestamps in date_start_col and date_end_exclusive_col are naive
+        If any of these checks fail, raise a ValueError
 
         :param df: the pandas.DataFrame containing the contracts
         :param date_start_col: the name of your contract date start column.
         :param date_end_exclusive_col: the name of your contract date end column, end date is exclusive.
+        :param is_naive: whether the timestamps in the start and end dates columns are supposed to be naïve
         """
 
         # check required columns and their types
         for c in [date_start_col, date_end_exclusive_col]:
             if c not in df.columns:
-                raise ValueError("Required column not found : {}".format(c))
+                raise ValueError(f"Required column not found : {c}")
             # data at a 'daily' precision should not have TZ information
             if not is_datetime64_dtype(df[c]) and is_naive:
-                raise ValueError("Expected tz-naive datetime dtype for column {}, but found dtype: {}"
-                                 .format(c, df[c].dtype))
+                raise ValueError(f"Expected tz-naive datetime dtype for column {c}, but found dtype: {df[c].dtype}")
         # check NaN values for date_start
         if df[date_start_col].isnull().any():
             rows_with_nan_date_start = df[df[date_start_col].isnull()]
-            raise ValueError("There are NaN values in these rows:\n{}".format(rows_with_nan_date_start))
+            raise ValueError(f"There are NaN values in these rows:\n{rows_with_nan_date_start}")
 
         contracts_with_end = df.dropna(subset=[date_end_exclusive_col])
         not_ok = contracts_with_end[date_start_col] >= contracts_with_end[date_end_exclusive_col]
         if not_ok.sum() >= 1:
-            raise ValueError("Some ending date happens before starting date:\n{}".format(contracts_with_end[not_ok]))
+            raise ValueError(f"Some ending date happens before starting date:\n{contracts_with_end[not_ok]}")
 
     @staticmethod
-    def __contract_to_events(contracts, date_start_col, date_end_exclusive_col):
+    def __contract_to_events(contracts: pd.DataFrame, date_start_col: str, date_end_exclusive_col: str) -> pd.DataFrame:
         # check that no column is named "event_type" or "event_date"
         for c in ["event_type", "event_date"]:
             if c in contracts.columns:
-                raise ValueError("contracts has a column named {}, but this name is reserved in this"
-                                 "function; rename your column.".format(c))
+                raise ValueError(f"contracts has a column named {c}, but this name is reserved in this"
+                                 "function; rename your column.")
 
         columns_to_keep = [c for c in contracts.columns if c not in [date_start_col, date_end_exclusive_col]]
         events_columns = ["event_type", "event_date"] + columns_to_keep
@@ -122,12 +127,12 @@ class Contracts:
     @classmethod
     def compute_portfolio_by_day(
             cls,
-            contracts,
-            columns_to_sum,
-            date_start_col="date_start",
-            date_end_exclusive_col="date_end_exclusive",
-            max_date_exclusive=None,
-    ):
+            contracts: pd.DataFrame,
+            columns_to_sum: list[str],
+            date_start_col: str = "date_start",
+            date_end_exclusive_col: str = "date_end_exclusive",
+            max_date_exclusive: pd.Timestamp = None,
+    ) -> pd.DataFrame:
         """
         Given a list of contracts_with_group ,
 
@@ -142,8 +147,8 @@ class Contracts:
                 ["date_start", "date_end_exclusive", and all columns_to_sum]
                 each column in columns_to_sum must be of a summable dtype
         :param columns_to_sum: the columns on which to compute a running-sum over time
-        :param date_start_col:
-        :param date_end_exclusive_col:
+        :param date_start_col: the name of your contract date start column.
+        :param date_end_exclusive_col: the name of your contract date end column, end date is exclusive.
         :param max_date_exclusive: restricts the output to strictly before this date.
                                    Useful if you have end_dates far in the future.
 
@@ -156,17 +161,17 @@ class Contracts:
 
         for c in ["date"]:
             if c in contracts.columns:
-                raise ValueError("contracts has a column named {}, but this name is reserved in this"
-                                 "function; rename your column.".format(c))
+                raise ValueError(f"contracts has a column named {c}, but this name is reserved in this"
+                                 "function; rename your column.")
 
         cls.check_contracts_dates(contracts, date_start_col, date_end_exclusive_col)
 
         for c in columns_to_sum:
             if c not in contracts.columns:
-                raise ValueError("missing column_to_sum: {}".format(c))
+                raise ValueError(f"missing column_to_sum: {c}")
             if contracts[c].isnull().any():
                 rows_with_nan_c = contracts[contracts[c].isnull()]
-                raise ValueError("There are NaN values for column {} in these rows:\n{}".format(c, rows_with_nan_c))
+                raise ValueError(f"There are NaN values for column {c} in these rows:\n{rows_with_nan_c}")
 
         # keep only useful columns
         df = contracts[[date_start_col, date_end_exclusive_col] + columns_to_sum]
@@ -195,7 +200,9 @@ class Contracts:
         return portfolio
 
     @staticmethod
-    def get_portfolio_between_dates(portfolio, start_datetime, end_datetime_exclusive):
+    def get_portfolio_between_dates(portfolio: pd.DataFrame, start_datetime: pd.Timestamp,
+                                    end_datetime_exclusive: pd.Timestamp) \
+            -> pd.DataFrame:
         """
         Adds or removes dates if needed.
 
@@ -211,8 +218,7 @@ class Contracts:
         df = portfolio.copy(deep=True)
 
         if not isinstance(df.index, pd.DatetimeIndex):
-            raise TypeError("The index of daily_portfolio should be a pd.DatetimeIndex, but given {}"
-                            .format(df.index.dtype))
+            raise TypeError(f"The index of daily_portfolio should be a pd.DatetimeIndex, but given {df.index.dtype}")
 
         if df.index.freq is None:
             raise ValueError("portfolio.index needs to have a freq. "
@@ -236,7 +242,7 @@ class Contracts:
             df.sort_index(inplace=True)  # make sure this new row is last
             df = df.asfreq(freq, method='ffill')
 
-        # remove dates outside of desired range
+        # remove dates outside desired range
         df = df[(df.index >= start_datetime) & (df.index < end_datetime_exclusive)]
         assert df.isnull().sum().sum() == 0  # check that there is no missing value
 
@@ -250,7 +256,7 @@ class Contracts:
                                   freq: [pd.Timedelta, str],
                                   max_allowed_gap: pd.Timedelta = pd.Timedelta(days=1),
                                   tzinfo: [pytz.timezone, str, None] = None
-                                  ):
+                                  ) -> pd.DataFrame:
 
         if end_forecast_date_exclusive < start_forecast_date:
             raise ValueError("end_forecast_date must be after start_forecast_date")
@@ -258,20 +264,19 @@ class Contracts:
         gap = portfolio_df.index.max() - start_forecast_date
         if gap > max_allowed_gap:
             raise ValueError("The gap between the end of portfolio_df and start_forecast_date is too big:"
-                             "{} (max_allowed_gap={}). Provide more recent data or change max_allowed_gap."
-                             .format(gap, max_allowed_gap))
+                             f"{gap} (max_allowed_gap={max_allowed_gap}). Provide more recent data or change "
+                             "max_allowed_gap.")
 
         if not isinstance(portfolio_df.index, pd.DatetimeIndex):
-            raise ValueError("portfolio_df should have a pandas.DatetimeIndex, but given {}"
-                             .format(portfolio_df.index.dtype))
+            raise ValueError(f"portfolio_df should have a pandas.DatetimeIndex, but given {portfolio_df.index.dtype}")
 
         try:
             from enda.ml_backends.sklearn_estimator import EndaSklearnEstimator
             from sklearn.linear_model import LinearRegression
             import numpy as np
-        except ImportError:
+        except ImportError as exc:
             raise ImportError("sklearn is required is you want to use this function. "
-                              "Try: pip install scikit-learn")
+                              "Try: pip install scikit-learn") from exc
 
         result_index = pd.date_range(
             start=start_forecast_date,
@@ -290,10 +295,10 @@ class Contracts:
             epoch_column = "seconds_since_epoch_" if c != "seconds_since_epoch_" else "seconds_since_epoch__"
 
             train_set = portfolio_df[[c]].copy(deep=True)
-            train_set[epoch_column] = train_set.index.astype(np.int64) // 10**9
+            train_set[epoch_column] = train_set.index.astype(np.int64) // 10 ** 9
 
             test_set = pd.DataFrame(
-                data={"epoch_column": result_index.astype(np.int64) // 10**9},
+                data={epoch_column: result_index.astype(np.int64) // 10 ** 9},
                 index=result_index
             )
 
@@ -309,12 +314,12 @@ class Contracts:
                                 start_forecast_date,
                                 nb_days: int = 14,
                                 past_days: int = 100,
-                                holt_init_params=None, holt_fit_params=None):
+                                holt_init_params=None, holt_fit_params=None) -> pd.DataFrame:
         """
         Forecast using exponential smoothing (Holt method) for the next nb_days
         The output has the same frequency as input portfolio_df.
 
-        :param portfolio_df:
+        :param portfolio_df: The portfolio DataFrame to perform the forecast on #TODO describe more
         :param start_forecast_date: when we stop the portfolio data and start forecasting
         :param nb_days: number of days after 'end_date' to forecast
         :param past_days: max number of days to use in the past used to make the forecast
@@ -329,9 +334,9 @@ class Contracts:
 
         try:
             from statsmodels.tsa.api import Holt
-        except ImportError:
+        except ImportError as exc:
             raise ImportError("statsmodels is required is you want to use this function. "
-                              "Try: pip install statsmodels>=0.12.0")
+                              "Try: pip install statsmodels>=0.12.0") from exc
 
         if holt_init_params is None:
             holt_init_params = {"initialization_method": "estimated"}
@@ -340,16 +345,14 @@ class Contracts:
             holt_fit_params = {}
 
         if nb_days < 1:
-            raise ValueError("nb_days should be at least 1, given {}".format(nb_days))
+            raise ValueError(f"nb_days should be at least 1, given {nb_days}")
 
         if start_forecast_date > portfolio_df.index.max() + relativedelta(days=1):
-            raise ValueError("Start forecast date ({}) more than 1 day after the latest portfolio information ({}). "
-                             "Portfolio information given is too old."
-                             .format(start_forecast_date, portfolio_df.index.max()))
+            raise ValueError(f"Start forecast date ({start_forecast_date}) more than 1 day after the latest portfolio "
+                             f"information ({portfolio_df.index.max()}). Portfolio information given is too old.")
 
         if not isinstance(portfolio_df.index, pd.DatetimeIndex):
-            raise ValueError("portfolio_df should have a pandas.DatetimeIndex, but given {}"
-                             .format(portfolio_df.index.dtype))
+            raise ValueError(f"portfolio_df should have a pandas.DatetimeIndex, but given {portfolio_df.index.dtype}")
 
         if portfolio_df.index.freq is None:
             raise ValueError("Input portfolio_df must have a frequency. "
