@@ -1,3 +1,5 @@
+"""This script contains a wrapper for H20 estimators"""
+
 import os
 import shutil
 import tempfile
@@ -10,11 +12,11 @@ from enda.estimators import EndaEstimator
 try:
     import h2o
     import h2o.exceptions
-except ImportError:
+except ImportError as exc:
     raise ImportError(
         "h2o is required is you want to use this enda's H2OEstimator. "
         "Try: pip install h2o>=3.32.0.3"
-    )
+    ) from exc
 
 
 class EndaH2OEstimator(EndaEstimator):
@@ -75,9 +77,8 @@ class EndaH2OEstimator(EndaEstimator):
         except (h2o.exceptions.H2OResponseError, TypeError) as e:
             raise ValueError(
                 "Problem getting the model from h2o server. Train the model first. "
-                "Cannot access model binary before training (for pickle or deepcopy or other uses).",
-                e,
-            )
+                "Cannot access model binary before training (for pickle or deepcopy or other uses)."
+            ) from e
 
         # model can be saved in __tmp_file_path_1, or in private/__tmp_file_path_1
         potential_startswith = [
@@ -86,9 +87,7 @@ class EndaH2OEstimator(EndaEstimator):
         ]
         if not model_path_from_h2o.startswith(tuple(potential_startswith)):
             warnings.warn(
-                "Expected model_path_from_h2o={} to start with {}".format(
-                    model_path_from_h2o, EndaH2OEstimator.__tmp_file_path_1
-                )
+                f"Expected model_path_from_h2o={model_path_from_h2o} to start with {EndaH2OEstimator.__tmp_file_path_1}"
             )
 
         # last step actually made a folder and a file inside (at path 'model_path_from_h2o')

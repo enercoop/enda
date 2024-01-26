@@ -15,8 +15,12 @@ class DatetimeFeature:
 
     @staticmethod
     @handle_multiindex
-    def split_datetime(df: pd.DataFrame, split_list: list[str] = None, index: bool = True,
-                       colname: str = None) -> pd.DataFrame:
+    def split_datetime(
+        df: pd.DataFrame,
+        split_list: list[str] = None,
+        index: bool = True,
+        colname: str = None,
+    ) -> pd.DataFrame:
         """
         Split a specific datetime column or datetime index into different date and time attributes (given by split list)
         Return the dataframe df with the new columns.
@@ -55,7 +59,9 @@ class DatetimeFeature:
         else:
             if not all(split in split_list_implemented for split in split_list):
                 extra_split = list(set(split_list) - set(split_list_implemented))
-                raise NotImplementedError(f'Split {extra_split} not in {split_list_implemented}')
+                raise NotImplementedError(
+                    f"Split {extra_split} not in {split_list_implemented}"
+                )
 
         df_split = pd.DataFrame(index=df.index)
         if index:
@@ -74,12 +80,14 @@ class DatetimeFeature:
 
         else:
             if colname not in list(df.select_dtypes(include=[np.datetime64])):
-                raise TypeError(f"{colname} is not a datetime column : {df[[colname]].dtypes}")
+                raise TypeError(
+                    f"{colname} is not a datetime column : {df[[colname]].dtypes}"
+                )
 
             for split in split_list:
                 if split == "weekofyear":  # To avoid a FutureWarning
                     df_split[split] = df[colname].dt.isocalendar().week
-                elif split == 'minuteofday':
+                elif split == "minuteofday":
                     df_split[split] = df[colname].dt.hour * 60 + df[colname].dt.minute
                 else:
                     df_split[split] = getattr(df[colname].dt, split)
@@ -185,8 +193,8 @@ class DatetimeFeature:
         """
         Split and encode a datetime index into different date and time attributes (given by split list).
         Encoding method : for each attribute, cosinus and sinus are provided.
-        Return the dataframe df with the new columns.
-        :param df: pd.DataFrame
+        Return the DataFrame df with the new columns.
+        :param df: The input DataFrame with a DatetimeIndex
         :param split_list: attributes in ['hour', 'day', 'month', 'dayofweek', 'dayofyear']
         :return: pd.DataFrame with new columns ['hour_cos', 'hour_sin', 'day_cos', ...]
         """
@@ -212,7 +220,9 @@ class DatetimeFeature:
         else:
             if not all(split in split_list_implemented for split in split_list):
                 extra_split = list(set(split_list) - set(split_list_implemented))
-                raise NotImplementedError(f'Split {extra_split} not in {split_list_implemented}')
+                raise NotImplementedError(
+                    f"Split {extra_split} not in {split_list_implemented}"
+                )
 
         df_split = pd.DataFrame(index=df.index)
         if not isinstance(df.index, pd.DatetimeIndex):
@@ -227,26 +237,30 @@ class DatetimeFeature:
                 df_split[split] = getattr(df.index, split)
 
             if split in max_dict:
-                df_split[f'{split}_max'] = max_dict[split]
+                df_split[f"{split}_max"] = max_dict[split]
 
-            if split == 'dayofyear':
-                df_split[f'{split}_max'] = df_split.index.is_leap_year
-                df_split[f'{split}_max'] = df_split[f'{split}_max'].replace({True: 366, False: 365})
-                df_split[f'{split}_max'] = df_split[f'{split}_max'].astype(int)
+            if split == "dayofyear":
+                df_split[f"{split}_max"] = df_split.index.is_leap_year
+                df_split[f"{split}_max"] = df_split[f"{split}_max"].replace(
+                    {True: 366, False: 365}
+                )
+                df_split[f"{split}_max"] = df_split[f"{split}_max"].astype(int)
 
-            if split == 'day':
-                df_split[f'{split}_max'] = df_split.index.days_in_month
+            if split == "day":
+                df_split[f"{split}_max"] = df_split.index.days_in_month
 
             if split in ["month", "day", "dayofyear"]:
                 df_split[split] = df_split[split] - 1
 
-            df_split[f'{split}_cos'] = np.cos(
-                (2 * np.pi * df_split[split]) / df_split[f'{split}_max'])
-            df_split[f'{split}_sin'] = np.sin(
-                (2 * np.pi * df_split[split]) / df_split[f'{split}_max'])
+            df_split[f"{split}_cos"] = np.cos(
+                (2 * np.pi * df_split[split]) / df_split[f"{split}_max"]
+            )
+            df_split[f"{split}_sin"] = np.sin(
+                (2 * np.pi * df_split[split]) / df_split[f"{split}_max"]
+            )
 
             df_split = df_split.drop(columns=split)
-            df_split = df_split.drop(columns='f{split}_max')
+            df_split = df_split.drop(columns="f{split}_max")
 
         result = pd.concat([df, df_split], axis=1, join="inner", verify_integrity=True)
 
@@ -254,6 +268,12 @@ class DatetimeFeature:
 
     @staticmethod
     def get_datetime_features(df: pd.DataFrame, split_list: list[str] = None):
+        """
+        This function makes successive calls to encode_cyclic_datetime_index() and to split_datetime()
+        :param df: The input DataFrame with a DatetimeIndex
+        :param split_list: attributes in ['hour', 'day', 'month', 'dayofweek', 'dayofyear']
+        :return: The DataFrame with new columns resulting from encoding/splitting
+        """
         result = DatetimeFeature.encode_cyclic_datetime_index(df, split_list)
         result = DatetimeFeature.split_datetime(result, split_list)
         return result

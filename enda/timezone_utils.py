@@ -1,10 +1,20 @@
+"""This module contains methods related to Timestamps"""
+
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 
 
 class TimezoneUtils:
+    """
+    Methods to deal with Timestamps
+    """
     @staticmethod
     def is_timezone_aware(dt: pd.Timestamp) -> bool:
+        """
+        Returns a boolean indicating whether a Timestamp is timezone aware
+        :param dt: A pd.Timestamp
+        :return: A boolean
+        """
         return dt.tzinfo is not None and dt.tzinfo.utcoffset(dt) is not None
 
     @classmethod
@@ -26,7 +36,7 @@ class TimezoneUtils:
         ):
             raise ValueError(
                 "day_dt must be datetime with only years, months or days (not more precise),"
-                " but given: {}, {}".format(type(day_dt), day_dt)
+                f" but given: {type(day_dt)}, {day_dt}"
             )
         if not (
             isinstance(interval, relativedelta)
@@ -39,9 +49,7 @@ class TimezoneUtils:
             raise (
                 ValueError(
                     "Interval must be a relativedelta with only years, months or days "
-                    "(not more precise), but given: {}, {}".format(
-                        type(interval), interval
-                    )
+                    f"(not more precise), but given: {type(interval)}, {interval}"
                 )
             )
 
@@ -52,5 +60,4 @@ class TimezoneUtils:
         if tz is not None:
             day_aware = tz.localize(day_naive, is_dst=None)
             return day_aware
-        else:
-            return day_naive
+        return day_naive

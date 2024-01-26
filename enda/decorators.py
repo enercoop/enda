@@ -1,12 +1,15 @@
+"""This script contains a decorator used to compute functions on multi-indexed DataFrames"""
+
 import functools
+from typing import Callable
 
 import pandas as pd
 
 
-def handle_multiindex(func):
+def handle_multiindex(func: Callable) -> Callable:
     """
     This function is a wrapper around functions defined for a single dataframe with a datetime index so that
-    they also work for multiindexed dataframe. More specifically, functions designed for a
+    they also work for multi-indexed dataframes. More specifically, functions designed for a
     dataframe with a DatetimeIndex also work for a two-levels dataframe defined with a first
     index that defines a group, and a second index which is a DatetimeIndex.
     This function is meant to be used as a decorator.
@@ -14,8 +17,9 @@ def handle_multiindex(func):
     """
 
     @functools.wraps(func)
-    def wrapper_handle_multiindex(*args, **kwargs):
-        if "df" in kwargs.keys():
+    def wrapper_handle_multiindex(*args, **kwargs) -> pd.DataFrame:
+
+        if "df" in kwargs:
             df = kwargs["df"]
         else:
             df = args[0]
@@ -33,14 +37,12 @@ def handle_multiindex(func):
 
         if not isinstance(df.index.levels[1], pd.DatetimeIndex):
             raise TypeError(
-                "The second index of the dataframe should be a pd.DatetimeIndex, but given {}".format(
-                    df.index.levels[1].dtype
-                )
+                f"The second index of the dataframe should be a pd.DatetimeIndex, but given {df.index.levels[1].dtype}"
             )
 
-        # and for now, we cannot accept no-key arguments excpet df for a multiindex
-        if ("df" in kwargs.keys() and len(args) > 0) or (
-            "df" not in kwargs.keys() and len(args) != 1
+        # and for now, we cannot accept no-key arguments except df for a multiindex
+        if ("df" in kwargs and len(args) > 0) or (
+            "df" not in kwargs and len(args) != 1
         ):
             raise NotImplementedError(
                 "The function with multi-index dataframes as input only works "
@@ -54,7 +56,7 @@ def handle_multiindex(func):
         for key, data in df.groupby(level=0, sort=False):
             data = data.reset_index().set_index(date_col).drop(columns=[key_col])
             args_decorator = (data,)
-            kwargs_decorator = {x: kwargs[x] for x in kwargs.keys() if x != "df"}
+            kwargs_decorator = {x: y for x, y in kwargs.items() if x != "df"}
             data = func(*args_decorator, **kwargs_decorator)
             if not isinstance(data, pd.DataFrame):
                 raise TypeError(

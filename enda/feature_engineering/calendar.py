@@ -11,9 +11,11 @@ try:
     from jours_feries_france import JoursFeries
     from vacances_scolaires_france import SchoolHolidayDates, UnsupportedYearException
 except ImportError as exc:
-    raise ImportError("unidecode, jours_feries_france, vacances_scolaires_france are required if you want to use "
-                      "enda's FrenchHolidays and FrenchCalendar classes. "
-                      "Try: pip install jours-feries-france vacances-scolaires-france Unidecode") from exc
+    raise ImportError(
+        "unidecode, jours_feries_france, vacances_scolaires_france are required if you want to use "
+        "enda's FrenchHolidays and FrenchCalendar classes. "
+        "Try: pip install jours-feries-france vacances-scolaires-france Unidecode"
+    ) from exc
 
 
 class FrenchHolidays:
@@ -22,7 +24,9 @@ class FrenchHolidays:
     """
 
     @staticmethod
-    def get_public_holidays(year_list: list[int] = None, orientation: str = 'rows') -> pd.DataFrame:
+    def get_public_holidays(
+        year_list: list[int] = None, orientation: str = "rows"
+    ) -> pd.DataFrame:
         """
         Compute a DataFrame indicating all public holidays in France
         :param year_list: A list of integers representing the years for which we want public holidays information
@@ -41,7 +45,7 @@ class FrenchHolidays:
         for year in year_list:
             try:
                 res = JoursFeries.for_year(year)
-                df_res = pd.DataFrame.from_dict(res, orient='index')
+                df_res = pd.DataFrame.from_dict(res, orient="index")
                 df_res.index = df_res.index.map(unidecode.unidecode)
                 result = pd.concat([result, df_res.T], ignore_index=True)
             except UnsupportedYearException as e:
@@ -78,8 +82,8 @@ class FrenchHolidays:
         for year in year_list:
             try:
                 res = d.holidays_for_year(year)
-                df_res = pd.DataFrame.from_dict(res, orient='index')
-                df_res['nom_vacances'] = df_res['nom_vacances'].map(unidecode.unidecode)
+                df_res = pd.DataFrame.from_dict(res, orient="index")
+                df_res["nom_vacances"] = df_res["nom_vacances"].map(unidecode.unidecode)
                 df_res = df_res.reset_index(drop=True)
                 result = pd.concat([result, df_res], ignore_index=True)
             except UnsupportedYearException as e:
@@ -93,7 +97,7 @@ class Calendar:
     A class allowing to gather special days (school/public holidays, lockdowns, long weekends) for a given country
     """
 
-    def __init__(self, country: str = 'FR'):
+    def __init__(self, country: str = "FR"):
         self.country = country
 
     def get_french_lockdown(self) -> pd.DataFrame:
@@ -105,7 +109,7 @@ class Calendar:
             lockdown period and 0 otherwise
         """
 
-        if self.country != 'FR':
+        if self.country != "FR":
             raise NotImplementedError(f"Public holidays in {self.country} unknown")
 
         start_lockdown_date = pd.to_datetime("2020-03-17")
@@ -209,8 +213,9 @@ class Calendar:
         return public_holidays[["extra_long_weekend"]]
 
     @staticmethod
-    def interpolate_daily_to_subdaily_data(df: pd.DataFrame, freq: str, method: str = 'ffill',
-                                           tz: str = 'Europe/Paris') -> pd.DataFrame:
+    def interpolate_daily_to_subdaily_data(
+        df: pd.DataFrame, freq: str, method: str = "ffill", tz: str = "Europe/Paris"
+    ) -> pd.DataFrame:
         """
         Interpolate daily data in a dataframe (with a DatetimeIndex) to subdaily data using a given method.
         :param df: pd.DataFrame
@@ -231,7 +236,7 @@ class Calendar:
             df, freq=freq, method=method, tz=tz
         )
 
-    def get_french_special_days(self, freq: str = '30min') -> pd.DataFrame:
+    def get_french_special_days(self, freq: str = "30min") -> pd.DataFrame:
         """
         Return a DataFrame containing all special french days: public and school holidays, lockdowns, and extra long
             weekends

@@ -1,3 +1,5 @@
+"""This script contains a wrapper for scikit-learn estimators"""
+
 import pandas
 
 from enda.estimators import EndaEstimator

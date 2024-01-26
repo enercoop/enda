@@ -15,10 +15,10 @@ class BackTesting:
 
     @staticmethod
     def yield_train_test(
-            df: pd.DataFrame,
-            start_eval_datetime: pd.Timestamp,
-            days_between_trains: int,
-            gap_days_between_train_and_eval: int = 0
+        df: pd.DataFrame,
+        start_eval_datetime: pd.Timestamp,
+        days_between_trains: int,
+        gap_days_between_train_and_eval: int = 0,
     ) -> Generator[(pd.DataFrame, pd.DataFrame)]:
         """
         Returns pairs of (train set, test set) to perform back-testing on the data
@@ -32,10 +32,6 @@ class BackTesting:
         :return: a generator of (train set, test set) pairs
         """
 
-        if not (start_eval_datetime.hour == start_eval_datetime.minute
-                == start_eval_datetime.second == start_eval_datetime.microsecond == 0):
-            raise ValueError("start_eval_datetime must be datetime with only years, months or days (not more precise),"
-                             f" but given: {type(start_eval_datetime)}, {start_eval_datetime}")
         if not (
             start_eval_datetime.hour
             == start_eval_datetime.minute
@@ -45,9 +41,18 @@ class BackTesting:
         ):
             raise ValueError(
                 "start_eval_datetime must be datetime with only years, months or days (not more precise),"
-                " but given: {}, {}".format(
-                    type(start_eval_datetime), start_eval_datetime
-                )
+                f" but given: {type(start_eval_datetime)}, {start_eval_datetime}"
+            )
+        if not (
+            start_eval_datetime.hour
+            == start_eval_datetime.minute
+            == start_eval_datetime.second
+            == start_eval_datetime.microsecond
+            == 0
+        ):
+            raise ValueError(
+                "start_eval_datetime must be datetime with only years, months or days (not more precise),"
+                f" but given: {type(start_eval_datetime)}, {start_eval_datetime}"
             )
 
         # initialize date-times: end_train, start_test and end_test
@@ -64,12 +69,16 @@ class BackTesting:
 
         if isinstance(df.index, pd.DatetimeIndex):
             if str(df.index.tz) != str(start_eval_datetime.tzinfo):
-                raise ValueError(f"df.index (tzinfo={df.index.tz}) and start_eval_datetime "
-                                 f"(tzinfo={start_eval_datetime.tzinfo}) must have the same tzinfo.")
+                raise ValueError(
+                    f"df.index (tzinfo={df.index.tz}) and start_eval_datetime "
+                    f"(tzinfo={start_eval_datetime.tzinfo}) must have the same tzinfo."
+                )
 
             if start_eval_datetime <= df.index.min():
-                raise ValueError(f"start_eval_datetime ({start_eval_datetime,}) must be after the beginning of df "
-                                 f"({df.index.min()})")
+                raise ValueError(
+                    f"start_eval_datetime ({start_eval_datetime,}) must be after the beginning of df "
+                    f"({df.index.min()})"
+                )
 
             # go through the dataset and yield pairs of (train set, test set)
             while start_test < df.index.max():
@@ -95,18 +104,26 @@ class BackTesting:
                 )
 
             if not isinstance(df.index.levels[1], pd.DatetimeIndex):
-                raise TypeError(f"The second index of the dataframe should be a pd.DatetimeIndex, but given"
-                                f" {df.index.levels[1].dtype}")
+                raise TypeError(
+                    f"The second index of the dataframe should be a pd.DatetimeIndex, but given"
+                    f" {df.index.levels[1].dtype}"
+                )
 
             time_col = df.index.levels[1].name
 
-            if str(df.index.get_level_values(time_col).tz) != str(start_eval_datetime.tzinfo):
-                raise ValueError(f"df.index (tzinfo={df.index.get_level_values(time_col).tz}) and start_eval_datetime "
-                                 f"(tzinfo={start_eval_datetime.tzinfo}) must have the same tzinfo.")
+            if str(df.index.get_level_values(time_col).tz) != str(
+                start_eval_datetime.tzinfo
+            ):
+                raise ValueError(
+                    f"df.index (tzinfo={df.index.get_level_values(time_col).tz}) and start_eval_datetime "
+                    f"(tzinfo={start_eval_datetime.tzinfo}) must have the same tzinfo."
+                )
 
             if start_eval_datetime <= df.index.get_level_values(time_col).min():
-                raise ValueError(f"start_eval_datetime ({start_eval_datetime}) must be after the beginning of df "
-                                 f"({df.index.get_level_values(time_col).min()})")
+                raise ValueError(
+                    f"start_eval_datetime ({start_eval_datetime}) must be after the beginning of df "
+                    f"({df.index.get_level_values(time_col).min()})"
+                )
 
             # go through the dataset and yield pairs of (train set, test set)
             while start_test < df.index.get_level_values(time_col).max():
