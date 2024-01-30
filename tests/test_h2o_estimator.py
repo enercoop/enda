@@ -16,8 +16,11 @@ try:
     from h2o.estimators import H2ODeepLearningEstimator
 
 except ImportError as e:
-    raise ImportError("h2o is required is you want to test enda's H2OEstimator. "
-                      "Try: pip install h2o>=3.32.0.3", e)
+    raise ImportError(
+        "h2o is required is you want to test enda's H2OEstimator. "
+        "Try: pip install h2o>=3.32.0.3",
+        e,
+    )
 
 try:
     import joblib
@@ -29,10 +32,9 @@ from enda.ml_backends.h2o_estimator import EndaH2OEstimator
 
 
 class TestH2OEstimator(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
-        """ initialize a local h2o server to tests h2o backend"""
+        """initialize a local h2o server to tests h2o backend"""
         logging.captureWarnings(True)
         logging.disable(logging.ERROR)
         h2o.init(nthreads=-1)  # starts an h2o local server
@@ -40,9 +42,9 @@ class TestH2OEstimator(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        """ shutdown the local h2o server """
+        """shutdown the local h2o server"""
         logging.captureWarnings(False)
-        logging.disable(logging.NOTSET)       
+        logging.disable(logging.NOTSET)
         h2o.cluster().shutdown()  # shutdown h2o local server
         # print("H2O cluster shutdown...")
         time.sleep(3)  # wait for h2o to actually finish shutting down
@@ -55,7 +57,7 @@ class TestH2OEstimator(unittest.TestCase):
             H2OXGBoostEstimator(),
             H2OGradientBoostingEstimator(),
             H2ORandomForestEstimator(),
-            H2ODeepLearningEstimator()
+            H2ODeepLearningEstimator(),
         ]:
             # print(type(estimator))
             m = EndaH2OEstimator(estimator)
@@ -71,7 +73,9 @@ class TestH2OEstimator(unittest.TestCase):
         m = EndaH2OEstimator(H2OGeneralizedLinearEstimator())
         m.train(train_set, target_name)
 
-        file_path_joblib = os.path.join(TestUtils.EXAMPLE_A_DIR, "tmp_test_joblib_h2o_estimator.joblib")
+        file_path_joblib = os.path.join(
+            TestUtils.EXAMPLE_A_DIR, "tmp_test_joblib_h2o_estimator.joblib"
+        )
         joblib.dump(m, file_path_joblib)
 
         # shutdown h2o local server and start another to tests persistence
@@ -100,7 +104,9 @@ class TestH2OEstimator(unittest.TestCase):
         m = EndaH2OEstimator(H2OGeneralizedLinearEstimator())
         m.train(train_set, target_name)
 
-        file_path_pickle = os.path.join(TestUtils.EXAMPLE_A_DIR, "tmp_test_pickle_h2o_estimator.pickle")
+        file_path_pickle = os.path.join(
+            TestUtils.EXAMPLE_A_DIR, "tmp_test_pickle_h2o_estimator.pickle"
+        )
         with open(file_path_pickle, "wb") as file:
             pickle.dump(m, file)
 
@@ -126,9 +132,10 @@ class TestH2OEstimator(unittest.TestCase):
 
         for estimator in [
             H2OXGBoostEstimator(),
-            H2OGradientBoostingEstimator(ntrees=10, max_depth=5, sample_rate=0.5, min_rows=5)
+            H2OGradientBoostingEstimator(
+                ntrees=10, max_depth=5, sample_rate=0.5, min_rows=5
+            ),
         ]:
-
             m = EndaH2OEstimator(estimator)
             m.train(train_set, target_name)
 
@@ -142,16 +149,22 @@ class TestH2OEstimator(unittest.TestCase):
             copy.deepcopy(m_not_trained)
 
     def test_regular_h2o_save_load(self):
-        """ An example to show how to work with h2o models even with just the h2o functions """
+        """An example to show how to work with h2o models even with just the h2o functions"""
         train_set, test_set, target_name = TestUtils.read_example_a_train_test_sets()
         m = EndaH2OEstimator(H2OGeneralizedLinearEstimator())
         m.train(train_set, target_name)
 
-        file_path_1 = os.path.join(TestUtils.EXAMPLE_A_DIR, "test_regular_h2o_save_load_1")
-        file_path_2 = os.path.join(TestUtils.EXAMPLE_A_DIR, "test_regular_h2o_save_load_2")
+        file_path_1 = os.path.join(
+            TestUtils.EXAMPLE_A_DIR, "test_regular_h2o_save_load_1"
+        )
+        file_path_2 = os.path.join(
+            TestUtils.EXAMPLE_A_DIR, "test_regular_h2o_save_load_2"
+        )
 
         # "regular" save
-        model_path_from_h2o = h2o.save_model(model=m.model, path=file_path_1, force=True)
+        model_path_from_h2o = h2o.save_model(
+            model=m.model, path=file_path_1, force=True
+        )
         shutil.move(src=model_path_from_h2o, dst=file_path_2)
         shutil.rmtree(file_path_1)
 

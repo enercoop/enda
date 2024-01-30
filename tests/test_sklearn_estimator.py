@@ -15,12 +15,14 @@ try:
     from sklearn.feature_selection import SelectFromModel
     from sklearn.neural_network import MLPRegressor
 except ImportError as e:
-    raise ImportError("scikit-learn is required is you want to test enda's EndaSklearnEstimator. "
-                      "Try: pip install scikit-learn>=0.24.1", e)
+    raise ImportError(
+        "scikit-learn is required is you want to test enda's EndaSklearnEstimator. "
+        "Try: pip install scikit-learn>=0.24.1",
+        e,
+    )
 
 
 class TestEndaSklearnEstimator(unittest.TestCase):
-
     def setUp(self):
         logging.captureWarnings(True)
         logging.disable(logging.ERROR)
@@ -36,19 +38,40 @@ class TestEndaSklearnEstimator(unittest.TestCase):
             LinearRegression(),
             AdaBoostRegressor(),
             SVR(),
-            Pipeline([('poly', PolynomialFeatures(degree=3)),
-                      ('linear', LinearRegression(fit_intercept=False))]),
-            Pipeline([('standard_scaler', StandardScaler()),
-                      ('sgd_regressor', SGDRegressor())]),
+            Pipeline(
+                [
+                    ("poly", PolynomialFeatures(degree=3)),
+                    ("linear", LinearRegression(fit_intercept=False)),
+                ]
+            ),
+            Pipeline(
+                [
+                    ("standard_scaler", StandardScaler()),
+                    ("sgd_regressor", SGDRegressor()),
+                ]
+            ),
             KNeighborsRegressor(n_neighbors=10),
             GaussianProcessRegressor(),
-            Pipeline([('feature_selection', SelectFromModel(LinearSVR())),
-                      ('classification', RandomForestRegressor())]),
-            Pipeline([
-                ('standard_scaler', StandardScaler()),
-                ('mlp_regressor', MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(5, 5), random_state=1))]
+            Pipeline(
+                [
+                    ("feature_selection", SelectFromModel(LinearSVR())),
+                    ("classification", RandomForestRegressor()),
+                ]
             ),
-
+            Pipeline(
+                [
+                    ("standard_scaler", StandardScaler()),
+                    (
+                        "mlp_regressor",
+                        MLPRegressor(
+                            solver="lbfgs",
+                            alpha=1e-5,
+                            hidden_layer_sizes=(5, 5),
+                            random_state=1,
+                        ),
+                    ),
+                ]
+            ),
         ]:
             m = EndaSklearnEstimator(estimator)
             m.train(train_set, target_name)
