@@ -5,6 +5,7 @@ import datetime
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_datetime64_any_dtype as is_datetime
 
 from enda.decorators import handle_multiindex
 
@@ -20,6 +21,7 @@ class DatetimeFeature:
         split_list: list[str] = None,
         index: bool = True,
         colname: str = None,
+        a: int = 0,
     ) -> pd.DataFrame:
         """
         Split a specific datetime column or datetime index into different date and time attributes (given by split list)
@@ -31,6 +33,8 @@ class DatetimeFeature:
         :param colname: str (only if index=False)
         :return: pd.DataFrame with new columns (split_list)
         """
+
+        print(a)
 
         if index is False and colname is None:
             raise ValueError(
@@ -79,7 +83,11 @@ class DatetimeFeature:
                     df_split[split] = getattr(df.index, split)
 
         else:
-            if colname not in list(df.select_dtypes(include=[np.datetime64])):
+            if colname not in df.columns:
+                raise AttributeError(
+                    f"Specified colname {colname} is not a column of the input DataFrame"
+                )
+            if not is_datetime(df[colname]):
                 raise TypeError(
                     f"{colname} is not a datetime column : {df[[colname]].dtypes}"
                 )
@@ -119,10 +127,10 @@ class DatetimeFeature:
         )
 
     @staticmethod
-    def daylight_saving_time_dates() -> pd.DataFrame:
+    def daylight_saving_time_dates(tz: str = "Europe/Paris") -> pd.DataFrame:
         """
         Return a pd.Dataframe with
-        - as index : the dates when daylight saving time starts or ends
+        - as index : the dates when daylight saving time starts or ends for the specified timezone
         - as column : the number of hour in this particular day (23 or 25)
         Example :
                                    nb_hour
@@ -136,7 +144,7 @@ class DatetimeFeature:
 
         df = pd.DataFrame(
             index=pd.date_range(
-                "1995-01-01", "2030-01-01", freq="H", tz="Europe/Paris", closed="left"
+                "1995-01-01", "2030-01-01", freq="H", tz=tz, closed="left"
             )
         )
         df["nb_hour"] = df.index.hour
@@ -195,7 +203,7 @@ class DatetimeFeature:
         Encoding method : for each attribute, cosinus and sinus are provided.
         Return the DataFrame df with the new columns.
         :param df: The input DataFrame with a DatetimeIndex
-        :param split_list: attributes in ['hour', 'day', 'month', 'dayofweek', 'dayofyear']
+        :param split_list: attributes in ['minute', 'minuteofday', 'hour', 'day', 'month', 'dayofweek', 'dayofyear']
         :return: pd.DataFrame with new columns ['hour_cos', 'hour_sin', 'day_cos', ...]
         """
 
@@ -260,7 +268,7 @@ class DatetimeFeature:
             )
 
             df_split = df_split.drop(columns=split)
-            df_split = df_split.drop(columns="f{split}_max")
+            df_split = df_split.drop(columns=f"{split}_max")
 
         result = pd.concat([df, df_split], axis=1, join="inner", verify_integrity=True)
 
@@ -271,7 +279,7 @@ class DatetimeFeature:
         """
         This function makes successive calls to encode_cyclic_datetime_index() and to split_datetime()
         :param df: The input DataFrame with a DatetimeIndex
-        :param split_list: attributes in ['hour', 'day', 'month', 'dayofweek', 'dayofyear']
+        :param split_list: attributes in ['minute', 'minuteofday', 'hour', 'day', 'month', 'dayofweek', 'dayofyear']
         :return: The DataFrame with new columns resulting from encoding/splitting
         """
         result = DatetimeFeature.encode_cyclic_datetime_index(df, split_list)

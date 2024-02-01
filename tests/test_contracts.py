@@ -1,8 +1,9 @@
 import logging
 import os
-import pandas as pd
 import pathlib
 import unittest
+import numpy as np
+import pandas as pd
 
 from enda.contracts import Contracts
 from enda.timeseries import TimeSeries
@@ -25,31 +26,104 @@ class TestContracts(unittest.TestCase):
         self.assertEqual((7, 12), contracts.shape)
 
     def test_check_contracts_dates(self):
-        contracts = Contracts.read_contracts_from_file(
-            TestContracts.CONTRACTS_PATH,
-            date_start_col="date_start",
-            date_end_exclusive_col="date_end_exclusive",
-            date_format="%Y-%m-%d",
+        dummy_contracts_df = pd.DataFrame(
+            data=[
+                {
+                    "station": "station1",
+                    "date_start": pd.Timestamp(year=2023, month=1, day=1),
+                    "date_end_excl": pd.Timestamp(year=2024, month=1, day=1),
+                },
+                {
+                    "station": "station2",
+                    "date_start": pd.Timestamp(year=2023, month=1, day=1),
+                    "date_end_excl": np.nan,
+                },
+            ]
         )
 
-        # check that it fails if the given date_start_col is not there
+        # Check that specifying a wrong column name raises an error
         with self.assertRaises(ValueError):
             Contracts.check_contracts_dates(
-                contracts,
+                dummy_contracts_df,
                 date_start_col="dummy",
-                date_end_exclusive_col="date_end_exclusive",
+                date_end_exclusive_col="date_end_excl",
             )
 
-        # check that it fails if one contract ends before it starts
-        c = contracts.copy(deep=True)
-        # set a wrong date_end_exclusive for the first contract
-        c.loc[0, "date_end_exclusive"] = pd.to_datetime("2020-09-16")
+        # Check that having localized timestamps with is_naive=True raises an error
+
+        error_localized_df = dummy_contracts_df.copy()
+        error_localized_df.loc[1, "date_end_excl"] = pd.Timestamp(
+            year=2024, month=1, day=1, tz="Europe/Paris"
+        )
+
         with self.assertRaises(ValueError):
             Contracts.check_contracts_dates(
-                c,
+                error_localized_df,
                 date_start_col="date_start",
-                date_end_exclusive_col="date_end_exclusive",
+                date_end_exclusive_col="date_end_excl",
+                is_naive=True,
             )
+
+        # Check that having non-timestamps values in date cols raises an errr
+
+        str_df = dummy_contracts_df.copy()
+        str_df.loc[0, "date_start"] = "I forgot to put a date"
+        with self.assertRaises(ValueError):
+            Contracts.check_contracts_dates(
+                str_df,
+                date_start_col="date_start",
+                date_end_exclusive_col="date_end_excl",
+            )
+
+        # Check that having nan values in date_start column raises an error
+
+        nan_df = dummy_contracts_df.copy()
+        nan_df.loc[1, "date_start"] = np.nan
+
+        with self.assertRaises(ValueError):
+            Contracts.check_contracts_dates(
+                nan_df,
+                date_start_col="date_start",
+                date_end_exclusive_col="date_end_excl",
+            )
+
+        # Check that having a contract end date earlier than the start date raises an error
+
+        end_before_start_df = dummy_contracts_df.copy()
+        end_before_start_df.loc[0, "date_end_excl"] = pd.Timestamp(
+            year=2022, month=12, day=31
+        )
+
+        with self.assertRaises(ValueError):
+            Contracts.check_contracts_dates(
+                end_before_start_df,
+                date_start_col="date_start",
+                date_end_exclusive_col="date_end_excl",
+            )
+
+        # Check that the function works with naïve timestamps
+        Contracts.check_contracts_dates(
+            dummy_contracts_df,
+            date_start_col="date_start",
+            date_end_exclusive_col="date_end_excl",
+        )
+
+        # Check that the function works with localized timestamps and is_naive=False
+
+        localized_df = dummy_contracts_df.copy()
+        localized_df["date_start"] = localized_df["date_start"].dt.tz_localize(
+            "Europe/Paris"
+        )
+        localized_df["date_end_excl"] = localized_df["date_end_excl"].dt.tz_localize(
+            "Europe/Paris"
+        )
+
+        Contracts.check_contracts_dates(
+            localized_df,
+            date_start_col="date_start",
+            date_end_exclusive_col="date_end_excl",
+            is_naive=False,
+        )
 
     @staticmethod
     def get_simple_portfolio_by_day():

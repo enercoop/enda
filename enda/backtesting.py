@@ -43,17 +43,6 @@ class BackTesting:
                 "start_eval_datetime must be datetime with only years, months or days (not more precise),"
                 f" but given: {type(start_eval_datetime)}, {start_eval_datetime}"
             )
-        if not (
-            start_eval_datetime.hour
-            == start_eval_datetime.minute
-            == start_eval_datetime.second
-            == start_eval_datetime.microsecond
-            == 0
-        ):
-            raise ValueError(
-                "start_eval_datetime must be datetime with only years, months or days (not more precise),"
-                f" but given: {type(start_eval_datetime)}, {start_eval_datetime}"
-            )
 
         # initialize date-times: end_train, start_test and end_test
         if gap_days_between_train_and_eval > 0:
@@ -111,6 +100,7 @@ class BackTesting:
 
             time_col = df.index.levels[1].name
 
+            # TODO : this line fails if the DatetimeIndex col has no name
             if str(df.index.get_level_values(time_col).tz) != str(
                 start_eval_datetime.tzinfo
             ):

@@ -11,7 +11,7 @@ def handle_multiindex(func: Callable) -> Callable:
     This function is a wrapper around functions defined for a single dataframe with a datetime index so that
     they also work for multi-indexed dataframes. More specifically, functions designed for a
     dataframe with a DatetimeIndex also work for a two-levels dataframe defined with a first
-    index that defines a group, and a second index which is a DatetimeIndex.
+    index that defines a group, and a second index which is a DatetimeIndex. Both index levels must have a name.
     This function is meant to be used as a decorator.
     :param func: the function to decorate
     """
@@ -51,6 +51,11 @@ def handle_multiindex(func: Callable) -> Callable:
 
         key_col = df.index.levels[0].name
         date_col = df.index.levels[1].name
+
+        if not key_col or not date_col:
+            raise ValueError(
+                "Both index levels of the input DataFrame must be named"
+            )
 
         df_new = pd.DataFrame()
         for key, data in df.groupby(level=0, sort=False):

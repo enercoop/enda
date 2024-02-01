@@ -383,7 +383,7 @@ class Contracts:
                                 holt_fit_params={"initialization_method":"estimated"}
                                 For more details see the statsmodels documentation :
                                 https://www.statsmodels.org/stable/examples/notebooks/generated/exponential_smoothing.html
-        :param holt_fit_params: the dict of params to give to the Holt.fi() method. If none, defaults to : {}
+        :param holt_fit_params: the dict of params to give to the Holt.fit() method. If none, defaults to : {}
         :return: pd.DataFrame (the forecast data)
         """
 

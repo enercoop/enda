@@ -1,16 +1,24 @@
+"""A module for testing the TimezoneUtils class in enda/timezone_utils.py"""
+
 import unittest
+from datetime import datetime
 import pandas as pd
 import pytz
-from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from dateutil import parser as date_parser
 from enda.timezone_utils import TimezoneUtils
 
 
 class TestTimezoneUtils(unittest.TestCase):
+    """
+    This class aims at testing the functions of the TimezoneUtils class in enda/timezone_utils.py
+    """
+
     TZ_PARIS = pytz.timezone("Europe/Paris")
 
     def test_pandas_timestamp_bug(self):
+
+        # TODO : remove ? this is not a unit test
         dt = datetime(year=2019, month=10, day=27, hour=2)
         ts = pd.Timestamp(year=2019, month=10, day=27, hour=2)
         dt_bis = ts.to_pydatetime()
@@ -39,16 +47,23 @@ class TestTimezoneUtils(unittest.TestCase):
         self.assertEqual(dt2, dt_bis2)
 
     def test_is_timezone_aware(self):
+        """
+        Test the is_timezone_aware function
+        """
         for dt, is_aware in [
             (date_parser.isoparse("2018-10-28T00:00:00+02:00"), True),
             (date_parser.isoparse("2018-10-28T00:00:00Z"), True),
             (date_parser.isoparse("2018-10-28T00:00:00"), False),
             (pd.to_datetime("2018-10-28T00:00:00"), False),
             (pd.to_datetime("2018-10-28 00:00:00+02:00"), True),
+            (pd.Timestamp(year=2023, month=1, day=1), False),
+            (pd.Timestamp(year=2023, month=1, day=1, tz="UTC"), True)
         ]:
             self.assertEqual(TimezoneUtils.is_timezone_aware(dt), is_aware)
 
     def test_add_interval_day_dt(self):
+        """Test the add_interval_day_dt function"""
+
         # expect error when day_dt is not an exact day
         self.assertRaises(
             ValueError,
@@ -61,7 +76,7 @@ class TestTimezoneUtils(unittest.TestCase):
         self.assertRaises(
             ValueError,
             TimezoneUtils.add_interval_to_day_dt,
-            day_dt=pd.to_datetime("2018-03-24T00:01:00+01"),
+            day_dt=pd.to_datetime("2018-03-24T00:00:00+01"),
             interval=relativedelta(minutes=5),
         )
 
