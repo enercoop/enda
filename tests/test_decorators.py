@@ -1,5 +1,4 @@
 import logging
-import numpy as np
 import pandas as pd
 import unittest
 
@@ -12,76 +11,152 @@ class TestDecorator(unittest.TestCase):
         logging.captureWarnings(True)
         logging.disable(logging.ERROR)
 
-        np.random.seed(10)
+        # datetime index / series ; unordered and duplicates
+        self.test_dti = pd.DatetimeIndex(['2024-01-01', '2023-01-01', '2023-01-01', '2025-01-01'])
+        self.test_str_series = pd.Series(['2024-01-01', '2023-01-01', '2023-01-01', '2025-01-01'])
+        self.test_series = self.test_dti.to_series().reset_index(drop=True)
 
-        # create a dummy dataframe with a basic DatetimeIndex: it spans
-        # 10 days, with a dummy column where half values are 0, and other are 1
-        dummy_single_df = pd.date_range(
-            start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
-            end=pd.to_datetime('2021-01-10 00:00:00+01:00').tz_convert('Europe/Paris'),
-            freq='D',
-            tz='Europe/Paris',
-            name='date'
-        ).to_frame()
-        dummy_single_df = dummy_single_df.set_index('date')
-        dummy_single_df["value"] = [0] * 5 + [1] * 5
-        self.dummy_single_df = dummy_single_df.copy(deep=True)
-        
-        # create a another dummy dataframe with random fill of values 
-        # to make it more complex, we will drop the last date
-        dummy_other_df = dummy_single_df.copy(deep=True)
-        dummy_other_df = dummy_other_df.iloc[:-1, :]
-        dummy_other_df["value"] = np.random.uniform(0, 1, dummy_other_df.shape[0])
+        # single-indexed dataframe
+        self.single_df = (
+            pd.date_range(start=pd.to_datetime('2021-01-01'),
+                          end=pd.to_datetime('2021-01-06'),
+                          freq='D',
+                          )
+            .to_frame(name='date')
+            .set_index('date')
+            .assign(value=[0] * 3 + [1] * 3)
+        )
 
-        # use both dataframes to create a multiindex dataframe
-        dummy_single_df["id"] = 'static'
-        dummy_other_df["id"] = 'rand'  
-        dummy_multi_df = pd.concat([dummy_single_df, dummy_other_df], axis=0)
-        self.dummy_multi_df = dummy_multi_df.reset_index().set_index(['id', 'date'])
+        # multi-indexed dataframe
+        other_df = (
+            self.single_df.copy()
+            .iloc[:-1, :]  # to make it more complex, we will drop the last date
+            .assign(value=[-1] * 3 + [-2] * 2)
+        )
+        self.multi_df = (
+            pd.concat([self.single_df.copy().assign(id='first'), other_df.assign(id='second')], axis=0)
+            .reset_index()
+            .set_index(['id', 'date'])
+        )
+
+        # 3-levels multi-indexed dataframe
+        self.multi_levels_df = (
+            self.multi_df.copy()
+            .assign(is_before_3=self.multi_df.index.get_level_values("date").day < 3)
+            .reset_index().
+            set_index(["id", "is_before_3", "date"])
+        )
 
     def tearDown(self):
         logging.captureWarnings(False)
         logging.disable(logging.NOTSET)
 
-    def test_1(self):
-        # a basic test with the input properly given as a  
+    def test_handle_series_as_datetimeindex_default_behaviour(self):
 
-        @enda.decorators.handle_multiindex
-        def mock_max_function_change_index(df, target_col):
-            '''
-            Dummy function meant to test the decorator. 
-            It sets 'value' to the max, and change the index name
-            '''
-            df[target_col] = df[target_col].max()
-            df.index.name = 'time'
-            return df
+        # test with a function working only on datetimeindex, performing an action on itself
+        @enda.decorators.handle_series_as_datetimeindex()
+        def tz_localize_time_series(time_series: pd.DatetimeIndex) -> pd.DatetimeIndex:
+            return time_series.tz_localize('Europe/Paris')  # would require dt. to work with Series, usually
+
+        # test with dti
+        result_dti = tz_localize_time_series(time_series=self.test_dti)
+
+        # test with series
+        result_series = tz_localize_time_series(time_series=self.test_series)
+
+        # test with dti and args instead of kwargs
+        result_dti = tz_localize_time_series(self.test_dti)
+
+        # test with series and args instead of kwargs
+        result_series = tz_localize_time_series(self.test_series)
+
+    def test_handle_series_as_datetimeindex_overload_decorator_parameters(self):
+
+        # test with a function working only on datetimeindex, performing an action on itself
+        # we change the arg name, and the return type
+        @enda.decorators.handle_series_as_datetimeindex(arg_name='dti', return_input_type=False)
+        def tz_localize_time_series(dti: pd.DatetimeIndex) -> pd.DatetimeIndex:
+            return dti.tz_localize('Europe/Paris')
+
+        # test with dti
+        result_dti = tz_localize_time_series(dti=self.test_dti)
+
+        # test with series
+        # shall return a dti
+        result_dti = tz_localize_time_series(dti=self.test_series)
+
+        # test with dti and args instead of kwargs
+        result_dti = tz_localize_time_series(self.test_dti)
+
+        # test with series and args instead of kwargs
+        # shall return a dti
+        result_dti = tz_localize_time_series(self.test_series)
+
+    def test_handle_multiindex_return_float(self):
+
+        # Test handle_multiindex in the case it returns a single value
+        @enda.decorators.handle_multiindex()
+        def compute_mean_as_float(df: pd.DataFrame):
+            return df.mean().squeeze()
        
-        # test the single index 
-        result_df = mock_max_function_change_index(self.dummy_single_df, target_col='value')
+        # test over single_df
+        result_df = compute_mean_as_float(self.single_df)
 
-        self.assertTrue((result_df.index == self.dummy_single_df.index).all())
-        self.assertEqual(0, result_df['value'].isna().sum())    
-        self.assertEqual(result_df['value'].nunique(), 1)
-        self.assertAlmostEqual(result_df['value'].max(), 1, places=3)
+        # test over multi_df
+        result_df = compute_mean_as_float(self.multi_df)
 
-        # test the multi index 
-        result_df = mock_max_function_change_index(self.dummy_multi_df, target_col='value')
-        
-        self.assertTrue((result_df.index == self.dummy_multi_df.index).all())
-        self.assertEqual(0, result_df['value'].isna().sum())    
-        self.assertEqual(result_df.loc[['static'], 'value'].nunique(), 1)
-        self.assertEqual(result_df.loc[['static'], 'value'].max(), 1)
-        self.assertEqual(result_df.loc[['rand'], 'value'].nunique(), 1)
-        self.assertAlmostEqual(result_df.loc[['rand'], 'value'].max(), 0.77132064, places=5)
+        # test over multi_levels_df
+        result_df = compute_mean_as_float(self.multi_levels_df)
 
-    def test_2(self):
+    def test_handle_multiindex_return_series(self):
 
-        # test with a function that does not return a dataframe. 
-        # It must not work with a multiindex, and a TypeError is raised. 
+        # Test handle_multiindex in the case it returns a single value
+        @enda.decorators.handle_multiindex()
+        def compute_mean_as_series(df: pd.DataFrame):
+            return df.mean()
 
-        @enda.decorators.handle_multiindex
-        def mock_max_function_error(df, target_col):
-            return df[target_col].max()
+        # test over single_df
+        result_df = compute_mean_as_series(self.single_df)
 
-        with self.assertRaises(TypeError):
-            mock_max_function_error(self.dummy_multi_df, target_col='value')
+        # test over multi_df
+        result_df = compute_mean_as_series(self.multi_df)
+
+        # test over multi_levels_df
+        result_df = compute_mean_as_series(self.multi_levels_df)
+
+    def test_handle_multiindex_return_same_index(self):
+
+        # Test handle_multiindex in the case it returns a dataframe with the same index
+        @enda.decorators.handle_multiindex(arg_name='test_df')
+        def add_one(test_df: pd.DataFrame, col_name='value'):
+            test_df = test_df.copy()
+            test_df[col_name] += 1
+            return test_df
+
+        # test over single_df
+        result_df = add_one(self.single_df, col_name='value')
+        # self.assertEqual(result_df)
+
+        # test over multi_df
+        # also test kwargs
+        result_df = add_one(col_name='value', test_df=self.multi_df)
+
+        # test over multi_levels_df
+        result_df = add_one(self.multi_levels_df)
+
+    def test_handle_multiindex_return_new_index(self):
+
+        # Test handle_multiindex in the case it returns a dataframe with a new index
+        @enda.decorators.handle_multiindex(arg_name='timeseries_df')
+        def twelve_hours_resampler(timeseries_df: pd.DataFrame):
+            return timeseries_df.resample("12H").ffill()
+
+        # test over single_df
+        result_df = twelve_hours_resampler(self.single_df)
+        # self.assertEqual(result_df)
+
+        # test over multi_df
+        result_df = twelve_hours_resampler(self.multi_df)
+
+        # test over multi_levels_df
+        result_df = twelve_hours_resampler(self.multi_levels_df)
