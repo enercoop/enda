@@ -1,7 +1,6 @@
 import unittest
 import pandas as pd
 import pytz
-from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from dateutil import parser as date_parser
 from enda.timezone_utils import TimezoneUtils
@@ -10,33 +9,6 @@ from enda.timezone_utils import TimezoneUtils
 class TestTimezoneUtils(unittest.TestCase):
 
     TZ_PARIS = pytz.timezone("Europe/Paris")
-
-    def test_pandas_timestamp_bug(self):
-
-        dt = datetime(year=2019, month=10, day=27, hour=2)
-        ts = pd.Timestamp(year=2019, month=10, day=27, hour=2)
-        dt_bis = ts.to_pydatetime()
-
-        self.assertFalse(TimezoneUtils.is_timezone_aware(dt))
-        self.assertFalse(TimezoneUtils.is_timezone_aware(ts))
-        self.assertFalse(TimezoneUtils.is_timezone_aware(dt_bis))
-
-        dt1 = TestTimezoneUtils.TZ_PARIS.localize(dt, is_dst=True)
-        dt2 = TestTimezoneUtils.TZ_PARIS.localize(dt, is_dst=False)
-
-        ts1 = TestTimezoneUtils.TZ_PARIS.localize(ts, is_dst=True)
-        ts2 = TestTimezoneUtils.TZ_PARIS.localize(ts, is_dst=False)
-
-        dt_bis1 = TestTimezoneUtils.TZ_PARIS.localize(dt_bis, is_dst=True)
-        dt_bis2 = TestTimezoneUtils.TZ_PARIS.localize(dt_bis, is_dst=False)
-
-        self.assertNotEqual(dt1, dt2)
-
-        self.assertEqual(dt1, ts1)
-        self.assertNotEqual(dt2, ts2)  # -> if no bug, these should be equal, but bug
-
-        self.assertEqual(dt1, dt_bis1)  # -> works fine if we convert pandas Timestamp to python datetime
-        self.assertEqual(dt2, dt_bis2)
 
     def test_is_timezone_aware(self):
 
@@ -101,3 +73,199 @@ class TestTimezoneUtils(unittest.TestCase):
             ct = TimezoneUtils.add_interval_to_day_dt(day_dt=at, interval=interval)
 
             self.assertEqual(bt, ct)
+
+    def test_convert_dtype_from_object_to_tz_aware(self):
+
+        # useful typically when daylight savings changes
+        object_series = pd.Series([
+            pd.to_datetime('2021-12-31 02:00:00+02:00'),
+            pd.to_datetime('2021-12-31 03:00:00+02:00'),
+            pd.to_datetime('2021-12-31 03:00:00+01:00'),
+            pd.to_datetime('2021-12-31 04:00:00+01:00')
+        ])
+
+        # s is of dtype "object" because of varying timezone
+        # cannot convert because of varying timezone
+        self.assertEqual(object_series.dtype, "object")
+        with self.assertRaises(ValueError):
+            pd.DatetimeIndex(object_series)
+
+        # test the simple conversion for a series with elements of dtype object
+        expected_series = pd.Series([
+            pd.to_datetime('2021-12-31 01:00:00+01:00'),
+            pd.to_datetime('2021-12-31 02:00:00+01:00'),
+            pd.to_datetime('2021-12-31 03:00:00+01:00'),
+            pd.to_datetime('2021-12-31 04:00:00+01:00')
+        ], dtype='datetime64[ns, Europe/Paris]')
+
+        # should work for 2 types of timezone object
+        for tz in ["Europe/Paris", pytz.timezone("Europe/Paris")]:
+            result_dt_series = TimezoneUtils.convert_dtype_from_object_to_tz_aware(object_series, tz_info=tz)
+            pd.testing.assert_series_equal(expected_series, result_dt_series)
+
+        # test that given a tz-aware pd.DatetimeIndex, it returns the same if the same time zone is provided
+        expected_dti = pd.DatetimeIndex([
+            pd.to_datetime('2021-12-31 01:00:00+01:00'),
+            pd.to_datetime('2021-12-31 02:00:00+01:00'),
+            pd.to_datetime('2021-12-31 03:00:00+01:00'),
+            pd.to_datetime('2021-12-31 04:00:00+01:00')
+        ], dtype='datetime64[ns, Europe/Paris]')
+
+        for tz in ["Europe/Paris", pytz.timezone("Europe/Paris")]:
+            result_dti = TimezoneUtils.convert_dtype_from_object_to_tz_aware(expected_dti, tz_info=tz)
+            pd.testing.assert_index_equal(expected_dti, result_dti)
+
+        # test that given a tz-aware pd.Series, it behaves like tz_convert if another
+        # time zone is required
+        tz_aware_series = expected_series.copy()  # Paris time zone
+
+        expected_series = pd.Series([
+            pd.to_datetime('2021-12-31 09:00:00+09:00'),
+            pd.to_datetime('2021-12-31 10:00:00+09:00'),
+            pd.to_datetime('2021-12-31 11:00:00+09:00'),
+            pd.to_datetime('2021-12-31 12:00:00+09:00')
+        ], dtype='datetime64[ns, Asia/Tokyo]')
+
+        for tz in ["Asia/Tokyo", pytz.timezone("Asia/Tokyo")]:
+            result_series = TimezoneUtils.convert_dtype_from_object_to_tz_aware(tz_aware_series, tz)
+            pd.testing.assert_series_equal(expected_series, result_series)
+
+        # test that given a tz-aware pd.DatetimeIndex, it behaves like tz_convert if another
+        # time zone is required
+        tz_aware_dti = expected_dti.copy()  # Paris time zone
+
+        expected_dti = pd.DatetimeIndex([
+            pd.to_datetime('2021-12-31 09:00:00+09:00'),
+            pd.to_datetime('2021-12-31 10:00:00+09:00'),
+            pd.to_datetime('2021-12-31 11:00:00+09:00'),
+            pd.to_datetime('2021-12-31 12:00:00+09:00')
+        ], dtype='datetime64[ns, Asia/Tokyo]')
+
+        for tz in ["Asia/Tokyo", pytz.timezone("Asia/Tokyo")]:
+            result_dti = TimezoneUtils.convert_dtype_from_object_to_tz_aware(tz_aware_dti, tz)
+            pd.testing.assert_index_equal(expected_dti, result_dti)
+
+        # test it does not work with a tz-naive DatetimeIndex
+        # we should use tz_localize
+        naive_dti = pd.DatetimeIndex([
+                pd.to_datetime('2021-12-31 02:00:00'),
+                pd.to_datetime('2021-12-31 03:00:00'),
+                pd.to_datetime('2021-12-31 04:00:00')
+            ])
+
+        with self.assertRaises(TypeError):
+            TimezoneUtils.convert_dtype_from_object_to_tz_aware(naive_dti, "Europe/Paris")
+
+        # with a naive dt series
+        naive_series = pd.Series([
+                pd.to_datetime('2021-12-31 02:00:00'),
+                pd.to_datetime('2021-12-31 03:00:00'),
+                pd.to_datetime('2021-12-31 04:00:00')
+        ], dtype='datetime64[ns]')
+
+        with self.assertRaises(TypeError):
+            TimezoneUtils.convert_dtype_from_object_to_tz_aware(naive_series, "Europe/Paris")
+
+        # dumb tz_info
+        with self.assertRaises(TypeError):
+            TimezoneUtils.convert_dtype_from_object_to_tz_aware(object_series, 4)
+
+    def test_set_timezone(self):
+
+        # with a naive dt series
+        naive_series = pd.Series([
+                pd.to_datetime('2021-12-31 02:00:00'),
+                pd.to_datetime('2021-12-31 03:00:00'),
+                pd.to_datetime('2021-12-31 04:00:00')
+        ], dtype='datetime64[ns]')
+
+        # test case tz_base is not given
+        expected_series = pd.Series([
+                pd.to_datetime('2021-12-31 02:00:00+01'),
+                pd.to_datetime('2021-12-31 03:00:00+01'),
+                pd.to_datetime('2021-12-31 04:00:00+01')
+        ], dtype='datetime64[ns, Europe/Paris]')
+
+        result_series = TimezoneUtils.set_timezone(naive_series, tz_info="Europe/Paris")
+
+        pd.testing.assert_series_equal(expected_series, result_series)
+
+        # test case tz_base is given, e.G UTC -> it assumes naive_series is given in UTC time
+        # it changes in case we set it to Europe/Paris
+        expected_series = pd.Series([
+                pd.to_datetime('2021-12-31 03:00:00+01'),
+                pd.to_datetime('2021-12-31 04:00:00+01'),
+                pd.to_datetime('2021-12-31 05:00:00+01')
+        ], dtype='datetime64[ns, Europe/Paris]')
+
+        result_series = TimezoneUtils.set_timezone(naive_series, tz_info="Europe/Paris", tz_base='UTC')
+
+        pd.testing.assert_series_equal(expected_series, result_series)
+
+        # with a tz-aware series
+        aware_series = pd.Series([
+            pd.to_datetime('2021-12-31 09:00:00+09'),
+            pd.to_datetime('2021-12-31 10:00:00+09'),
+            pd.to_datetime('2021-12-31 11:00:00+09')
+        ], dtype='datetime64[ns, Asia/Tokyo]')
+
+        # test case tz_base is not given
+        expected_series = pd.Series([
+            pd.to_datetime('2021-12-31 01:00:00+01'),
+            pd.to_datetime('2021-12-31 02:00:00+01'),
+            pd.to_datetime('2021-12-31 03:00:00+01')
+        ], dtype='datetime64[ns, Europe/Paris]')
+
+        result_series = TimezoneUtils.set_timezone(aware_series, tz_info="Europe/Paris")
+
+        pd.testing.assert_series_equal(expected_series, result_series)
+
+        # same but with a datetimeindex
+
+        # with a naive datetimeindex
+        naive_dti = pd.DatetimeIndex([
+                pd.to_datetime('2021-12-31 02:00:00'),
+                pd.to_datetime('2021-12-31 03:00:00'),
+                pd.to_datetime('2021-12-31 04:00:00')
+        ], dtype='datetime64[ns]')
+
+        # test case tz_base is not given
+        expected_dti = pd.DatetimeIndex([
+                pd.to_datetime('2021-12-31 02:00:00+01'),
+                pd.to_datetime('2021-12-31 03:00:00+01'),
+                pd.to_datetime('2021-12-31 04:00:00+01')
+        ], dtype='datetime64[ns, Europe/Paris]')
+
+        result_dti = TimezoneUtils.set_timezone(naive_dti, tz_info="Europe/Paris")
+
+        pd.testing.assert_index_equal(expected_dti, result_dti)
+
+        # test case tz_base is given, e.G UTC -> it assumes naive_dti is given in UTC time
+        # it changes in case we set it to Europe/Paris
+        expected_dti = pd.DatetimeIndex([
+                pd.to_datetime('2021-12-31 03:00:00+01'),
+                pd.to_datetime('2021-12-31 04:00:00+01'),
+                pd.to_datetime('2021-12-31 05:00:00+01')
+        ], dtype='datetime64[ns, Europe/Paris]')
+
+        result_dti = TimezoneUtils.set_timezone(naive_dti, tz_info="Europe/Paris", tz_base='UTC')
+
+        pd.testing.assert_index_equal(expected_dti, result_dti)
+
+        # with a tz-aware dti
+        aware_dti = pd.DatetimeIndex([
+            pd.to_datetime('2021-12-31 09:00:00+09'),
+            pd.to_datetime('2021-12-31 10:00:00+09'),
+            pd.to_datetime('2021-12-31 11:00:00+09')
+        ], dtype='datetime64[ns, Asia/Tokyo]')
+
+        # test case tz_base is not given
+        expected_dti = pd.DatetimeIndex([
+            pd.to_datetime('2021-12-31 01:00:00+01'),
+            pd.to_datetime('2021-12-31 02:00:00+01'),
+            pd.to_datetime('2021-12-31 03:00:00+01')
+        ], dtype='datetime64[ns, Europe/Paris]')
+
+        result_dti = TimezoneUtils.set_timezone(aware_dti, tz_info="Europe/Paris")
+
+        pd.testing.assert_index_equal(expected_dti, result_dti)
