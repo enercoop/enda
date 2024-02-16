@@ -106,11 +106,11 @@ def handle_series_as_datetimeindex(arg_name='time_series', return_input_type=Tru
     return decorator
 
 
-def warning_deprecated_name(old_namespace_name, new_namespace_name=None, new_function_name=None):
+def warning_deprecated_name(namespace_name, new_namespace_name=None, new_function_name=None):
     """
     This decorator with a parameter is meant to be used to issue a specific warning, namely that a function
     has been renamed, or moved in a new namespace. This is useful for classes that changed named, or will be deleted
-    :param old_namespace_name: the old namespace that contained the function
+    :param namespace_name: the namespace that contains the function. Might be the one to replace.
     :param new_namespace_name: the new namespace that contains the function
     :param new_function_name: the new name of the function
     """
@@ -118,9 +118,9 @@ def warning_deprecated_name(old_namespace_name, new_namespace_name=None, new_fun
     def decorator(func):
         @functools.wraps(func)
         def wrapper_warning_deprecated_name(*args, **kwargs):
-            warnings.warn(f"{func.__name__} in {old_namespace_name} is deprecated, use "
+            warnings.warn(f"{func.__name__} in {namespace_name} is deprecated, use "
                           f"{new_function_name if new_function_name is not None else 'it'}"
-                          f" from {old_namespace_name if new_namespace_name is None else new_namespace_name}"
+                          f" from {namespace_name if new_namespace_name is None else new_namespace_name}"
                           f" instead.",
                           DeprecationWarning,
                           stacklevel=2)
