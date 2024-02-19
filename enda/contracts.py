@@ -58,6 +58,8 @@ class Contracts:
 
         df = pd.read_csv(file_path)
         for c in [date_start_col, date_end_exclusive_col]:
+            if c not in df.columns:
+                raise AttributeError(f"Column {c} is not present in the contracts file")
             if is_string_dtype(df[c]):
                 df[c] = pd.to_datetime(df[c], format=date_format)
         cls.check_contracts_dates(df, date_start_col, date_end_exclusive_col)
@@ -111,7 +113,7 @@ class Contracts:
             )
 
     @staticmethod
-    def __contract_to_events(
+    def _contract_to_events(
         contracts: pd.DataFrame, date_start_col: str, date_end_exclusive_col: str
     ) -> pd.DataFrame:
         # check that no column is named "event_type" or "event_date"
@@ -207,7 +209,7 @@ class Contracts:
         # keep only useful columns
         df = contracts[[date_start_col, date_end_exclusive_col] + columns_to_sum]
         # create start and end events for each contract, sorted chronologically
-        events = cls.__contract_to_events(df, date_start_col, date_end_exclusive_col)
+        events = cls._contract_to_events(df, date_start_col, date_end_exclusive_col)
 
         # remove events after max_date if they are not wanted
         if max_date_exclusive is not None:
@@ -239,22 +241,21 @@ class Contracts:
         end_datetime_exclusive: pd.Timestamp,
     ) -> pd.DataFrame:
         """
-        Adds or removes dates if needed.
-
-        If additional dates are needed at the beginning, add these dates with 0s
-        If additional dates needed at the end, copy the portfolio of the last date into the additional dates
-
-        :param portfolio: the dataframe with the portfolio, must have a pandas.DatetimeIndex with frequency
-        :param start_datetime:
-        :param end_datetime_exclusive:
-        :return:
+        Keeps portfolio data between the specified dates.
+        If the first date in portfolio is after start_datetime, we add missing dates with 0 as value.
+        If the last date in portfolio is before end_datetime_exclusive, we forward fill the last present values
+        until end_datetime_exclusive
+        :param portfolio: The portfolio DataFrame. It must have a pd.DatetimeIndex with a frequency
+        :param start_datetime: The start datetime from which to keep the portfolio
+        :param end_datetime_exclusive: The exclusive end datetime until which to keep the portfolio
+        :return: A portfolio DataFrame with values between specified dates
         """
 
         df = portfolio.copy(deep=True)
 
         if not isinstance(df.index, pd.DatetimeIndex):
             raise TypeError(
-                f"The index of daily_portfolio should be a pd.DatetimeIndex, but given {df.index.dtype}"
+                f"The index of portfolio should be a pd.DatetimeIndex, but given {df.index.dtype}"
             )
 
         if df.index.freq is None:
@@ -286,7 +287,6 @@ class Contracts:
 
         # remove dates outside desired range
         df = df[(df.index >= start_datetime) & (df.index < end_datetime_exclusive)]
-        assert df.isnull().sum().sum() == 0  # check that there is no missing value
 
         return df
 

@@ -70,13 +70,14 @@ class PowerStations:
         stations: pd.DataFrame, date_start_col: str, date_end_exclusive_col: str
     ) -> pd.DataFrame:
         """
-        # TODO : change docstring once tested (and __contract_to_event documented / tested)
         This function is basically the same as Contracts.__contract_to_event()
         :param stations: The DataFrame containing station information
         :param date_start_col: The column containing start date information
         :param date_end_exclusive_col: The column containing exclusive end date information
         :return: A DataFrame containing events information
         """
+
+        # TODO : déprécier pour rediriger vers contracts._contract_to_events
 
         # check that no column is named "event_type" or "event_date"
         for c in ["event_type", "event_date"]:
@@ -151,7 +152,6 @@ class PowerStations:
             stations, date_start_col, date_end_exclusive_col
         )
 
-        # TODO : Make sure this is intended behaviour, maybe max_date_exclusive should be taken into account later
         # remove events after max_date if they are not wanted
         if max_date_exclusive is not None:
             events = events[events["event_date"] <= max_date_exclusive]

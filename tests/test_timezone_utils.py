@@ -1,7 +1,6 @@
 """A module for testing the TimezoneUtils class in enda/timezone_utils.py"""
 
 import unittest
-from datetime import datetime
 import pandas as pd
 import pytz
 from dateutil.relativedelta import relativedelta
@@ -16,36 +15,6 @@ class TestTimezoneUtils(unittest.TestCase):
 
     TZ_PARIS = pytz.timezone("Europe/Paris")
 
-    def test_pandas_timestamp_bug(self):
-
-        # TODO : remove ? this is not a unit test
-        dt = datetime(year=2019, month=10, day=27, hour=2)
-        ts = pd.Timestamp(year=2019, month=10, day=27, hour=2)
-        dt_bis = ts.to_pydatetime()
-
-        self.assertFalse(TimezoneUtils.is_timezone_aware(dt))
-        self.assertFalse(TimezoneUtils.is_timezone_aware(ts))
-        self.assertFalse(TimezoneUtils.is_timezone_aware(dt_bis))
-
-        dt1 = TestTimezoneUtils.TZ_PARIS.localize(dt, is_dst=True)
-        dt2 = TestTimezoneUtils.TZ_PARIS.localize(dt, is_dst=False)
-
-        ts1 = TestTimezoneUtils.TZ_PARIS.localize(ts, is_dst=True)
-        ts2 = TestTimezoneUtils.TZ_PARIS.localize(ts, is_dst=False)
-
-        dt_bis1 = TestTimezoneUtils.TZ_PARIS.localize(dt_bis, is_dst=True)
-        dt_bis2 = TestTimezoneUtils.TZ_PARIS.localize(dt_bis, is_dst=False)
-
-        self.assertNotEqual(dt1, dt2)
-
-        self.assertEqual(dt1, ts1)
-        self.assertNotEqual(dt2, ts2)  # -> if no bug, these should be equal, but bug
-
-        self.assertEqual(
-            dt1, dt_bis1
-        )  # -> works fine if we convert pandas Timestamp to python datetime
-        self.assertEqual(dt2, dt_bis2)
-
     def test_is_timezone_aware(self):
         """
         Test the is_timezone_aware function
@@ -57,7 +26,7 @@ class TestTimezoneUtils(unittest.TestCase):
             (pd.to_datetime("2018-10-28T00:00:00"), False),
             (pd.to_datetime("2018-10-28 00:00:00+02:00"), True),
             (pd.Timestamp(year=2023, month=1, day=1), False),
-            (pd.Timestamp(year=2023, month=1, day=1, tz="UTC"), True)
+            (pd.Timestamp(year=2023, month=1, day=1, tz="UTC"), True),
         ]:
             self.assertEqual(TimezoneUtils.is_timezone_aware(dt), is_aware)
 
