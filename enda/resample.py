@@ -114,6 +114,7 @@ class Resample:
             timeseries_df: pd.DataFrame,
             freq: Union[str, pd.Timedelta],
             index_name: str = None,
+            tz_info: Union[str, datetime.tzinfo] = None
     ) -> pd.DataFrame:
         """
         Upsample a datetime-indexed pd.DataFrame to a provided frequency and divide the values so that the sum
@@ -130,16 +131,26 @@ class Resample:
         :param timeseries_df: the dataframe with a datetime-like index
         :param freq: the aimed frequency. If given as string, it must be convertible to pd.Timedelta, eg '1D' or '1H'
         :param index_name: a name to give to the new index. For instance going from 'date' to 'time'.
+        :param tz_info: the target time zone in case the index is resampled in another timezone / or if we want to
+                        go from a non-localized timestamp (eg. dates) to a localized one (e.g. date-times)
+        :return: the upsampled timeseries dataframe
         """
 
         if not isinstance(timeseries_df.index, pd.DatetimeIndex):
             raise TypeError("The dataframe index must be a DatetimeIndex")
 
-        # check it's not a one-row dataframe, because it cannot be up-sampled.
+        # check it's not a one-row dataframe, because it cannot be upsampled.
         # Consider using forward_fill and give a gap_timedelta to achieve the objective.
         if enda.timeseries.TimeSeries.find_nb_records(timeseries_df.index) <= 1:
-            raise ValueError("Cannot upsample an empty or single-record time series; because it's initial"
+            raise ValueError("Cannot upsample an empty or single-record time series; because its initial"
                              " frequency cannot be determined. Consider using 'forward_fill_last_record prior.")
+
+        # get to copy
+        timeseries_df = timeseries_df.copy()
+
+        # set timezone in case it's been indicated
+        if tz_info is not None:
+            timeseries_df = enda.timezone_utils.TimezoneUtils.set_timezone(timeseries_df, tz_info)
 
         # get frequency from the initial dataframe
         original_freq = enda.timeseries.TimeSeries.find_most_common_frequency(timeseries_df.index)
@@ -180,7 +191,9 @@ class Resample:
     @staticmethod
     @enda.decorators.handle_multiindex(arg_name='timeseries_df')
     def upsample_monthly_data_and_divide_evenly(
-            timeseries_df: pd.DataFrame, freq: Union[str, pd.Timedelta]
+            timeseries_df: pd.DataFrame,
+            freq: Union[str, pd.Timedelta],
+            tz_info: Union[str, datetime.tzinfo] = None
     ) -> pd.DataFrame:
         """
         # @ TODO integrate to the previous function ?
@@ -194,6 +207,9 @@ class Resample:
         The provided frequency must be lower than the original one in the dataframe index.
         :param timeseries_df: the dataframe with a datetime-like index
         :param freq: the aimed frequency. If given as string, it must be convertible to pd.Timedelta, eg '1D' or '1H'
+        :param tz_info: the target time zone in case the index is resampled in another timezone / or if we want to
+                        go from a non-localized timestamp (eg. dates) to a localized one (e.g. date-times)
+        :return: the upsampled timeseries dataframe
         """
 
         if not isinstance(timeseries_df.index, pd.DatetimeIndex):
@@ -207,11 +223,16 @@ class Resample:
         if month_freq not in ['MS', 'M'] or amount_months != 1:
             raise ValueError(f"Frequency should be monthly but found {original_freq}")
 
+        resampled_df = timeseries_df.copy()
+
+        # set timezone in case it's been indicated
+        if tz_info is not None:
+            resampled_df = enda.timezone_utils.TimezoneUtils.set_timezone(resampled_df, tz_info)
+
         # resample using the aggregation function
         # We must artificially add one timestep to the original dataframe to make sure we don't miss time steps in the
         # new frequency. With the example of the docstring, if we don't do this the 2023-01-01 00:45:00 won't be
         # added when resampling which will make the sum of values in the numerical columns false
-        resampled_df = timeseries_df.copy()
         resampled_df.loc[resampled_df.index.max() + relativedelta(months=1)] = 0
         resampled_df = (
             resampled_df.resample(freq)
@@ -232,25 +253,35 @@ class Resample:
             forward_fill: bool = False,
             is_original_frequency_unique: bool = False,
             index_name: str = None,
+            tz_info: Union[str, datetime.tzinfo] = None
     ):
         """
         Upsample a datetime-indexed dataframe, and interpolate the columns data according to an interpolating method
         :param timeseries_df: the dataframe to resample
         :param freq: the target frequency (timedelta) e.g. 'H', '30min', '15min', etc.
         :param method: how are data interpolated between two consecutive dates (e.g. 'ffill', 'linear', etc.)
-        :param forward_fill: If True, the up-sampling is performed for the last element of the datetimeindex
+        :param forward_fill: If True, the upsampling is performed for the last element of the datetimeindex
         :param is_original_frequency_unique: check whether the frequency is unique in the initial dataframe
         :param index_name: a name to give to the new index. For instance going from 'date' to 'time'.
-        :return: a pd.DataFrame with a resampled index
+        :param tz_info: the target time zone in case the index is resampled in another timezone / or if we want to
+                        go from a non-localized timestamp (eg. dates) to a localized one (e.g. date-times)
+        :return: the upsampled timeseries dataframe
         """
 
-        if type(timeseries_df.index) != pd.DatetimeIndex:
+        if not isinstance(timeseries_df.index, pd.DatetimeIndex):
             raise TypeError("The dataframe index must be a DatetimeIndex")
 
-        # check it's not a one-row dataframe, because it cannot be up-sampled.
+        # check it's not a one-row dataframe, because it cannot be upsampled.
         if enda.timeseries.TimeSeries.find_nb_records(timeseries_df.index) <= 1:
             raise ValueError("Cannot upsample an empty or single-record time series; because it's initial"
                              " frequency cannot be determined. Consider using 'forward_fill_last_record prior.")
+
+        timeseries_df = timeseries_df.copy()
+
+        # set timezone in case it's been indicated
+        if tz_info is not None:
+            timeseries_df = enda.timezone_utils.TimezoneUtils.set_timezone(timeseries_df, tz_info)
+
         # get frequency from the initial dataframe
         original_freq = enda.timeseries.TimeSeries.find_most_common_frequency(
             timeseries_df.index
@@ -268,7 +299,7 @@ class Resample:
         if (enda.timeseries.TimeSeries.freq_as_approximate_nb_days(freq) >=
                 enda.timeseries.TimeSeries.freq_as_approximate_nb_days(original_freq)):
             raise ValueError(
-                f"The required frequency {freq}" f" is smaller than the original one {original_freq}"
+                f"The required frequency {freq}" f" is higher than the original one {original_freq}"
             )
         # resample and interpolate
         timeseries_df = timeseries_df.resample(freq).interpolate(method=method)
@@ -357,9 +388,10 @@ class Resample:
         Forward-fill the final record of a regular datetime-indexed dataframe, keeping the sampling of
         the initial time series.
         The index of the resulting dataframe is determined using the parameter 'gap_timedelta' so that
-        final_index = index + gap_timedelta.
+        the new index goes until gap_timedelta
         The resampling frequency is determined from the frequency of the initial dataframe.
-        The extra parameter 'cut_off_frequency' can be used to set up a limit not to overpass
+        The extra parameter 'cut_off' can be used to set up a limit not to overpass. It means max of index is
+        truncated to take into account the given cut-off.
         This function is typically used in junction with interpolate_freq_to_sub_freq() to forward-fill the last record
         (gap_timedelta in that case is the initial frequency of the dataframe before the interpolation).
 

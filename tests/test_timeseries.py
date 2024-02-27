@@ -15,9 +15,9 @@ class TestTimeSeries(unittest.TestCase):
         logging.disable(logging.ERROR)
 
         # define several frequencies
-        self.ok_freq_list = ['2d', '1MS', '3H', 'D', '10MS', '2Y', '2min', '1S',
-                             '2S', pd.Timedelta('10min'), pd.Timedelta('3D'), '1Q']
-        self.not_ok_freq_list = ['D2', '1MS2', 'DD', '-3D', '', 5]
+        self.ok_freq_list = ['2d', '1MS', '3H', 'D', '10MS', '2Y', '-3D', '2min', '+1S',
+                             '2S', '-d', pd.Timedelta('10min'), pd.Timedelta('3D'), '1Q']
+        self.not_ok_freq_list = ['D2', '1MS2', 'DD', '', 5]
 
         # define  datetime index and series of type datetime
         self.dti = pd.DatetimeIndex(['2024-01-01 01:00:00', '2024-01-01 02:00:00',
@@ -65,25 +65,22 @@ class TestTimeSeries(unittest.TestCase):
     # Frequencies / Timedelta
     # ------------------------
 
-    def test_get_amount_and_unit_from_freq(self):
+    def test_split_amount_and_unit_from_freq(self):
 
         # test with correct frequencies
         parsed_freq_list = [TimeSeries.split_amount_and_unit_from_freq(_) for _ in self.ok_freq_list]
 
-        expected_result_list = [(2, 'D'), (1, 'MS'), (3, 'H'), (1, 'D'), (10, 'MS'), (2, 'Y'), (2, 'MIN'), (1, 'S'),
-                                (2, 'S'), (10, 'T'), (3, 'D'), (1, 'Q')]
+        expected_result_list = [(2, 'D'), (1, 'MS'), (3, 'H'), (1, 'D'), (10, 'MS'), (2, 'Y'), (-3, 'D'),
+                                (2, 'MIN'), (1, 'S'), (2, 'S'), (-1, 'D'), (10, 'T'), (3, 'D'), (1, 'Q')]
 
         for result, expected_result in zip(parsed_freq_list, expected_result_list):
             self.assertEqual(result[0], expected_result[0])
             self.assertEqual(result[1], expected_result[1])
 
         # test with in fail frequencies
-        for freq in self.not_ok_freq_list[:-2]:
+        for freq in self.not_ok_freq_list[:-1]:
             with self.assertRaises(ValueError):
                 TimeSeries.split_amount_and_unit_from_freq(freq)
-
-        with self.assertRaises(IndexError):
-            TimeSeries.split_amount_and_unit_from_freq(self.not_ok_freq_list[-2])
 
         with self.assertRaises(TypeError):
             TimeSeries.split_amount_and_unit_from_freq(self.not_ok_freq_list[-1])
@@ -94,29 +91,18 @@ class TestTimeSeries(unittest.TestCase):
         parsed_freq_list = [TimeSeries.is_regular_freq(_) for _ in self.ok_freq_list]
 
         expected_result_list = [True, False, True, True, False, False, True, True,
-                                True, True, True, False]
+                                True, True, True, True, True, False]
 
         for result, expected_result in zip(parsed_freq_list, expected_result_list):
             self.assertEqual(result, expected_result)
-
-        # test with in fail frequencies
-        for freq in self.not_ok_freq_list[:-2]:
-            with self.assertRaises(ValueError):
-                TimeSeries.split_amount_and_unit_from_freq(freq)
-
-        with self.assertRaises(IndexError):
-            TimeSeries.split_amount_and_unit_from_freq(self.not_ok_freq_list[-2])
-
-        with self.assertRaises(TypeError):
-            TimeSeries.split_amount_and_unit_from_freq(self.not_ok_freq_list[-1])
 
     def test_freq_as_approximate_nb_days(self):
 
         # test with correct frequencies
         result_list = [TimeSeries.freq_as_approximate_nb_days(_) for _ in self.ok_freq_list]
 
-        expected_result_list = [2, 30.4, 0.125, 1, 304, 730, 2. / 1440, 1 / (24 * 3600),
-                                2 / (24 * 3600), 10 / 1440, 3, 91]
+        expected_result_list = [2, 30.4, 0.125, 1, 304, 730, -3,  2. / 1440, 1 / (24 * 3600),
+                                2 / (24 * 3600), -1, 10 / 1440, 3, 91]
 
         for result, expected_result in zip(result_list, expected_result_list):
             self.assertAlmostEqual(result, expected_result)
@@ -133,9 +119,11 @@ class TestTimeSeries(unittest.TestCase):
                                 pd.to_datetime("2021-01-02 00:00:00"),
                                 pd.to_datetime("2021-11-01 00:00:00"),
                                 pd.to_datetime("2023-01-01 00:00:00"),
+                                pd.to_datetime("2020-12-29 00:00:00"),
                                 pd.to_datetime("2021-01-01 00:02:00"),
                                 pd.to_datetime("2021-01-01 00:00:01"),
                                 pd.to_datetime("2021-01-01 00:00:02"),
+                                pd.to_datetime("2020-12-31 00:00:00"),
                                 pd.to_datetime("2021-01-01 00:10:00"),
                                 pd.to_datetime("2021-01-04 00:00:00")]
 
@@ -152,9 +140,11 @@ class TestTimeSeries(unittest.TestCase):
                                 pd.Timestamp("2021-01-02 00:00:00+01"),
                                 pd.Timestamp("2021-11-01 00:00:00+01"),
                                 pd.Timestamp("2023-01-01 00:00:00+01"),
+                                pd.Timestamp("2020-12-29 00:00:00+01"),
                                 pd.Timestamp("2021-01-01 00:02:00+01"),
                                 pd.Timestamp("2021-01-01 00:00:01+01"),
                                 pd.Timestamp("2021-01-01 00:00:02+01"),
+                                pd.Timestamp("2020-12-31 00:00:00+01"),
                                 pd.Timestamp("2021-01-01 00:10:00+01"),
                                 pd.Timestamp("2021-01-04 00:00:00+01")]
 
@@ -171,9 +161,11 @@ class TestTimeSeries(unittest.TestCase):
                                 datetime.date(year=2021, month=1, day=2),
                                 datetime.date(year=2021, month=11, day=1),
                                 datetime.date(year=2023, month=1, day=1),
+                                datetime.date(year=2020, month=12, day=29),
                                 datetime.date(year=2021, month=1, day=1),
                                 datetime.date(year=2021, month=1, day=1),
                                 datetime.date(year=2021, month=1, day=1),
+                                datetime.date(year=2020, month=12, day=31),
                                 datetime.date(year=2021, month=1, day=1),
                                 datetime.date(year=2021, month=1, day=4)]
 
@@ -190,9 +182,11 @@ class TestTimeSeries(unittest.TestCase):
                                 datetime.datetime(year=2021, month=1, day=2, hour=2),
                                 datetime.datetime(year=2021, month=11, day=1, hour=2),
                                 datetime.datetime(year=2023, month=1, day=1, hour=2),
+                                datetime.datetime(year=2020, month=12, day=29, hour=2),
                                 datetime.datetime(year=2021, month=1, day=1, hour=2, minute=2),
                                 datetime.datetime(year=2021, month=1, day=1, hour=2, minute=0, second=1),
                                 datetime.datetime(year=2021, month=1, day=1, hour=2, minute=0, second=2),
+                                datetime.datetime(year=2020, month=12, day=31, hour=2),
                                 datetime.datetime(year=2021, month=1, day=1, hour=2, minute=10),
                                 datetime.datetime(year=2021, month=1, day=4, hour=2)]
 
@@ -206,12 +200,9 @@ class TestTimeSeries(unittest.TestCase):
             TimeSeries.add_timedelta(test_datetime, self.ok_freq_list[-1])
 
         # test other fails
-        for freq in self.not_ok_freq_list[:-2]:
+        for freq in self.not_ok_freq_list[:-1]:
             with self.assertRaises(ValueError):
                 TimeSeries.add_timedelta(test_datetime, freq)
-
-        with self.assertRaises(IndexError):
-            TimeSeries.add_timedelta(test_datetime, self.not_ok_freq_list[-2])
 
         with self.assertRaises(TypeError):
             TimeSeries.add_timedelta(test_datetime, self.not_ok_freq_list[-1])
@@ -228,9 +219,11 @@ class TestTimeSeries(unittest.TestCase):
                                 pd.to_datetime("2020-12-31 00:00:00"),
                                 pd.to_datetime("2020-03-01 00:00:00"),
                                 pd.to_datetime("2019-01-01 00:00:00"),
+                                pd.to_datetime("2021-01-04 00:00:00"),
                                 pd.to_datetime("2020-12-31 23:58:00"),
                                 pd.to_datetime("2020-12-31 23:59:59"),
                                 pd.to_datetime("2020-12-31 23:59:58"),
+                                pd.to_datetime("2021-01-02 00:00:00"),
                                 pd.to_datetime("2020-12-31 23:50:00"),
                                 pd.to_datetime("2020-12-29 00:00:00")]
 
@@ -245,9 +238,6 @@ class TestTimeSeries(unittest.TestCase):
         for freq in self.not_ok_freq_list[:-2]:
             with self.assertRaises(ValueError):
                 TimeSeries.add_timedelta(test_timestamp, freq)
-
-        with self.assertRaises(IndexError):
-            TimeSeries.add_timedelta(test_timestamp, self.not_ok_freq_list[-2])
 
         with self.assertRaises(TypeError):
             TimeSeries.add_timedelta(test_timestamp, self.not_ok_freq_list[-1])
@@ -275,7 +265,7 @@ class TestTimeSeries(unittest.TestCase):
         self.assertEqual(result, True)
 
         # test weird type
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             TimeSeries.has_nan_or_empty(5)
 
     def test_find_nb_records(self):
@@ -474,18 +464,6 @@ class TestTimeSeries(unittest.TestCase):
                 self.assertEqual(computed_periods[i][0], periods[i][0])
                 self.assertEqual(computed_periods[i][1], periods[i][1])
 
-        # # now, other test
-        # dti = pd.DatetimeIndex([
-        #     pd.to_datetime('2018-01-01 00:15:00+01:00'),
-        #     pd.to_datetime('2018-01-01 00:45:00+01:00'),
-        #     pd.to_datetime('2018-01-01 00:30:00+01:00'),
-        #     pd.to_datetime('2018-01-01 01:00:00+01:00')
-        # ])
-        #
-        # with self.assertRaises(ValueError):
-        #     # should raise an error because 15min gaps are not multiples of freq=30min
-        #     TimeSeries.collapse_to_periods(dti, "30min")
-
     def test_find_missing_and_extra_periods(self):
         dti = pd.DatetimeIndex([
             pd.to_datetime('2018-01-01 00:00:00+01:00'),
@@ -604,47 +582,48 @@ class TestTimeSeries(unittest.TestCase):
 
     def test_interpolate_daily_to_sub_daily_data(self):
 
-        df_expected = pd.date_range(
+        expected_df = pd.date_range(
             start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
             end=pd.to_datetime('2021-01-04 18:00:00+01:00').tz_convert('Europe/Paris'),
             freq='6H',
             tz='Europe/Paris',
             name='time'
         ).to_frame().set_index('time')
-        df_expected["value"] = [0.] * 8 + [1.] * 8
-        df_expected.index.freq = '6H'
+        expected_df["value"] = [0.] * 8 + [1.] * 8
+        expected_df.index.freq = '6H'
 
         # test with full kwargs
         sub_df = TimeSeries.interpolate_daily_to_sub_daily_data(
             df=self.single_index_df,
             freq='6H',
+            tz="Europe/Paris"
         )
 
-        pd.testing.assert_frame_equal(df_expected, sub_df)
+        pd.testing.assert_frame_equal(expected_df, sub_df)
 
-        df1_expected = pd.date_range(
+        expected_df1 = pd.date_range(
             start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
             end=pd.to_datetime('2021-01-04 18:00:00+01:00').tz_convert('Europe/Paris'),
             freq='6H',
             tz='Europe/Paris',
             name='time'
         ).to_frame()
-        df1_expected["value"] = [0.] * 8 + [1.] * 8
-        df1_expected["key"] = 'key1'
-        df1_expected.index.freq = '6H'
+        expected_df1["value"] = [0.] * 8 + [1.] * 8
+        expected_df1["key"] = 'key1'
+        expected_df1.index.freq = '6H'
 
-        df2_expected = pd.date_range(
+        expected_df2 = pd.date_range(
             start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
             end=pd.to_datetime('2021-01-03 18:00:00+01:00').tz_convert('Europe/Paris'),
             freq='6H',
             tz='Europe/Paris',
             name='time'
         ).to_frame()
-        df2_expected["value"] = [2.] * 8 + [3.] * 4
-        df2_expected["key"] = 'key2'
-        df2_expected.index.freq = '6H'
+        expected_df2["value"] = [2.] * 8 + [3.] * 4
+        expected_df2["key"] = 'key2'
+        expected_df2.index.freq = '6H'
 
-        df_expected = pd.concat([df1_expected, df2_expected], axis=0).set_index(['key', 'time'])
+        expected_df = pd.concat([expected_df1, expected_df2], axis=0).set_index(['key', 'time'])
 
         # test with full kwargs
         sub_df = TimeSeries.interpolate_daily_to_sub_daily_data(
@@ -652,152 +631,156 @@ class TestTimeSeries(unittest.TestCase):
             freq='6H',
             tz='Europe/Paris'
         )
-        pd.testing.assert_frame_equal(df_expected, sub_df)
+        pd.testing.assert_frame_equal(expected_df, sub_df)
 
     def test_interpolate_freq_to_sub_freq_data(self):
 
         # test interpolate freq to sub-freq on a 6H basis
-        df_expected = pd.date_range(
+        expected_df = pd.date_range(
             start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
             end=pd.to_datetime('2021-01-04 00:00:00+01:00').tz_convert('Europe/Paris'),
             freq='6H',
             tz='Europe/Paris',
             name='time'
         ).to_frame().set_index('time')
-        df_expected.index.freq = '6H'
-        df_expected['value'] = [0.] * 5 + [0.25, 0.5, 0.75] + [1] * 5
+        expected_df.index.freq = '6H'
+        expected_df['value'] = [0.] * 5 + [0.25, 0.5, 0.75] + [1] * 5
 
         sub_df = TimeSeries.interpolate_freq_to_sub_freq_data(
             df=self.single_index_df, freq='6H', tz='Europe/Paris', index_name='time'
         )
-        pd.testing.assert_frame_equal(df_expected, sub_df)
+        pd.testing.assert_frame_equal(expected_df, sub_df)
 
         # test interpolate freq to sub-freq using ffill
-        df_expected['value'] = [0.] * 8 + [1] * 5
-        df_expected.index.name = 'date'
+        expected_df['value'] = [0.] * 8 + [1] * 5
+        expected_df.index.name = 'date'
         sub_df = TimeSeries.interpolate_freq_to_sub_freq_data(
             self.single_index_df, freq='6H', tz='Europe/Paris', method='ffill'
         )
-        pd.testing.assert_frame_equal(df_expected, sub_df)
+        pd.testing.assert_frame_equal(expected_df, sub_df)
 
         # test interpolation with a multiindex
 
-        df1_expected = pd.date_range(
+        expected_df1 = pd.date_range(
             start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
             end=pd.to_datetime('2021-01-04 00:00:00+01:00').tz_convert('Europe/Paris'),
             freq='6H',
             tz='Europe/Paris',
             name='time'
         ).to_frame()
-        df1_expected["value"] = [0.] * 8 + [1.] * 5
-        df1_expected["key"] = 'key1'
-        df1_expected.index.freq = '6H'
+        expected_df1["value"] = [0.] * 8 + [1.] * 5
+        expected_df1["key"] = 'key1'
+        expected_df1.index.freq = '6H'
 
-        df2_expected = pd.date_range(
+        expected_df2 = pd.date_range(
             start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
             end=pd.to_datetime('2021-01-03 00:00:00+01:00').tz_convert('Europe/Paris'),
             freq='6H',
             tz='Europe/Paris',
             name='time'
         ).to_frame()
-        df2_expected["value"] = [2.] * 8 + [3.] * 1
-        df2_expected["key"] = 'key2'
-        df2_expected.index.freq = '6H'
+        expected_df2["value"] = [2.] * 8 + [3.] * 1
+        expected_df2["key"] = 'key2'
+        expected_df2.index.freq = '6H'
 
-        df_expected = pd.concat([df1_expected, df2_expected], axis=0).set_index(['key', 'time'])
+        expected_df = pd.concat([expected_df1, expected_df2], axis=0).set_index(['key', 'time'])
 
         sub_df = TimeSeries.interpolate_freq_to_sub_freq_data(
             self.multi_index_test, freq='6H', tz='Europe/Paris', method='ffill', index_name='time'
         )
 
-        pd.testing.assert_frame_equal(df_expected, sub_df)
+        pd.testing.assert_frame_equal(expected_df, sub_df)
 
     def test_forward_fill_final_record(self):
+        """
+        Test extend_final_data: this is a ffill of the last record
+        on the provided frequency
+        """
 
-        # test extend_final_data: this is a ffill of the last record 
-        # on the provided frequency 
-        df_test = pd.date_range(
+        test_df = pd.date_range(
             start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
             end=pd.to_datetime('2021-01-02 00:00:00+01:00').tz_convert('Europe/Paris'),
             freq='12H', tz='Europe/Paris', name='time'
         ).to_frame().set_index('time')
-        df_test["value"] = [0., 1., 2.]
-        df_test.index.freq = '12H'
+        test_df["value"] = [0., 1., 2.]
+        test_df.index.freq = '12H'
 
-        df_expected = pd.date_range(
+        expected_df = pd.date_range(
             start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
             end=pd.to_datetime('2021-01-02 12:00:00+01:00').tz_convert('Europe/Paris'),
             freq='12H', tz='Europe/Paris', name='time'
         ).to_frame().set_index('time')
-        df_expected["value"] = [0., 1., 2., 2.]
-        df_expected.index.freq = '12H'
+        expected_df["value"] = [0., 1., 2., 2.]
+        expected_df.index.freq = '12H'
 
         sub_df = TimeSeries.forward_fill_final_record(
-            df=df_test,
+            df=test_df,
             gap_frequency='1D'
         )
-        pd.testing.assert_frame_equal(df_expected, sub_df)
+        pd.testing.assert_frame_equal(expected_df, sub_df)
 
         # forward_fill_final_record with a None cutoff frequency
         # and 3H as the original frequency
-        df_test = pd.date_range(
+        test_df = pd.date_range(
             start=pd.to_datetime('2021-01-01 19:00:00+01:00').tz_convert('Europe/Paris'),
             end=pd.to_datetime('2021-01-01 22:00:00+01:00').tz_convert('Europe/Paris'),
             freq='1H', tz='Europe/Paris', name='time'
         ).to_frame().set_index('time')
-        df_test["value"] = [0., 1., 2., 3.]
+        test_df["value"] = [0., 1., 2., 3.]
 
-        df_expected = pd.date_range(
+        expected_df = pd.date_range(
             start=pd.to_datetime('2021-01-01 19:00:00+01:00').tz_convert('Europe/Paris'),
             end=pd.to_datetime('2021-01-02 00:00:00+01:00').tz_convert('Europe/Paris'),
             freq='1H', tz='Europe/Paris', name='time'
         ).to_frame().set_index('time')
-        df_expected["value"] = [0., 1., 2., 3., 3., 3.]
+        expected_df["value"] = [0., 1., 2., 3., 3., 3.]
+        expected_df.index.freq = '1H'
 
         sub_df = TimeSeries.forward_fill_final_record(
-            df=df_test,
+            df=test_df,
             gap_frequency='3H',
             cut_off_frequency=None
         )
-        pd.testing.assert_frame_equal(df_expected, sub_df)
+        pd.testing.assert_frame_equal(expected_df, sub_df)
 
         # forward_fill_final_record with a cutoff frequency
-        df_expected = pd.date_range(
+        expected_df = pd.date_range(
             start=pd.to_datetime('2021-01-01 19:00:00+01:00').tz_convert('Europe/Paris'),
             end=pd.to_datetime('2021-01-01 23:00:00+01:00').tz_convert('Europe/Paris'),
             freq='1H', tz='Europe/Paris', name='time'
         ).to_frame().set_index('time')
-        df_expected["value"] = [0., 1., 2., 3., 3.]
+        expected_df["value"] = [0., 1., 2., 3., 3.]
+        expected_df.index.freq = '1H'
 
         sub_df = TimeSeries.forward_fill_final_record(
-            df=df_test,
+            df=test_df,
             gap_frequency='3H',
             cut_off_frequency='1D'
         )
-        pd.testing.assert_frame_equal(df_expected, sub_df)
+        pd.testing.assert_frame_equal(expected_df, sub_df)
 
     def test_average_to_upper_freq(self):
 
         # average to upper freq
 
-        df_test = pd.date_range(
+        test_df = pd.date_range(
             start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
             end=pd.to_datetime('2021-01-02 00:00:00+01:00').tz_convert('Europe/Paris'),
             freq='12H', tz='Europe/Paris', name='time'
         ).to_frame().set_index('time')
-        df_test["value"] = [0., 1., 2.]
+        test_df["value"] = [0., 1., 2.]
 
-        df_expected = pd.date_range(
+        expected_df = pd.date_range(
             start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
             end=pd.to_datetime('2021-01-02 00:00:00+01:00').tz_convert('Europe/Paris'),
             freq='1D', tz='Europe/Paris', name='time'
         ).to_frame().set_index('time')
-        df_expected["value"] = [0.5, 2.]
-        df_expected.index.freq = '1D'
+        expected_df["value"] = [0.5, 2.]
+        expected_df.index.freq = '1D'
 
         sub_df = TimeSeries.average_to_upper_freq(
-            df=df_test,
+            df=test_df,
             freq='1D',
             tz="Europe/Paris"
         )
-        pd.testing.assert_frame_equal(df_expected, sub_df)
+        pd.testing.assert_frame_equal(expected_df, sub_df)

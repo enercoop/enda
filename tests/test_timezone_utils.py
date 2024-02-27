@@ -75,8 +75,10 @@ class TestTimezoneUtils(unittest.TestCase):
             self.assertEqual(bt, ct)
 
     def test_convert_dtype_from_object_to_tz_aware(self):
+        """
+        test convert_dtype_from_object_to_tz_aware, which is useful typically when daylight savings changes
+        """
 
-        # useful typically when daylight savings changes
         object_series = pd.Series([
             pd.to_datetime('2021-12-31 02:00:00+02:00'),
             pd.to_datetime('2021-12-31 03:00:00+02:00'),
@@ -171,6 +173,9 @@ class TestTimezoneUtils(unittest.TestCase):
             TimezoneUtils.convert_dtype_from_object_to_tz_aware(object_series, 4)
 
     def test_set_timezone(self):
+        """
+        Test set_timezone with multiple series
+        """
 
         # with a naive dt series
         naive_series = pd.Series([
@@ -269,3 +274,10 @@ class TestTimezoneUtils(unittest.TestCase):
         result_dti = TimezoneUtils.set_timezone(aware_dti, tz_info="Europe/Paris")
 
         pd.testing.assert_index_equal(expected_dti, result_dti)
+
+        # check raise if tz_info is wrong type
+        with self.assertRaises(TypeError):
+            TimezoneUtils.set_timezone(naive_dti, tz_info=5)
+
+        with self.assertRaises(TypeError):
+            TimezoneUtils.set_timezone(naive_dti, tz_info="Europe/Paris", tz_base=5)

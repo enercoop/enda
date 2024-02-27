@@ -65,19 +65,12 @@ class TimezoneUtils:
 
     @staticmethod
     @enda.decorators.handle_series_as_datetimeindex(arg_name='time_series', return_input_type=True)
-    def set_timezone(time_series: Union[pd.DatetimeIndex, pd.Series],
-                     tz_info: Union[str, datetime.tzinfo],
-                     tz_base: Union[str, datetime.tzinfo] = None
-                     ) -> Union[pd.DatetimeIndex, pd.Series]:
+    def _set_timezone_dti(time_series: Union[pd.DatetimeIndex, pd.Series],
+                          tz_info: Union[str, datetime.tzinfo],
+                          tz_base: Union[str, datetime.tzinfo] = None
+                          ) -> Union[pd.DatetimeIndex, pd.Series]:
         """
         Make a time series timezone-aware or convert it to a target timezone.
-        The provided time series must be convertible to a datetime dtype, i.e. it must be
-        a pd.DatetimeIndex, or a pd.Series convertible to DatetimeIndex.
-        If the time series is time zone naive:
-            > if tz_base is None, the function localize the time series to tz_info.
-            > if tz_base is given, the function localize the time series to  tz_base and convert it to tz_info
-        If the time series is time zone aware, the function converts it to the provided tz_info,
-        whatever the value of tz_base
         :param time_series: a time series, tz-naive or tz-aware.
         :param tz_info: the target time zone
         :param tz_base: optional, the base time zone if we know it while the time series is time zone naive.
@@ -105,6 +98,47 @@ class TimezoneUtils:
             return time_series.tz_localize(tz_base).tz_convert(tz_info)
 
         return time_series.tz_localize(tz_info)
+
+    @staticmethod
+    @enda.decorators.handle_multiindex(arg_name='df')
+    def _set_timezone_frame(df: pd.DataFrame,
+                            tz_info: Union[str, datetime.tzinfo],
+                            tz_base: Union[str, datetime.tzinfo] = None
+                            ) -> Union[pd.DatetimeIndex, pd.Series]:
+        """
+        Make a single-datetime-indexed dataframe's index timezone-aware or convert it to a target timezone.
+        :param df: a dataframe with a datetime index
+        :param tz_info: the target time zone
+        :param tz_base: optional, the base time zone if we know it while the time series is time zone naive.
+        :return: the dataframe with the index in the new time zone
+        """
+        df.index = TimezoneUtils._set_timezone_dti(df.index, tz_info, tz_base)
+        return df
+
+    @staticmethod
+    def set_timezone(time_series: Union[pd.DataFrame, pd.DatetimeIndex, pd.Series],
+                     tz_info: Union[str, datetime.tzinfo],
+                     tz_base: Union[str, datetime.tzinfo] = None
+                     ) -> Union[pd.DataFrame, pd.DatetimeIndex, pd.Series]:
+        """
+        Make:
+         - a single-datetime-indexed dataframe's index timezone-aware or convert it to a target timezone.
+         - a time series timezone-aware or convert it to a target timezone.
+        If the time series is time zone naive:
+            > if tz_base is None, the function localize the time series to tz_info.
+            > if tz_base is given, the function localize the time series to  tz_base and convert it to tz_info
+        If the time series is time zone aware, the function converts it to the provided tz_info,
+        whatever the value of tz_base
+        :param time_series: a datetimeindex, a series, or a dataframe with a datetime index
+        :param tz_info: the target time zone
+        :param tz_base: optional, the base time zone if we know it while the time series is time zone naive.
+        :return: the dataframe with the index in the new time zone
+        """
+
+        if isinstance(time_series, pd.DataFrame):
+            return TimezoneUtils._set_timezone_frame(time_series, tz_info, tz_base)
+        if isinstance(time_series, pd.DatetimeIndex) or isinstance(time_series, pd.Series):
+            return TimezoneUtils._set_timezone_dti(time_series, tz_info, tz_base)
 
     @staticmethod
     def convert_dtype_from_object_to_tz_aware(

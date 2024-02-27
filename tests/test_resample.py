@@ -90,6 +90,10 @@ class TestResample(unittest.TestCase):
         ).set_index("time")
 
     def test_downsample(self):
+        """
+        Test downsample
+        """
+
         # test that we can't downsample to a smaller period
         with self.assertRaises(RuntimeError):
             enda.resample.Resample.downsample(self.perfect_df, freq="6H")
@@ -240,6 +244,10 @@ class TestResample(unittest.TestCase):
         pd.testing.assert_frame_equal(result_df, expected_df)
 
     def test_equal_sample_fillna(self):
+        """
+        Test equal_sample_fillna
+        """
+
         # check with self.df_12h_imperfect: error because duplicates and extra periods
         with self.assertRaises(RuntimeError):
             enda.resample.Resample.equal_sample_fillna(self.imperfect_df)
@@ -310,6 +318,10 @@ class TestResample(unittest.TestCase):
         pd.testing.assert_frame_equal(outcome_df, expected_df)
 
     def test_upsample_and_interpolate(self):
+        """
+        Test upsample_and_interpolate
+        """
+
         # test that we can't upsample to a higher period
         with self.assertRaises(ValueError):
             enda.resample.Resample.upsample_and_divide_evenly(self.perfect_df, freq="1D")
@@ -408,6 +420,10 @@ class TestResample(unittest.TestCase):
             enda.resample.Resample.upsample_and_interpolate(self.single_row_df, freq="W")
 
     def test_upsample_and_divide_evenly(self):
+        """
+        Test upsample_and_divide_evenly
+        """
+
         # test that we can't upsample because initial period (12 hours) is lower than the aimed one (24 hours)
         with self.assertRaises(ValueError):
             enda.resample.Resample.upsample_and_divide_evenly(self.perfect_df, freq="24H")
@@ -496,6 +512,11 @@ class TestResample(unittest.TestCase):
             enda.resample.Resample.upsample_and_divide_evenly(self.monthly_df, freq="1D")
 
     def test_upsample_monthly_data_and_divide_evenly(self):
+        """
+        Test upsample_monthly_data_and_divide_evenly
+        """
+
+        # basic test
         input_df = pd.DataFrame(
             [[pd.Timestamp(2023, 1, 1), 100], [pd.Timestamp(2023, 2, 1), 200], [pd.Timestamp(2023, 3, 1), 300]],
             columns=["time", "value"],
@@ -536,6 +557,10 @@ class TestResample(unittest.TestCase):
         pd.testing.assert_frame_equal(output_df, expected_output_df)
 
     def test_forward_fill_last_record(self):
+        """
+        Test forward_fill_last_record
+        """
+
         # test with dataframe
         input_df = (
             pd.date_range(
