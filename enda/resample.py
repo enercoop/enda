@@ -274,7 +274,7 @@ class Resample:
         # check it's not a one-row dataframe, because it cannot be upsampled.
         if enda.timeseries.TimeSeries.find_nb_records(timeseries_df.index) <= 1:
             raise ValueError("Cannot upsample an empty or single-record time series; because it's initial"
-                             " frequency cannot be determined. Consider using 'forward_fill_last_record prior.")
+                             " frequency cannot be determined. Consider using 'forward_fill_last_record' prior.")
 
         timeseries_df = timeseries_df.copy()
 
@@ -448,7 +448,7 @@ class Resample:
         :param cut_off: a timedelta that serves as a cut-off beyond which the final record is not extended
         :param excl_end_time: The forward-filling is performed using this argument if provided.
                               Basically, the last index is extended until excl_end_time - timeseries_df.index.freq
-                              This option is incompatible with the setting of the excl_end_time argument
+                              This option is incompatible with the setting of the gap_timedelta argument
         :return: datetime-indexed dataframe similar to the initial one, with the last record being forward filled
                  using the initial frequency of the dataframe index.
         """
@@ -466,7 +466,7 @@ class Resample:
             extra_excl_end_time = pd.to_datetime(excl_end_time)
             if extra_excl_end_time <= incl_end_time:
                 raise ValueError(f"Provided extra_excl_end_time={extra_excl_end_time} <= "
-                                 f"max(timeseries_df.index) = {incl_end_time}. Cannot forward-fill. ")
+                                 f"max(timeseries_df.index) = {incl_end_time}. Cannot forward-fill.")
         else:
             raise ValueError("One argument among excl_end_final_date and gap_timedelta must be given")
 

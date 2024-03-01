@@ -105,7 +105,7 @@ class TimezoneUtils:
             else:
                 new_time_series = time_series.tz_localize(tz_info)
 
-        # reset freq (dropped during setting)
+        # reset freq (dropped during localizing)
         new_time_series.freq = freq
 
         return new_time_series
