@@ -469,6 +469,9 @@ class TestTimeSeries(unittest.TestCase):
     # ----------------------------------------
 
     def test_align_timezone(self):
+        """
+        Test align_timezone
+        """
 
         # useful typically when daylight savings changes
         s = pd.Series([
