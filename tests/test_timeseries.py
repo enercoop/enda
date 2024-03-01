@@ -464,56 +464,8 @@ class TestTimeSeries(unittest.TestCase):
                 self.assertEqual(computed_periods[i][0], periods[i][0])
                 self.assertEqual(computed_periods[i][1], periods[i][1])
 
-    def test_find_missing_and_extra_periods(self):
-        dti = pd.DatetimeIndex([
-            pd.to_datetime('2018-01-01 00:00:00+01:00'),
-            pd.to_datetime('2018-01-01 00:15:00+01:00'),
-            pd.to_datetime('2018-01-01 00:30:00+01:00'),
-            pd.to_datetime('2018-01-01 00:45:00+01:00'),
-            pd.to_datetime('2018-01-01 00:50:00+01:00'),
-            pd.to_datetime('2018-01-01 01:00:00+01:00'),
-            pd.to_datetime('2018-01-01 02:00:00+01:00'),
-            pd.to_datetime('2018-01-01 02:20:00+01:00')
-        ])
-        freq, missing_periods, extra_points = TimeSeries.find_missing_and_extra_periods(dti, expected_freq="15min")
-        self.assertEqual(len(missing_periods), 2)  # (01:15:00 -> 01:45:00), (02:15:00 -> 02:15:00)
-        self.assertEqual(len(extra_points), 2)  # [00:50:00, 02:20:00]
-
-        dti = pd.DatetimeIndex([
-            pd.to_datetime('2018-01-01 00:00:00+01:00'),
-            pd.to_datetime('2018-01-01 00:15:00+01:00'),
-            pd.to_datetime('2018-01-01 00:30:00+01:00'),
-            pd.to_datetime('2018-01-01 00:45:00+01:00'),
-            pd.to_datetime('2018-01-01 00:50:00+01:00'),
-            pd.to_datetime('2018-01-01 01:00:00+01:00'),
-            pd.to_datetime('2018-01-01 02:00:00+01:00'),
-            pd.to_datetime('2018-01-01 02:20:00+01:00')
-        ])
-
-        # should work when we infer "expected_freq"
-        freq, missing_periods, extra_points = TimeSeries.find_missing_and_extra_periods(dti, expected_freq=None)
-        self.assertEqual(pd.Timedelta(freq), pd.Timedelta("15min"))  # inferred a 15min freq
-        self.assertEqual(len(missing_periods), 2)  # (01:15:00 -> 01:45:00), (02:15:00 -> 02:15:00)
-        self.assertEqual(len(extra_points), 2)  # [00:50:00, 02:20:00]
-
-        dti = pd.DatetimeIndex([
-            pd.to_datetime('2018-01-01'),
-            pd.to_datetime('2018-01-02'),
-            pd.to_datetime('2018-01-03'),
-            pd.to_datetime('2018-01-03 12:00:00'),
-            pd.to_datetime('2018-01-04'),
-            pd.to_datetime('2018-01-05'),
-            pd.to_datetime('2018-01-06')
-        ])
-        freq, missing_periods, extra_points = TimeSeries.find_missing_and_extra_periods(dti, '1D')
-        self.assertEqual(len(missing_periods), 0)
-        self.assertEqual(len(extra_points), 1)
-
-        with self.assertRaises(ValueError):
-            TimeSeries.find_missing_and_extra_periods(pd.DatetimeIndex([]), '1D')
-
     # ----------------------------------------
-    # deprecated functions (moved elsewhere)
+    # Deprecated functions (moved elsewhere)
     # ----------------------------------------
 
     def test_align_timezone(self):
@@ -579,6 +531,98 @@ class TestTimeSeries(unittest.TestCase):
         for s in [s4]:
             with self.assertRaises(AttributeError):
                 TimeSeries.align_timezone(s, tzinfo="UTC")
+
+    def test_find_missing_and_extra_periods(self):
+        """
+        Test find_missing_and_extra_periods
+        """
+
+        dti = pd.DatetimeIndex([
+            pd.to_datetime('2018-01-01 00:00:00+01:00'),
+            pd.to_datetime('2018-01-01 00:15:00+01:00'),
+            pd.to_datetime('2018-01-01 00:30:00+01:00'),
+            pd.to_datetime('2018-01-01 00:45:00+01:00'),
+            pd.to_datetime('2018-01-01 00:50:00+01:00'),
+            pd.to_datetime('2018-01-01 01:00:00+01:00'),
+            pd.to_datetime('2018-01-01 02:00:00+01:00'),
+            pd.to_datetime('2018-01-01 02:20:00+01:00')
+        ])
+        freq, missing_periods, extra_points = TimeSeries.find_missing_and_extra_periods(dti, expected_freq="15min")
+        self.assertEqual(len(missing_periods), 2)  # (01:15:00 -> 01:45:00), (02:15:00 -> 02:15:00)
+        self.assertEqual(len(extra_points), 2)  # [00:50:00, 02:20:00]
+
+        dti = pd.DatetimeIndex([
+            pd.to_datetime('2018-01-01 00:00:00+01:00'),
+            pd.to_datetime('2018-01-01 00:15:00+01:00'),
+            pd.to_datetime('2018-01-01 00:30:00+01:00'),
+            pd.to_datetime('2018-01-01 00:45:00+01:00'),
+            pd.to_datetime('2018-01-01 00:50:00+01:00'),
+            pd.to_datetime('2018-01-01 01:00:00+01:00'),
+            pd.to_datetime('2018-01-01 02:00:00+01:00'),
+            pd.to_datetime('2018-01-01 02:20:00+01:00')
+        ])
+
+        # should work when we infer "expected_freq"
+        freq, missing_periods, extra_points = TimeSeries.find_missing_and_extra_periods(dti, expected_freq=None)
+        self.assertEqual(pd.Timedelta(freq), pd.Timedelta("15min"))  # inferred a 15min freq
+        self.assertEqual(len(missing_periods), 2)  # (01:15:00 -> 01:45:00), (02:15:00 -> 02:15:00)
+        self.assertEqual(len(extra_points), 2)  # [00:50:00, 02:20:00]
+
+        dti = pd.DatetimeIndex([
+            pd.to_datetime('2018-01-01'),
+            pd.to_datetime('2018-01-02'),
+            pd.to_datetime('2018-01-03'),
+            pd.to_datetime('2018-01-03 12:00:00'),
+            pd.to_datetime('2018-01-04'),
+            pd.to_datetime('2018-01-05'),
+            pd.to_datetime('2018-01-06')
+        ])
+        freq, missing_periods, extra_points = TimeSeries.find_missing_and_extra_periods(dti, '1D')
+        self.assertEqual(len(missing_periods), 0)
+        self.assertEqual(len(extra_points), 1)
+
+        with self.assertRaises(ValueError):
+            TimeSeries.find_missing_and_extra_periods(pd.DatetimeIndex([]), '1D')
+
+    def test_collapse_dt_series_into_periods(self):
+        """
+        Test deprecated function collapse_dt_series_into_periods
+        """
+
+        # periods is a list of (start, end) pairs.
+        periods = [
+            (pd.to_datetime('2018-01-01 00:15:00+01:00'), pd.to_datetime('2018-01-01 00:45:00+01:00')),
+            (pd.to_datetime('2018-01-01 10:15:00+01:00'), pd.to_datetime('2018-01-01 15:45:00+01:00')),
+            (pd.to_datetime('2018-01-01 20:15:00+01:00'), pd.to_datetime('2018-01-01 21:45:00+01:00')),
+        ]
+
+        # expand periods to build a time-series with gaps
+        dti = pd.DatetimeIndex([])
+        for s, e in periods:
+            dti = dti.append(pd.date_range(s, e, freq="30min"))
+        self.assertEqual(2 + 12 + 4, dti.shape[0])
+
+        # now find periods in the time-series
+        # should work with 2 types of freq arguments
+        for freq in ["30min", pd.to_timedelta("30min")]:
+            computed_periods = TimeSeries.collapse_dt_series_into_periods(dti, freq)
+            self.assertEqual(len(computed_periods), len(periods))
+
+            for i in range(len(periods)):
+                self.assertEqual(computed_periods[i][0], periods[i][0])
+                self.assertEqual(computed_periods[i][1], periods[i][1])
+
+        # test error
+        dti = pd.DatetimeIndex([
+            pd.to_datetime('2018-01-01 00:15:00+01:00'),
+            pd.to_datetime('2018-01-01 00:45:00+01:00'),
+            pd.to_datetime('2018-01-01 00:30:00+01:00'),
+            pd.to_datetime('2018-01-01 01:00:00+01:00')
+        ])
+
+        with self.assertRaises(ValueError):
+            # should raise an error because 15min gaps are not multiples of freq=30min
+            TimeSeries.collapse_dt_series_into_periods(dti, freq="30min")
 
     def test_interpolate_daily_to_sub_daily_data(self):
 

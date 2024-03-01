@@ -381,19 +381,22 @@ class Resample:
     @enda.decorators.handle_multiindex(arg_name='timeseries_df')
     def forward_fill_final_record(
             timeseries_df: pd.DataFrame,
-            gap_timedelta: [str, pd.Timedelta],
+            gap_timedelta: [str, pd.Timedelta] = None,
             cut_off: [str, pd.Timedelta] = None,
+            excl_end_time: [str, datetime.date, datetime.datetime, pd.Timestamp] = None
     ):
         """
-        Forward-fill the final record of a regular datetime-indexed dataframe, keeping the sampling of
-        the initial time series.
-        The index of the resulting dataframe is determined using the parameter 'gap_timedelta' so that
-        the new index goes until gap_timedelta
+        Forward-fill the final record of a regular datetime-indexed dataframe, keeping the frequency of
+        the initial time series. This function not only add a timestamp, but resample with a forward-fill
+        the timeseries until the desired timestamp.
+        Naming 'final_ts' the max of the index of the initial dataframe timeseries_df, the resulting index of the
+        final dataframe can be determined from two manners:
+        - using the argument 'gap_timedelta' so that the new index goes until final_ts + gap_timedelta (excluded)
+        - using the argument 'excl_end_final_date' so that the new index goes until excl_end_time (excluded)
         The resampling frequency is determined from the frequency of the initial dataframe.
-        The extra parameter 'cut_off' can be used to set up a limit not to overpass. It means max of index is
+        The extra parameter 'cut_off' can be used to set up a limit not to overpass. It means the resulting index is
         truncated to take into account the given cut-off.
-        This function is typically used in junction with interpolate_freq_to_sub_freq() to forward-fill the last record
-        (gap_timedelta in that case is the initial frequency of the dataframe before the interpolation).
+        This function is typically used in junction with upsample_*() to forward-fill the last record.
 
         Here are some examples:
 
@@ -439,25 +442,41 @@ class Resample:
         2021-01-01 23:00:00+01:00 4
 
         :param timeseries_df: input datetime-indexed dataframe to be forward-filled.
-        :param gap_timedelta: the timedelta used to extend the final dataframe record.
+        :param gap_timedelta: The forward-filling is performed using this argument if provided.
+                              Basically, the last index is extended until last_index + gap_timedelta
+                              This option is incompatible with the setting of the excl_end_time argument
         :param cut_off: a timedelta that serves as a cut-off beyond which the final record is not extended
+        :param excl_end_time: The forward-filling is performed using this argument if provided.
+                              Basically, the last index is extended until excl_end_time - timeseries_df.index.freq
+                              This option is incompatible with the setting of the excl_end_time argument
         :return: datetime-indexed dataframe similar to the initial one, with the last record being forward filled
-                 using the initial frequency of the dataframe index
+                 using the initial frequency of the dataframe index.
         """
 
         freq = enda.timeseries.TimeSeries.find_most_common_frequency(timeseries_df.index)
 
-        # the last record is understood as the max time (not the last index)
+        # the last record is understood as the max time (not the last record of the index)
         incl_end_time = timeseries_df.index.max()
-        extra_end_time = enda.timeseries.TimeSeries.add_timedelta(incl_end_time, gap_timedelta)
+
+        if gap_timedelta and excl_end_time:
+            raise ValueError("Cannot provide both arguments excl_end_time and gap_timedelta at once")
+        elif gap_timedelta is not None:
+            extra_excl_end_time = enda.timeseries.TimeSeries.add_timedelta(incl_end_time, gap_timedelta)
+        elif excl_end_time is not None:
+            extra_excl_end_time = pd.to_datetime(excl_end_time)
+            if extra_excl_end_time <= incl_end_time:
+                raise ValueError(f"Provided extra_excl_end_time={extra_excl_end_time} <= "
+                                 f"max(timeseries_df.index) = {incl_end_time}. Cannot forward-fill. ")
+        else:
+            raise ValueError("One argument among excl_end_final_date and gap_timedelta must be given")
 
         # the dataframe is extended using the row of index.max()
         end_row = timeseries_df.loc[[incl_end_time], :]
         if len(end_row) > 1:
-            raise RuntimeError("Duplicate last record, cannot find a way to extrapolate")
+            raise ValueError("Duplicate last record, cannot find a way to extrapolate")
         extra_row = pd.DataFrame(
             timeseries_df.loc[[incl_end_time], :].values,
-            index=[extra_end_time],
+            index=[extra_excl_end_time],
             columns=timeseries_df.columns
         )
         extra_row.index.name = timeseries_df.index.name
@@ -465,7 +484,7 @@ class Resample:
         # Add the extra row, and extrapolate using resample
         result = pd.concat([end_row, extra_row], ignore_index=False)
         result = result.resample(freq).interpolate(method="ffill")
-        result = result.drop([incl_end_time, extra_end_time])
+        result = result.drop([incl_end_time, extra_excl_end_time])
 
         if cut_off is not None:
             cut_off_end = enda.timeseries.TimeSeries.add_timedelta(incl_end_time.floor(cut_off), cut_off)

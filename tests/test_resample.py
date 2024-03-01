@@ -561,7 +561,7 @@ class TestResample(unittest.TestCase):
         Test forward_fill_last_record
         """
 
-        # test with dataframe
+        # test with dataframe, and gap_timedelta
         input_df = (
             pd.date_range(
                 start=pd.to_datetime('2021-01-01 00:00:00+01:00'),
@@ -584,6 +584,27 @@ class TestResample(unittest.TestCase):
             gap_timedelta='1D'
         )
         pd.testing.assert_frame_equal(expected_df, result_df)
+
+        # test with excl_end_time as timestamp
+        result_df = enda.resample.Resample.forward_fill_final_record(
+            timeseries_df=input_df,
+            excl_end_time=pd.Timestamp('2021-01-03 00:00:00+01:00')
+        )
+        pd.testing.assert_frame_equal(expected_df, result_df)
+
+        # test with excl_end_time as string
+        result_df = enda.resample.Resample.forward_fill_final_record(
+            timeseries_df=input_df,
+            excl_end_time='2021-01-03 00:00:00+01:00'
+        )
+        pd.testing.assert_frame_equal(expected_df, result_df)
+
+        # test error excl_end_time
+        with self.assertRaises(ValueError):
+            enda.resample.Resample.forward_fill_final_record(
+                timeseries_df=input_df,
+                excl_end_time='2021-01-02 00:00:00+01:00'
+            )
 
         # forward_fill_final_record with a cut-off frequency
         input_df = (

@@ -597,22 +597,22 @@ class TimeSeries:
                                              new_function_name="collapse_to_periods")
     def collapse_dt_series_into_periods(
             cls, dti: pd.DatetimeIndex, freq: [str, pd.Timedelta]
-    ):
-        # it should be next call:
-        # return TimeSeries.collapse_to_periods(dti, freq)
+    ) -> list[tuple[Union[pd.Timestamp, datetime.date, datetime.datetime],
+                    Union[pd.Timestamp, datetime.date, datetime.datetime]]
+              ]:
+        """
+        Given a datetime index and a frequency, it gives the list of regular periods found in the datetime index, as
+        a collection of tuples that contain the start time and exclusive time of the periods found. More precisely,
+        if a timestamp is missing (ie if t is present but t + freq is missing), a new period is defined (t
+        becomes the end time of the current period, and the next timestamp found after t defines the beginning of a new
+        period).
+        :param dti: a datetime index, without NaN
+        :param freq: the freq of the datetime index used to find missing periods.
+        :return: a list of tuples that contain the regular periods in the datetime index (defined as the start and
+        inclusive end times of the period).
+        """
 
-        assert isinstance(dti, pd.DatetimeIndex)
-        assert isinstance(freq, str) or isinstance(freq, pd.Timedelta)
-        if pd.to_timedelta(freq).total_seconds() < 1.0:
-            raise ValueError(
-                "freq must be more than 1 second, but given {}".format(freq)
-            )
-
-        if dti.shape[0] == 0:
-            return []
-
-        current_period_start = dti[0]
-        periods_list = []
+        # legacy: check duplicates and multiple of period
         for i in range(1, dti.shape[0]):
             if dti[i] <= dti[i - 1]:
                 raise ValueError("dti must be sorted and without duplicates!")
@@ -626,13 +626,7 @@ class TimeSeries:
                     )
                 )
 
-            if (
-                pd.to_timedelta(freq) != dti[i] - dti[i - 1]
-            ):  # End the current period and start a new one
-                periods_list.append((current_period_start, dti[i - 1]))
-                current_period_start = dti[i]
-        periods_list.append((current_period_start, dti[-1]))  # Don't forget last period
-        return periods_list
+        return TimeSeries.collapse_to_periods(dti=dti, freq=freq)
 
     @staticmethod
     @enda.decorators.warning_deprecated_name(namespace_name='TimeSeries',
@@ -737,13 +731,9 @@ class TimeSeries:
         :return: pd.DataFrame
         """
 
-        df = enda.resample.Resample.upsample_and_interpolate(timeseries_df=df, freq=freq, method=method,
-                                                             forward_fill=True,
-                                                             index_name=index_name)
-
-        df = enda.timezone_utils.TimezoneUtils.set_timezone(df, tz_info=tz)
-
-        return df
+        return enda.resample.Resample.upsample_and_interpolate(timeseries_df=df, freq=freq, method=method,
+                                                               forward_fill=True, index_name=index_name,
+                                                               tz_info=tz)
 
     @staticmethod
     @enda.decorators.warning_deprecated_name(namespace_name='TimeSeries',

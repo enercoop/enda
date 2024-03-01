@@ -77,27 +77,38 @@ class TimezoneUtils:
         :return: the time series with the new time zone
         """
 
+        # check tz_info
         if isinstance(tz_info, str):
             tz_info = pytz.timezone(tz_info)
         if not isinstance(tz_info, datetime.tzinfo):
             raise TypeError("parameter 'tzinfo' should be of type str or datetime.tzinfo")
 
+        # store freq to reset it afterward
+        # cf https://github.com/pandas-dev/pandas/issues/33677
+        freq = time_series.freq
+
         # do we have a tz-aware time series
         if time_series.tzinfo is not None:
-            return time_series.tz_convert(tz_info)
+            new_time_series = time_series.tz_convert(tz_info)
 
-        # else it's a naive time series
+        else:
+            # else it's a naive time series
+            if tz_base is not None:
 
-        if tz_base is not None:
+                if isinstance(tz_base, str):
+                    tz_base = pytz.timezone(tz_base)
+                if not isinstance(tz_base, datetime.tzinfo):
+                    raise TypeError("parameter 'tz_base' should be of type str or datetime.tzinfo")
 
-            if isinstance(tz_base, str):
-                tz_base = pytz.timezone(tz_base)
-            if not isinstance(tz_base, datetime.tzinfo):
-                raise TypeError("parameter 'tz_base' should be of type str or datetime.tzinfo")
+                new_time_series = time_series.tz_localize(tz_base).tz_convert(tz_info)
 
-            return time_series.tz_localize(tz_base).tz_convert(tz_info)
+            else:
+                new_time_series = time_series.tz_localize(tz_info)
 
-        return time_series.tz_localize(tz_info)
+        # reset freq (dropped during setting)
+        new_time_series.freq = freq
+
+        return new_time_series
 
     @staticmethod
     @enda.decorators.handle_multiindex(arg_name='df')
@@ -113,6 +124,7 @@ class TimezoneUtils:
         :return: the dataframe with the index in the new time zone
         """
         df.index = TimezoneUtils._set_timezone_dti(df.index, tz_info, tz_base)
+
         return df
 
     @staticmethod
