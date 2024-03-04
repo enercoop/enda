@@ -17,7 +17,6 @@ def handle_multiindex(arg_name):
     def decorator(func):
         @functools.wraps(func)
         def wrapper_handle_multiindex(*args, **kwargs):
-
             # check whether a multiindex has been given
             multi_df = None
             is_multiindex = False
@@ -26,7 +25,9 @@ def handle_multiindex(arg_name):
             if arg_name in kwargs:
                 is_arg_name_in_kwargs = True
                 if not isinstance(kwargs[arg_name], pd.DataFrame):
-                    raise ValueError(f"Object for argument '{arg_name}' passed to {func.__name__} is not a dataframe")
+                    raise ValueError(
+                        f"Object for argument '{arg_name}' passed to {func.__name__} is not a dataframe"
+                    )
 
                 if isinstance(kwargs[arg_name].index, pd.MultiIndex):
                     is_multiindex = True
@@ -34,7 +35,9 @@ def handle_multiindex(arg_name):
 
             if args and not is_arg_name_in_kwargs:
                 if not isinstance(args[0], pd.DataFrame):
-                    raise ValueError(f"Object for argument '{arg_name}' passed to {func.__name__} is not a dataframe")
+                    raise ValueError(
+                        f"Object for argument '{arg_name}' passed to {func.__name__} is not a dataframe"
+                    )
 
                 if isinstance(args[0].index, pd.MultiIndex):
                     is_multiindex = True
@@ -48,16 +51,19 @@ def handle_multiindex(arg_name):
             other_levels_names = [_.name for _ in multi_df.index.levels[0:-1]]
 
             if last_level_name is None or pd.isna(other_levels_names).sum() > 0:
-                raise ValueError(f"Cannot use the function {func.__name__} with a multiindex dataframe having "
-                                 "unnamed indexes")
+                raise ValueError(
+                    f"Cannot use the function {func.__name__} with a multiindex dataframe having "
+                    "unnamed indexes"
+                )
 
             # we will build a new dataframe looping on all sub-dataframes, and applying func to all of them
             new_df = pd.DataFrame()
-            for other_level_values, last_level_df in multi_df.groupby(level=other_levels_names, sort=False):
-
+            for other_level_values, last_level_df in multi_df.groupby(
+                level=other_levels_names, sort=False
+            ):
                 # turn last level to a single-index dataframe
-                last_level_df = (
-                    last_level_df.reset_index(level=other_levels_names, drop=True)
+                last_level_df = last_level_df.reset_index(
+                    level=other_levels_names, drop=True
                 )
 
                 # define arguments of the function, to use it with the new last-level single-index dataframe
@@ -66,8 +72,9 @@ def handle_multiindex(arg_name):
                 if not is_arg_name_in_kwargs:
                     args_decorator = (last_level_df,) + args[1:]
                 else:
-                    kwargs_decorator = {arg_name: last_level_df} | {kw: kwarg for kw, kwarg in kwargs.items()
-                                                                    if kw != arg_name}
+                    kwargs_decorator = {arg_name: last_level_df} | {
+                        kw: kwarg for kw, kwarg in kwargs.items() if kw != arg_name
+                    }
 
                 # call function with sub-dataframe
                 result = func(*args_decorator, **kwargs_decorator)
@@ -76,7 +83,9 @@ def handle_multiindex(arg_name):
                 if isinstance(result, pd.DataFrame):
                     new_col_name = result.index.name
                     result[other_levels_names] = other_level_values
-                    result = result.reset_index().set_index(other_levels_names + [new_col_name])
+                    result = result.reset_index().set_index(
+                        other_levels_names + [new_col_name]
+                    )
                 else:
                     # it should be convertible to a pd.Series
                     result = pd.Series(result).to_frame().T
@@ -104,26 +113,32 @@ def handle_series_as_datetimeindex(arg_name, return_input_type):
     """
 
     def decorator(func):
-
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-
             is_series = False
 
             # check if the argument is in kwargs
             if arg_name in kwargs:
-                if not isinstance(kwargs[arg_name], pd.Series) and not isinstance(kwargs[arg_name], pd.DatetimeIndex):
-                    raise ValueError(f"Object for argument '{arg_name}' passed to {func.__name__} must "
-                                     f"be a datetimeindex or a series convertible to a datetimeindex")
+                if not isinstance(kwargs[arg_name], pd.Series) and not isinstance(
+                    kwargs[arg_name], pd.DatetimeIndex
+                ):
+                    raise ValueError(
+                        f"Object for argument '{arg_name}' passed to {func.__name__} must "
+                        f"be a datetimeindex or a series convertible to a datetimeindex"
+                    )
 
                 if isinstance(kwargs[arg_name], pd.Series):
                     is_series = True
                     kwargs[arg_name] = pd.DatetimeIndex(kwargs[arg_name])
 
             elif args:
-                if not isinstance(args[0], pd.Series) and not isinstance(args[0], pd.DatetimeIndex):
-                    raise ValueError(f"Object for argument '{arg_name}' passed to {func.__name__} must "
-                                     f"be a datetimeindex or a series convertible to a datetimeindex")
+                if not isinstance(args[0], pd.Series) and not isinstance(
+                    args[0], pd.DatetimeIndex
+                ):
+                    raise ValueError(
+                        f"Object for argument '{arg_name}' passed to {func.__name__} must "
+                        f"be a datetimeindex or a series convertible to a datetimeindex"
+                    )
 
                 if isinstance(args[0], pd.Series):
                     is_series = True
@@ -143,7 +158,9 @@ def handle_series_as_datetimeindex(arg_name, return_input_type):
     return decorator
 
 
-def warning_deprecated_name(namespace_name, new_namespace_name=None, new_function_name=None):
+def warning_deprecated_name(
+    namespace_name, new_namespace_name=None, new_function_name=None
+):
     """
     This decorator with a parameter is meant to be used to issue a specific warning, namely that a function
     has been renamed, or moved in a new namespace. This is useful for classes that changed named, or will be deleted
@@ -155,14 +172,17 @@ def warning_deprecated_name(namespace_name, new_namespace_name=None, new_functio
     def decorator(func):
         @functools.wraps(func)
         def wrapper_warning_deprecated_name(*args, **kwargs):
-            warnings.warn(f"{func.__name__} in {namespace_name} is deprecated, use "
-                          f"{new_function_name if new_function_name is not None else 'it'}"
-                          f" from {namespace_name if new_namespace_name is None else new_namespace_name}"
-                          f" instead.",
-                          DeprecationWarning,
-                          stacklevel=2)
+            warnings.warn(
+                f"{func.__name__} in {namespace_name} is deprecated, use "
+                f"{new_function_name if new_function_name is not None else 'it'}"
+                f" from {namespace_name if new_namespace_name is None else new_namespace_name}"
+                f" instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             return func(*args, **kwargs)
 
         # noinspection PyDeprecation
         return wrapper_warning_deprecated_name
+
     return decorator
