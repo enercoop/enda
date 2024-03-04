@@ -1,9 +1,11 @@
+"""This module contains functions to help manipulating timeseries"""
+
 import datetime
+import re
+from typing import Union
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 import pytz
-import re
-from typing import Union
 
 import enda.decorators
 import enda.timezone_utils
@@ -11,6 +13,10 @@ import enda.resample
 
 
 class TimeSeries:
+    """
+    This class contains methods for manipulating timeseries
+    """
+
     # ------------------------
     # Frequencies / Timedelta
     # ------------------------
@@ -67,13 +73,13 @@ class TimeSeries:
 
         elif len(freq_string_parts) == 2:
 
-            # in that case, first group must be a number, second group must be a unit eg. '2MS'
+            # in that case, first group must be a number, second group must be a unit e.g. '2MS'
             numeric_part_int = int(freq_string_parts[0])
             freq_unit_str = freq_string_parts[-1].upper()
 
         elif len(freq_string_parts) == 1:
 
-            # in that case, there is no number but first character might be a sign. eg.  or 'MS' or '-D'
+            # in that case, there is no number but first character might be a sign. e.g.  or 'MS' or '-D'
             if freq_string_parts[0][0] == '-':
                 numeric_part_int = -1
                 freq_unit_str = freq_string_parts[0][1:].upper()
@@ -88,7 +94,7 @@ class TimeSeries:
             raise ValueError(f"freq {freq} is not valid")
 
         # simple check
-        if freq_unit_str not in TimeSeries.FREQ_UNIT_TO_DAYS.keys():
+        if freq_unit_str not in TimeSeries.FREQ_UNIT_TO_DAYS:
             raise ValueError(f"Unknown frequency unit {freq_unit_str} obtained from frequency {freq}")
 
         return numeric_part_int, freq_unit_str
@@ -103,7 +109,7 @@ class TimeSeries:
         :param freq: the frequency given as a string or a pd.Timedelta
         :return: a boolean that indicates whether the considered frequency is 'even'
         """
-        numeric_part_int, freq_unit_str = TimeSeries.split_amount_and_unit_from_freq(freq)
+        _, freq_unit_str = TimeSeries.split_amount_and_unit_from_freq(freq)
         if freq_unit_str in ["M", "MS", "Q", "A", "Y"]:
             return False
         return True
@@ -132,12 +138,12 @@ class TimeSeries:
         Define how to add a timedelta according to the way it's provided (string, timedelta), regular or irregular
         absolute length.
         :param date: a date, provided as a pd.Timestamp (naive or tz-aware), a date, a datetime
-        :param timedelta:  a timedelta, given as a freq string (eg. '2MS') or a pd.Timedelta object.
+        :param timedelta:  a timedelta, given as a freq string (e.g. '2MS') or a pd.Timedelta object.
         """
         if isinstance(timedelta, pd.Timedelta):
             return date + timedelta
 
-        elif isinstance(timedelta, str):
+        if isinstance(timedelta, str):
             # if it's a string, it is not necessarily convertible to timedelta, as
             # it might be an irregular length (month, year, quarter...)
             # in that case, we handle these cases before defaulting to pd.to_timedelta()
@@ -145,17 +151,16 @@ class TimeSeries:
 
             if unit_freq_str in ['M', 'MS']:
                 return date + relativedelta(months=numeric_part_int)
-            elif unit_freq_str in ['Y', 'A']:
+            if unit_freq_str in ['Y', 'A']:
                 return date + relativedelta(years=numeric_part_int)
-            elif unit_freq_str in ['Q']:
+            if unit_freq_str in ['Q']:
                 raise ValueError("Cannot simply add a quarter, it does not mean anything in general")
-            else:
-                # it should be convertible to pd.Timedelta
-                timedelta = str(numeric_part_int) + unit_freq_str
-                return date + pd.to_timedelta(timedelta)
 
-        else:
-            raise TypeError("timedelta must be of type Timedelta or string ")
+            # it should be convertible to pd.Timedelta
+            timedelta = str(numeric_part_int) + unit_freq_str
+            return date + pd.to_timedelta(timedelta)
+
+        raise TypeError("timedelta must be of type Timedelta or string ")
 
     @staticmethod
     def subtract_timedelta(date: Union[datetime.date, datetime.datetime, pd.Timestamp],
@@ -170,7 +175,7 @@ class TimeSeries:
         if isinstance(timedelta, pd.Timedelta):
             return date - timedelta
 
-        elif isinstance(timedelta, str):
+        if isinstance(timedelta, str):
             # if it's a string, it is not necessarily convertible to timedelta, as
             # it might be an irregular length (month, year, quarter...)
             # in that case, we handle these cases before defaulting to pd.to_timedelta()
@@ -178,17 +183,16 @@ class TimeSeries:
 
             if unit_freq_str in ['M', 'MS']:
                 return date + relativedelta(months=-numeric_part_int)
-            elif unit_freq_str in ['Y', 'A']:
+            if unit_freq_str in ['Y', 'A']:
                 return date + relativedelta(years=-numeric_part_int)
-            elif unit_freq_str in ['Q']:
+            if unit_freq_str in ['Q']:
                 raise ValueError("Cannot simply subtract a quarter, it does not mean anything in general")
-            else:
-                # it should be convertible to pd.Timedelta
-                timedelta = str(numeric_part_int) + unit_freq_str
-                return date - pd.to_timedelta(timedelta)
 
-        else:
-            raise TypeError("timedelta must be of type Timedelta or string ")
+            # it should be convertible to pd.Timedelta
+            timedelta = str(numeric_part_int) + unit_freq_str
+            return date - pd.to_timedelta(timedelta)
+
+        raise TypeError("timedelta must be of type Timedelta or string ")
 
     # ------------
     # Time-series
@@ -289,7 +293,7 @@ class TimeSeries:
         nb_records = TimeSeries.find_nb_records(dti)
         if nb_records == 1:
             # we cannot get a frequency out of the series, as it's a single element series !
-            return
+            return ''
 
         if nb_records >= 3:
             # try getting single frequency from pandas if the series is big enough
@@ -297,7 +301,7 @@ class TimeSeries:
 
         if freq is None:
             # it means there is some kind of irregularity in the datetimeindex, as pandas could not find it or
-            # eg. there might be more than one frequency in the dataframe.
+            # e.g. there might be more than one frequency in the dataframe.
             # note that there must be at least two records in the datetimeindex at that point
 
             # get all gap distributions in the dataframe
@@ -311,7 +315,7 @@ class TimeSeries:
 
         # if the freq is 'one' of a particular unit, pandas just returns the unit,
         # This is not practical for other functions, so we add 1 to the string freq.
-        # eg. the freq is one day, pandas may return 'D'
+        # e.g. the freq is one day, pandas may return 'D'
         # we transform it to '1D' in that case
         freq = freq if freq[0].isdecimal() else "1" + freq
 
@@ -516,7 +520,7 @@ class TimeSeries:
             return len(TimeSeries.find_gap_distribution(dti)) == 1
 
         # else, it might be more tricky, because the frequency may be irregular in terms of total_seconds
-        # (eg. when freq is months, years, or even days because of change of hour). We need to rely on pd.infer_freq().
+        # (e.g. when freq is months, years, or even days because of change of hour). We need to rely on pd.infer_freq().
         # Safer way is to reconstruct a time-series index from scratch using the most common frequency found in the
         # input index, and compare it to the index.
 
@@ -550,6 +554,23 @@ class TimeSeries:
                 pytz.timezone,
             ],
     ):
+        """
+               Sometimes a time series is of pandas type "object" just because the time-zone information
+               is not well-read initially. Such a series can't be translated to a pd.DatetimeIndex.
+               This function makes sure the time zone information of the input series is set to the input
+               tz_info for each row and also for the series.
+
+               Example :
+               time_series = a time_series with some times at timezone +01:00 (French winter time)
+                             and others at timezone +02:00 (French summer)
+                             So its pandas dtype is "object"
+               tz = pytz.timezone("Europe/Paris")
+
+               :param time_series: a series with tz-aware date-times. If a datetime-index is passed, the function
+                                   process it
+               :param tzinfo: a str or a datetime.tzinfo
+               :return: a DatetimeIndex of dtype: datetime[ns, tzinfo]
+               """
         return pd.DatetimeIndex(enda.timezone_utils.TimezoneUtils.convert_dtype_from_object_to_tz_aware(
             time_series=time_series,
             tz_info=tzinfo)
@@ -621,9 +642,7 @@ class TimeSeries:
                 freq
             ).total_seconds() != 0:
                 raise ValueError(
-                    "Timedelta between {} and {} is not a multiple of freq ({}).".format(
-                        dti[i - 1], dti[i], freq
-                    )
+                    f"Timedelta between {dti[i - 1]} and {dti[i]} is not a multiple of freq ({freq})."
                 )
 
         return TimeSeries.collapse_to_periods(dti=dti, freq=freq)

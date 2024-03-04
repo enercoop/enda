@@ -1,13 +1,19 @@
+""""A module for testing the Timeseries class in enda/timeseries.py"""
+
 import datetime
 import logging
+import unittest
 import pandas as pd
 import pytz
-import unittest
 
 from enda.timeseries import TimeSeries
 
 
 class TestTimeSeries(unittest.TestCase):
+    """
+    This class aims at testing the functions of the Timeseries class in
+        enda/timeseries.py
+    """
 
     def setUp(self):
 
@@ -22,15 +28,15 @@ class TestTimeSeries(unittest.TestCase):
         # define  datetime index and series of type datetime
         self.dti = pd.DatetimeIndex(['2024-01-01 01:00:00', '2024-01-01 02:00:00',
                                      '2024-01-01 03:00:00', '2024-01-01 04:00:00'])  # 1H regular
-        self.almost_inperfect_dti = pd.DatetimeIndex(
+        self.almost_imperfect_dti = pd.DatetimeIndex(
             ['2024-01-01 01:00:00+01', '2024-01-01 02:00:00+01', '2024-01-01 02:00:00+01',
              '2024-01-01 04:00:00+01', '2024-01-01 03:00:00+01', '2024-01-01 05:00:00+01'])  # 1H duplicates unordered
-        self.inperfect_dti = pd.DatetimeIndex(
+        self.imperfect_dti = pd.DatetimeIndex(
             ['2024-01-01 01:00:00+01', '2024-01-01 02:00:00+01', '2024-01-01 03:00:00+01',
              '2024-01-01 06:00:00+01', '2024-01-01 08:00:00+01', '2024-01-01 09:00:00+01',
              '2024-01-01 09:30:00+01'])  # 1H with holes and an extra period (last point)
         self.monthly_dti = pd.DatetimeIndex(['2024-01-01', '2024-02-01', '2024-03-01'])  # monthly
-        self.almost_inperfect_monthly_dti = pd.DatetimeIndex(
+        self.almost_imperfect_monthly_dti = pd.DatetimeIndex(
             ['2024-01-01', '2024-03-01', '2024-03-01', '2024-02-01']  # monthly duplicates unordered
         )
         self.series = self.dti.to_series().reset_index(drop=True)
@@ -66,6 +72,7 @@ class TestTimeSeries(unittest.TestCase):
     # ------------------------
 
     def test_split_amount_and_unit_from_freq(self):
+        """Test the split_amount_and_unit_from_freq function"""
 
         # test with correct frequencies
         parsed_freq_list = [TimeSeries.split_amount_and_unit_from_freq(_) for _ in self.ok_freq_list]
@@ -86,6 +93,7 @@ class TestTimeSeries(unittest.TestCase):
             TimeSeries.split_amount_and_unit_from_freq(self.not_ok_freq_list[-1])
 
     def test_is_regular_freq(self):
+        """Test the is_regular_freq function"""
 
         # test with correct frequencies
         parsed_freq_list = [TimeSeries.is_regular_freq(_) for _ in self.ok_freq_list]
@@ -97,6 +105,7 @@ class TestTimeSeries(unittest.TestCase):
             self.assertEqual(result, expected_result)
 
     def test_freq_as_approximate_nb_days(self):
+        """Test the freq_as_approximate_nb_days function"""
 
         # test with correct frequencies
         result_list = [TimeSeries.freq_as_approximate_nb_days(_) for _ in self.ok_freq_list]
@@ -108,6 +117,7 @@ class TestTimeSeries(unittest.TestCase):
             self.assertAlmostEqual(result, expected_result)
 
     def test_add_timedelta(self):
+        """Test the add_timedelta_function"""
 
         # test with naive timestamp
         test_timestamp = pd.to_datetime("2021-01-01 00:00:00")
@@ -208,6 +218,7 @@ class TestTimeSeries(unittest.TestCase):
             TimeSeries.add_timedelta(test_datetime, self.not_ok_freq_list[-1])
 
     def test_subtract_timedelta(self):
+        """Test the subtract_timedelta function"""
 
         # test with naive timestamp
         test_timestamp = pd.to_datetime("2021-01-01 00:00:00")
@@ -247,6 +258,7 @@ class TestTimeSeries(unittest.TestCase):
     # ------------
 
     def test_has_nan_or_empty(self):
+        """Test the has_nan_or_empty function"""
 
         # test with a correct dti
         result = TimeSeries.has_nan_or_empty(self.dti)
@@ -269,13 +281,15 @@ class TestTimeSeries(unittest.TestCase):
             TimeSeries.has_nan_or_empty(5)
 
     def test_find_nb_records(self):
-        result = TimeSeries.find_nb_records(self.almost_inperfect_dti)
+        """Test the find_nb_records function"""
+        result = TimeSeries.find_nb_records(self.almost_imperfect_dti)
         self.assertEqual(result, 6)
 
-        result = TimeSeries.find_nb_records(self.almost_inperfect_dti, True)
+        result = TimeSeries.find_nb_records(self.almost_imperfect_dti, True)
         self.assertEqual(result, 5)
 
     def test_find_gap_distribution(self):
+        """Test the find_gap_distribution function"""
 
         # test dti
         pd.testing.assert_series_equal(TimeSeries.find_gap_distribution(self.dti),
@@ -284,18 +298,18 @@ class TestTimeSeries(unittest.TestCase):
         pd.testing.assert_series_equal(TimeSeries.find_gap_distribution(self.dti, True),
                                        pd.Series(data=[3], index=[pd.Timedelta("1H")]))
 
-        # test almost_inperfect_dti
-        pd.testing.assert_series_equal(TimeSeries.find_gap_distribution(self.almost_inperfect_dti),
+        # test almost_imperfect_dti
+        pd.testing.assert_series_equal(TimeSeries.find_gap_distribution(self.almost_imperfect_dti),
                                        pd.Series(data=[4, 1],
                                                  index=[pd.Timedelta("1H"), pd.Timedelta("0H")]))
 
-        pd.testing.assert_series_equal(TimeSeries.find_gap_distribution(dti=self.almost_inperfect_dti,
+        pd.testing.assert_series_equal(TimeSeries.find_gap_distribution(dti=self.almost_imperfect_dti,
                                                                         skip_duplicate_timestamps=True),
                                        pd.Series(data=[4],
                                                  index=[pd.Timedelta("1H")]))
 
         # test dti_imperfect
-        pd.testing.assert_series_equal(TimeSeries.find_gap_distribution(self.inperfect_dti),
+        pd.testing.assert_series_equal(TimeSeries.find_gap_distribution(self.imperfect_dti),
                                        pd.Series(data=[3, 1, 1, 1],
                                                  index=[pd.Timedelta("1H"), pd.Timedelta("3H"),
                                                         pd.Timedelta("2H"), pd.Timedelta("30T")]))
@@ -304,8 +318,8 @@ class TestTimeSeries(unittest.TestCase):
         pd.testing.assert_series_equal(TimeSeries.find_gap_distribution(self.monthly_dti),
                                        pd.Series(data=[1, 1], index=[pd.Timedelta("31D"), pd.Timedelta("29D")]))
 
-        # test inperfect monthly data
-        pd.testing.assert_series_equal(TimeSeries.find_gap_distribution(dti=self.almost_inperfect_monthly_dti),
+        # test imperfect monthly data
+        pd.testing.assert_series_equal(TimeSeries.find_gap_distribution(dti=self.almost_imperfect_monthly_dti),
                                        pd.Series(data=[1, 1, 1],
                                                  index=[pd.Timedelta("31D"), pd.Timedelta("29D"), pd.Timedelta("0D")]))
 
@@ -318,25 +332,26 @@ class TestTimeSeries(unittest.TestCase):
             pd.Series(data=[3], index=[pd.Timedelta("1H")]))
 
     def test_find_most_common_frequency(self):
+        """Test the find_most_common_frequency function"""
 
         # test dti
         self.assertEqual(TimeSeries.find_most_common_frequency(self.dti), "1H")
         self.assertEqual(TimeSeries.find_most_common_frequency(self.dti, True), "1H")
 
-        # test almost_inperfect_dti
-        self.assertEqual(TimeSeries.find_most_common_frequency(self.almost_inperfect_dti), "1H")
-        self.assertEqual(TimeSeries.find_most_common_frequency(dti=self.almost_inperfect_dti,
+        # test almost_imperfect_dti
+        self.assertEqual(TimeSeries.find_most_common_frequency(self.almost_imperfect_dti), "1H")
+        self.assertEqual(TimeSeries.find_most_common_frequency(dti=self.almost_imperfect_dti,
                                                                skip_duplicate_timestamps=True),
                          "1H")
 
         # test dti_imperfect
-        self.assertEqual(TimeSeries.find_most_common_frequency(self.inperfect_dti), "1H")
+        self.assertEqual(TimeSeries.find_most_common_frequency(self.imperfect_dti), "1H")
 
         # test monthly data
         # that's the interesting part !
         self.assertEqual(TimeSeries.find_most_common_frequency(self.monthly_dti), "1MS")
-        self.assertEqual(TimeSeries.find_most_common_frequency(self.almost_inperfect_monthly_dti), "31D")
-        self.assertEqual(TimeSeries.find_most_common_frequency(self.almost_inperfect_monthly_dti,
+        self.assertEqual(TimeSeries.find_most_common_frequency(self.almost_imperfect_monthly_dti), "31D")
+        self.assertEqual(TimeSeries.find_most_common_frequency(self.almost_imperfect_monthly_dti,
                                                                skip_duplicate_timestamps=True),
                          "1MS")
 
@@ -351,6 +366,7 @@ class TestTimeSeries(unittest.TestCase):
                          "1H")
 
     def test_find_duplicates(self):
+        """Test the find_duplicates function"""
 
         empty_index = pd.DatetimeIndex(data=[])
         empty_series = pd.Series(data=[], dtype='datetime64[ns]')
@@ -358,12 +374,13 @@ class TestTimeSeries(unittest.TestCase):
         pd.testing.assert_index_equal(TimeSeries.find_duplicates(self.dti), empty_index)
         pd.testing.assert_series_equal(TimeSeries.find_duplicates(self.series), empty_series)
 
-        pd.testing.assert_index_equal(TimeSeries.find_duplicates(self.almost_inperfect_dti),
+        pd.testing.assert_index_equal(TimeSeries.find_duplicates(self.almost_imperfect_dti),
                                       pd.DatetimeIndex(['2024-01-01 02:00:00+01']))
-        pd.testing.assert_index_equal(TimeSeries.find_duplicates(self.almost_inperfect_monthly_dti),
+        pd.testing.assert_index_equal(TimeSeries.find_duplicates(self.almost_imperfect_monthly_dti),
                                       pd.DatetimeIndex(['2024-03-01']))
 
     def test_find_extra_points(self):
+        """Test the find_extra_point function"""
 
         result_index = pd.DatetimeIndex(data=[])
         pd.testing.assert_index_equal(TimeSeries.find_extra_points(self.dti), result_index)
@@ -380,18 +397,19 @@ class TestTimeSeries(unittest.TestCase):
                                        result_series)
 
         # > result_index = pd.DatetimeIndex(data=[]).tz_localize("Europe/Paris")
-        # > pd.testing.assert_index_equal(TimeSeries.find_extra_periods(self.almost_inperfect_dti), result_index)
+        # > pd.testing.assert_index_equal(TimeSeries.find_extra_periods(self.almost_imperfect_dti), result_index)
         #  Fails because it's hard to set an empty index with type tz-aware datetime.
         #  In that case, just test the length of the index
-        self.assertEqual(len(TimeSeries.find_extra_points(self.almost_inperfect_dti)), 0)
+        self.assertEqual(len(TimeSeries.find_extra_points(self.almost_imperfect_dti)), 0)
 
         result_index = pd.DatetimeIndex(["2024-01-01 09:30:00+01"])
-        pd.testing.assert_index_equal(TimeSeries.find_extra_points(self.inperfect_dti), result_index)
+        pd.testing.assert_index_equal(TimeSeries.find_extra_points(self.imperfect_dti), result_index)
 
         self.assertEqual(len(TimeSeries.find_extra_points(self.monthly_dti)), 0)
-        self.assertEqual(len(TimeSeries.find_extra_points(self.almost_inperfect_monthly_dti)), 0)
+        self.assertEqual(len(TimeSeries.find_extra_points(self.almost_imperfect_monthly_dti)), 0)
 
     def test_find_missing_points(self):
+        """Test the find_missing_points function"""
 
         pd.testing.assert_index_equal(
             TimeSeries.find_missing_points(self.dti),
@@ -417,6 +435,7 @@ class TestTimeSeries(unittest.TestCase):
         )
 
     def test_has_single_frequency(self):
+        """Test the has_single_frequency function"""
 
         self.assertEqual(TimeSeries.has_single_frequency(self.dti), True)
         self.assertEqual(TimeSeries.has_single_frequency(self.dti, False), True)
@@ -424,13 +443,13 @@ class TestTimeSeries(unittest.TestCase):
 
         self.assertEqual(TimeSeries.has_single_frequency(self.series), True)
 
-        self.assertEqual(TimeSeries.has_single_frequency(self.inperfect_dti), False)
-        self.assertEqual(TimeSeries.has_single_frequency(self.inperfect_dti,
+        self.assertEqual(TimeSeries.has_single_frequency(self.imperfect_dti), False)
+        self.assertEqual(TimeSeries.has_single_frequency(self.imperfect_dti,
                                                          variable_duration_freq_included=False,
                                                          skip_duplicate_timestamps=True),
                          False)
 
-        self.assertEqual(TimeSeries.has_single_frequency(self.inperfect_dti,
+        self.assertEqual(TimeSeries.has_single_frequency(self.imperfect_dti,
                                                          skip_duplicate_timestamps=True),
                          False)
 
@@ -441,6 +460,7 @@ class TestTimeSeries(unittest.TestCase):
                          False)
 
     def test_collapse_to_periods(self):
+        """Test the collapse to periods function"""
 
         # periods is a list of (start, end) pairs.
         periods = [
@@ -460,9 +480,9 @@ class TestTimeSeries(unittest.TestCase):
             computed_periods = TimeSeries.collapse_to_periods(dti, freq)
             self.assertEqual(len(computed_periods), len(periods))
 
-            for i in range(len(periods)):
-                self.assertEqual(computed_periods[i][0], periods[i][0])
-                self.assertEqual(computed_periods[i][1], periods[i][1])
+            for i, period in enumerate(periods):
+                self.assertEqual(computed_periods[i][0], period[0])
+                self.assertEqual(computed_periods[i][1], period[1])
 
     # ----------------------------------------
     # Deprecated functions (moved elsewhere)
@@ -611,9 +631,9 @@ class TestTimeSeries(unittest.TestCase):
             computed_periods = TimeSeries.collapse_dt_series_into_periods(dti, freq)
             self.assertEqual(len(computed_periods), len(periods))
 
-            for i in range(len(periods)):
-                self.assertEqual(computed_periods[i][0], periods[i][0])
-                self.assertEqual(computed_periods[i][1], periods[i][1])
+            for i, period in enumerate(periods):
+                self.assertEqual(computed_periods[i][0], period[0])
+                self.assertEqual(computed_periods[i][1], period[1])
 
         # test error
         dti = pd.DatetimeIndex([
@@ -628,6 +648,7 @@ class TestTimeSeries(unittest.TestCase):
             TimeSeries.collapse_dt_series_into_periods(dti, freq="30min")
 
     def test_interpolate_daily_to_sub_daily_data(self):
+        """Test the interpolate_daily_to_sub_daily_data function"""
 
         expected_df = pd.date_range(
             start=pd.to_datetime('2021-01-01 00:00:00+01:00').tz_convert('Europe/Paris'),
@@ -681,6 +702,7 @@ class TestTimeSeries(unittest.TestCase):
         pd.testing.assert_frame_equal(expected_df, sub_df)
 
     def test_interpolate_freq_to_sub_freq_data(self):
+        """Test the interpolate_freq_to_sub_freq_data function"""
 
         # test interpolate freq to sub-freq on a 6H basis
         expected_df = pd.date_range(
@@ -807,6 +829,7 @@ class TestTimeSeries(unittest.TestCase):
         pd.testing.assert_frame_equal(expected_df, sub_df)
 
     def test_average_to_upper_freq(self):
+        """Test the average_to_upper_freq function"""
 
         # average to upper freq
 

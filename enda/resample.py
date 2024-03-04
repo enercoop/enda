@@ -1,3 +1,5 @@
+"""This module contains functions for resampling timeseries"""
+
 from typing import Union
 import datetime
 from dateutil.relativedelta import relativedelta
@@ -9,6 +11,7 @@ import enda.decorators
 
 
 class Resample:
+    """This class contains methods to resample (up or down) timeseries DataFrames"""
 
     @staticmethod
     @enda.decorators.handle_multiindex(arg_name='timeseries_df')
@@ -132,7 +135,7 @@ class Resample:
         :param freq: the aimed frequency. If given as string, it must be convertible to pd.Timedelta, eg '1D' or '1H'
         :param index_name: a name to give to the new index. For instance going from 'date' to 'time'.
         :param tz_info: the target time zone in case the index is resampled in another timezone / or if we want to
-                        go from a non-localized timestamp (eg. dates) to a localized one (e.g. date-times)
+                        go from a non-localized timestamp (e.g. dates) to a localized one (e.g. date-times)
         :return: the upsampled timeseries dataframe
         """
 
@@ -264,7 +267,7 @@ class Resample:
         :param is_original_frequency_unique: check whether the frequency is unique in the initial dataframe
         :param index_name: a name to give to the new index. For instance going from 'date' to 'time'.
         :param tz_info: the target time zone in case the index is resampled in another timezone / or if we want to
-                        go from a non-localized timestamp (eg. dates) to a localized one (e.g. date-times)
+                        go from a non-localized timestamp (e.g. dates) to a localized one (e.g. date-times)
         :return: the upsampled timeseries dataframe
         """
 
@@ -460,7 +463,7 @@ class Resample:
 
         if gap_timedelta and excl_end_time:
             raise ValueError("Cannot provide both arguments excl_end_time and gap_timedelta at once")
-        elif gap_timedelta is not None:
+        if gap_timedelta is not None:
             extra_excl_end_time = enda.timeseries.TimeSeries.add_timedelta(incl_end_time, gap_timedelta)
         elif excl_end_time is not None:
             extra_excl_end_time = pd.to_datetime(excl_end_time)

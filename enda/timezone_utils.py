@@ -1,13 +1,19 @@
+"""This module contains various functions for dealing with timezones in temporal data in Python"""
+
 import datetime
+from typing import Union
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 import pytz
-from typing import Union
+
 
 import enda.decorators
 
 
 class TimezoneUtils:
+    """
+    This class contains various methods for helping deal with timezones
+    """
     @staticmethod
     def is_timezone_aware(dt: Union[datetime.datetime, pd.Timestamp]) -> bool:
         """
@@ -34,7 +40,7 @@ class TimezoneUtils:
         ):
             raise ValueError(
                 "day_dt must be datetime with only years, months or days (not more precise),"
-                " but given: {}, {}".format(type(day_dt), day_dt)
+                f" but given: {type(day_dt)}, {day_dt}"
             )
         if not (
             isinstance(interval, relativedelta)
@@ -47,9 +53,7 @@ class TimezoneUtils:
             raise (
                 ValueError(
                     "Interval must be a relativedelta with only years, months or days "
-                    "(not more precise), but given: {}, {}".format(
-                        type(interval), interval
-                    )
+                    f"(not more precise), but given: {type(interval)}, {interval}"
                 )
             )
 
@@ -60,8 +64,8 @@ class TimezoneUtils:
         if tz is not None:
             day_aware = tz.localize(day_naive, is_dst=None)
             return day_aware
-        else:
-            return day_naive
+
+        return day_naive
 
     @staticmethod
     @enda.decorators.handle_series_as_datetimeindex(arg_name='time_series', return_input_type=True)
@@ -115,7 +119,7 @@ class TimezoneUtils:
     def _set_timezone_frame(df: pd.DataFrame,
                             tz_info: Union[str, datetime.tzinfo],
                             tz_base: Union[str, datetime.tzinfo] = None
-                            ) -> Union[pd.DatetimeIndex, pd.Series]:
+                            ) -> pd.DataFrame:
         """
         Make a single-datetime-indexed dataframe's index timezone-aware or convert it to a target timezone.
         :param df: a dataframe with a datetime index
@@ -149,8 +153,11 @@ class TimezoneUtils:
 
         if isinstance(time_series, pd.DataFrame):
             return TimezoneUtils._set_timezone_frame(time_series, tz_info, tz_base)
-        if isinstance(time_series, pd.DatetimeIndex) or isinstance(time_series, pd.Series):
+        if isinstance(time_series, (pd.DatetimeIndex, pd.Series)):
             return TimezoneUtils._set_timezone_dti(time_series, tz_info, tz_base)
+
+        raise TypeError("time_series should be either a DataFrame, a DatetimeIndex or a Series, "
+                        f"got {type(time_series)}")
 
     @staticmethod
     def convert_dtype_from_object_to_tz_aware(

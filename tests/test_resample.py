@@ -1,3 +1,5 @@
+""""A module for testing the Resample class in enda/resample.py"""
+
 import logging
 import unittest
 import pandas as pd
@@ -5,6 +7,10 @@ import enda.resample
 
 
 class TestResample(unittest.TestCase):
+    """
+        This class aims at testing the functions of the Resample class in
+            enda/resample.py
+        """
     def setUp(self):
         logging.captureWarnings(True)
         logging.disable(logging.ERROR)

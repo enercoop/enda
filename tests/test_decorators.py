@@ -1,12 +1,16 @@
+"""A module for testing the functions of enda/decorators.py"""
+
 import logging
-import pandas as pd
 import unittest
 import warnings
+import pandas as pd
+
 
 import enda.decorators
 
 
 class TestDecorator(unittest.TestCase):
+    """This class aims at testing the decorator functions in enda/decorators.py"""
 
     def setUp(self):
         logging.captureWarnings(True)

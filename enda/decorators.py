@@ -1,6 +1,8 @@
+"""This module contains various utility functions to be used as decorators"""
+
 import functools
-import pandas as pd
 import warnings
+import pandas as pd
 
 
 def handle_multiindex(arg_name):
@@ -64,7 +66,8 @@ def handle_multiindex(arg_name):
                 if not is_arg_name_in_kwargs:
                     args_decorator = (last_level_df,) + args[1:]
                 else:
-                    kwargs_decorator = {arg_name: last_level_df} | {_: kwargs[_] for _ in kwargs if _ != arg_name}
+                    kwargs_decorator = {arg_name: last_level_df} | {kw: kwarg for kw, kwarg in kwargs.items()
+                                                                    if kw != arg_name}
 
                 # call function with sub-dataframe
                 result = func(*args_decorator, **kwargs_decorator)
