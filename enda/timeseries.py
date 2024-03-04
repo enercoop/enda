@@ -1,64 +1,570 @@
 import datetime
-from typing import Union
-
-import numpy as np
+from dateutil.relativedelta import relativedelta
 import pandas as pd
 import pytz
+import re
+from typing import Union
 
-from enda.decorators import handle_multiindex
+import enda.decorators
+import enda.timezone_utils
+import enda.resample
 
 
 class TimeSeries:
-    @classmethod
-    def align_timezone(
-        cls,
-        time_series: pd.Series,
-        tzinfo: Union[
-            str,
-            pytz.timezone,
-        ],
-    ):
+    # ------------------------
+    # Frequencies / Timedelta
+    # ------------------------
+
+    # mapping of common frequencies codes to approximate number of days
+    FREQ_UNIT_TO_DAYS = {
+        'S': 1 / (24 * 3600),  # second
+        'MIN': 1 / 1440,  # minute
+        'T': 1 / 1440,  # minute
+        'H': 1 / 24,  # hour
+        'D': 1,  # day
+        'B': 1,  # business day
+        'W': 7,  # week
+        'M': 30.4,  # average number of days in a month
+        'MS': 30.4,  # average number of days in a month
+        'Q': 91,  # quarter (approximation)
+        'A': 365,  # assuming 365 days in a year (approximation)
+        'Y': 365,  # assuming 365 days in a year (approximation)
+    }
+
+    @staticmethod
+    def split_amount_and_unit_from_freq(freq: Union[str, pd.Timedelta]) -> tuple[int, str]:
         """
-        Sometimes a time_series is of pandas type "object" just because the time-zone information
-        is not well read initially.
-
-        Example :
-        time_series = a time_series with some times at timezone +01:00 (French winter time)
-                      and others at timezone +02:00 (French summer time)
-                      So its pandas dtype is "object"
-        tz = pytz.timezone("Europe/Paris")
-        We want to make sure the timezone information is tzinfo for each row and also for the series.
-
-        :param time_series: a series with tz-aware date-times
-        :param tzinfo: a str or a datetime.tzinfo
-        :return: a DatetimeIndex of dtype: datetime[ns, tzinfo]
+        Given a frequency as a string, such as '1D', '10min', '-3MS'
+        extract the amount (e.g. 1, 10, -3) and the unit part (e.g. 'D', 'min', 'MS'), capitalized.
+        :param freq: the frequency
+        :return: the unit part of that frequency, and the number of units
         """
 
-        if not isinstance(time_series, pd.Series) and not isinstance(
-            time_series, pd.DatetimeIndex
-        ):
-            raise TypeError("parameter 'series' should be a pandas.Series")
+        # if freq is a pd.Timedelta, it should be convertible to a string
+        if isinstance(freq, pd.Timedelta):
+            freq = pd.tseries.frequencies.to_offset(freq).freqstr
 
-        if isinstance(tzinfo, str):
-            tzinfo = pytz.timezone(tzinfo)
+        # separate the freq string in numeric and alphabetic parts
+        freq_string_parts = re.findall(r'(\d+|\D+)', freq)
 
-        if not isinstance(tzinfo, datetime.tzinfo):
-            raise TypeError(
-                "parameter 'tzinfo' should be of type str or datetime.tzinfo"
-            )
+        # several cases are possible to take into account the +/- sign
+        if len(freq_string_parts) == 3:
 
-        result = time_series.map(lambda x: x.astimezone(tzinfo))
-        # now all values in 'result' have the same type: pandas.Timestamp with the same tzinfo
-        result = pd.DatetimeIndex(result)
-        return result
+            # in that case, first character must be a + or - sign, eg. '-1D'
+            sign = 1
+            if freq_string_parts[0] == '-':
+                sign = -1
+            elif freq_string_parts[0] == '+':
+                pass
+            else:
+                raise ValueError('First character is not a plus or minus sign')
 
-    @classmethod
-    def find_missing_and_extra_periods(
-            cls,
+            # numeric part - error if type is wrong
+            numeric_part_int = sign * int(freq_string_parts[1])
+
+            # freq part  - error if type is wrong
+            freq_unit_str = freq_string_parts[-1].upper()
+
+        elif len(freq_string_parts) == 2:
+
+            # in that case, first group must be a number, second group must be a unit eg. '2MS'
+            numeric_part_int = int(freq_string_parts[0])
+            freq_unit_str = freq_string_parts[-1].upper()
+
+        elif len(freq_string_parts) == 1:
+
+            # in that case, there is no number but first character might be a sign. eg.  or 'MS' or '-D'
+            if freq_string_parts[0][0] == '-':
+                numeric_part_int = -1
+                freq_unit_str = freq_string_parts[0][1:].upper()
+            elif freq_string_parts[0][0] == '+':
+                numeric_part_int = 1
+                freq_unit_str = freq_string_parts[0][1:].upper()
+            else:
+                numeric_part_int = 1
+                freq_unit_str = freq_string_parts[0].upper()
+
+        else:
+            raise ValueError(f"freq {freq} is not valid")
+
+        # simple check
+        if freq_unit_str not in TimeSeries.FREQ_UNIT_TO_DAYS.keys():
+            raise ValueError(f"Unknown frequency unit {freq_unit_str} obtained from frequency {freq}")
+
+        return numeric_part_int, freq_unit_str
+
+    @staticmethod
+    def is_regular_freq(freq: str) -> bool:
+        """
+        Return a boolean that indicates the frequency is something regular or not
+        eg 'D' 'min' are regular, 'MS', 'Y', 'Q' are not.
+        For instance, irregular frequencies cannot be turned to pd.Timedelta elements.
+        Note that if the frequency is a pd.Timedelta, it is always regular
+        :param freq: the frequency given as a string or a pd.Timedelta
+        :return: a boolean that indicates whether the considered frequency is 'even'
+        """
+        numeric_part_int, freq_unit_str = TimeSeries.split_amount_and_unit_from_freq(freq)
+        if freq_unit_str in ["M", "MS", "Q", "A", "Y"]:
+            return False
+        return True
+
+    @staticmethod
+    def freq_as_approximate_nb_days(freq: Union[str, pd.Timedelta]) -> int:
+        """
+        Map pandas freq string to an approximate length of days.
+        This serves to compare freq strings, such as '1D', '3MS', and so on.
+        It replaces the calls to total_seconds() possibly used only with pd.Timedelta().
+        Note that the computation is exact if a pd.Timedelta is given.
+        :param freq: the frequency as a string, such as '10min', '3MS', or a pd.Timedelta.
+        :return: a sometimes approximate length of the provided frequency in days
+        """
+
+        # separate the freq string in numeric and alphabetic parts
+        numeric_part_int, freq_unit_str = TimeSeries.split_amount_and_unit_from_freq(freq)
+
+        # error if is not in freq_to_days
+        return numeric_part_int * TimeSeries.FREQ_UNIT_TO_DAYS[freq_unit_str]
+
+    @staticmethod
+    def add_timedelta(date: Union[datetime.date, datetime.datetime, pd.Timestamp],
+                      timedelta: Union[str, pd.Timedelta]) -> Union[datetime.date, datetime.datetime, pd.Timestamp]:
+        """
+        Define how to add a timedelta according to the way it's provided (string, timedelta), regular or irregular
+        absolute length.
+        :param date: a date, provided as a pd.Timestamp (naive or tz-aware), a date, a datetime
+        :param timedelta:  a timedelta, given as a freq string (eg. '2MS') or a pd.Timedelta object.
+        """
+        if isinstance(timedelta, pd.Timedelta):
+            return date + timedelta
+
+        elif isinstance(timedelta, str):
+            # if it's a string, it is not necessarily convertible to timedelta, as
+            # it might be an irregular length (month, year, quarter...)
+            # in that case, we handle these cases before defaulting to pd.to_timedelta()
+            numeric_part_int, unit_freq_str = TimeSeries.split_amount_and_unit_from_freq(timedelta)
+
+            if unit_freq_str in ['M', 'MS']:
+                return date + relativedelta(months=numeric_part_int)
+            elif unit_freq_str in ['Y', 'A']:
+                return date + relativedelta(years=numeric_part_int)
+            elif unit_freq_str in ['Q']:
+                raise ValueError("Cannot simply add a quarter, it does not mean anything in general")
+            else:
+                # it should be convertible to pd.Timedelta
+                timedelta = str(numeric_part_int) + unit_freq_str
+                return date + pd.to_timedelta(timedelta)
+
+        else:
+            raise TypeError("timedelta must be of type Timedelta or string ")
+
+    @staticmethod
+    def subtract_timedelta(date: Union[datetime.date, datetime.datetime, pd.Timestamp],
+                           timedelta: Union[str, pd.Timedelta]
+                           ) -> Union[datetime.date, datetime.datetime, pd.Timestamp]:
+        """
+        Define how to subtract a timedelta according to the way it's provided (string, timedelta), regular or irregular
+        absolute length.
+        :param date: a date, provided as a pd.Timestamp (naive or tz-aware), a date, a datetime
+        :param timedelta: a timedelta, given as a freq string (e.g. '2MS') or a pd.Timedelta object.
+        """
+        if isinstance(timedelta, pd.Timedelta):
+            return date - timedelta
+
+        elif isinstance(timedelta, str):
+            # if it's a string, it is not necessarily convertible to timedelta, as
+            # it might be an irregular length (month, year, quarter...)
+            # in that case, we handle these cases before defaulting to pd.to_timedelta()
+            numeric_part_int, unit_freq_str = TimeSeries.split_amount_and_unit_from_freq(timedelta)
+
+            if unit_freq_str in ['M', 'MS']:
+                return date + relativedelta(months=-numeric_part_int)
+            elif unit_freq_str in ['Y', 'A']:
+                return date + relativedelta(years=-numeric_part_int)
+            elif unit_freq_str in ['Q']:
+                raise ValueError("Cannot simply subtract a quarter, it does not mean anything in general")
+            else:
+                # it should be convertible to pd.Timedelta
+                timedelta = str(numeric_part_int) + unit_freq_str
+                return date - pd.to_timedelta(timedelta)
+
+        else:
+            raise TypeError("timedelta must be of type Timedelta or string ")
+
+    # ------------
+    # Time-series
+    # ------------
+
+    @staticmethod
+    @enda.decorators.handle_series_as_datetimeindex(arg_name='dti', return_input_type=False)
+    def has_nan_or_empty(dti: pd.DatetimeIndex) -> bool:
+        """
+        Check whether a datetime index has NaN or is empty
+        :param dti: pd.DatetimeIndex to investigate
+        """
+
+        if not isinstance(dti, pd.DatetimeIndex):
+            raise TypeError("parameter 'dti' should be a pandas.DatetimeIndex")
+
+        if dti.isna().sum() != 0:
+            return True
+
+        if len(dti) == 0:
+            return True
+
+        return False
+
+    @staticmethod
+    @enda.decorators.handle_series_as_datetimeindex(arg_name='dti', return_input_type=False)
+    def find_nb_records(dti: pd.DatetimeIndex, skip_duplicate_timestamps=False) -> int:
+        """
+        Compute the number of records
+         :param dti: pd.DatetimeIndex to investigate
+        :param skip_duplicate_timestamps: bool that indicates if duplicates must be considered
+               or not when computing the number of records
+        :return: the number of records in the time series
+        """
+
+        if skip_duplicate_timestamps:
+            dti = dti.drop_duplicates()
+
+        return len(dti)
+
+    @staticmethod
+    @enda.decorators.handle_series_as_datetimeindex(arg_name='dti', return_input_type=False)
+    def find_gap_distribution(dti: pd.DatetimeIndex, skip_duplicate_timestamps=False) -> pd.Series:
+        """
+        Find frequencies in a pd.DatetimeIndex. The function computes
+        all timedelta between successive indexes, and count them. It returns an ordered
+        pd.Series, with the most commonly found in index 0.
+
+
+        :param dti: pd.DatetimeIndex to investigate
+        :param skip_duplicate_timestamps: bool that indicates if duplicates must be considered
+               or not when the gap distribution is considered.
+        :return: a pd.Series with all frequencies found, and their cardinality.
+                eg. >>> find_frequencies(dti)
+                #    01:00:00    1181
+                #    02:00:00     499
+                #    03:00:00     180
+                #    ....
+        """
+
+        if TimeSeries.has_nan_or_empty(dti):
+            raise ValueError("Nan or empty dti")
+
+        dti = dti.sort_values()
+
+        if skip_duplicate_timestamps:
+            dti = dti.drop_duplicates()
+
+        # compute the gap distribution
+        gap_dist = (pd.Series(dti[1:]) - pd.Series(dti[:-1])).value_counts()
+
+        return gap_dist
+
+    @staticmethod
+    @enda.decorators.handle_series_as_datetimeindex(arg_name='dti', return_input_type=False)
+    def find_most_common_frequency(
+            dti: pd.DatetimeIndex,
+            skip_duplicate_timestamps=False
+    ) -> str:
+        """
+        Find most common frequency in pd.DatetimeIndex. If several frequencies are found, it returns the most common.
+        The function checks the index is not null,
+        :param dti: pd.DatetimeIndex to investigate
+        :param skip_duplicate_timestamps: if True, the function will not consider duplicate timestamps
+                                          in the calculation.
+        :return : the most common frequency found in the datetime index as a string
+        """
+
+        if TimeSeries.has_nan_or_empty(dti):
+            raise ValueError("Nan or empty datetime index")
+
+        dti = dti.sort_values()
+
+        if skip_duplicate_timestamps:
+            dti = dti.drop_duplicates()
+
+        freq = None
+        nb_records = TimeSeries.find_nb_records(dti)
+        if nb_records == 1:
+            # we cannot get a frequency out of the series, as it's a single element series !
+            return
+
+        if nb_records >= 3:
+            # try getting single frequency from pandas if the series is big enough
+            freq = pd.infer_freq(dti)
+
+        if freq is None:
+            # it means there is some kind of irregularity in the datetimeindex, as pandas could not find it or
+            # eg. there might be more than one frequency in the dataframe.
+            # note that there must be at least two records in the datetimeindex at that point
+
+            # get all gap distributions in the dataframe
+            gap_distribution = TimeSeries.find_gap_distribution(dti)
+
+            # return the more common
+            freq = gap_distribution.index[0]
+
+            # turn it to a string
+            freq = pd.tseries.frequencies.to_offset(freq).freqstr
+
+        # if the freq is 'one' of a particular unit, pandas just returns the unit,
+        # This is not practical for other functions, so we add 1 to the string freq.
+        # eg. the freq is one day, pandas may return 'D'
+        # we transform it to '1D' in that case
+        freq = freq if freq[0].isdecimal() else "1" + freq
+
+        return freq
+
+    @staticmethod
+    @enda.decorators.handle_series_as_datetimeindex(arg_name='dti', return_input_type=True)
+    def find_duplicates(dti: pd.DatetimeIndex) -> pd.DatetimeIndex:
+        """
+        Check for duplicates in the timeseries
+        :param dti: a datetime index, without NaN
+        :return: duplicates
+        """
+        return dti[dti.duplicated()]
+
+    @staticmethod
+    @enda.decorators.handle_series_as_datetimeindex(arg_name='dti', return_input_type=True)
+    def find_extra_points(
+            dti: pd.DatetimeIndex,
+            expected_freq: Union[str, pd.Timedelta] = None
+    ) -> pd.DatetimeIndex:
+        """
+        Check for extra data points in the timeseries, i.e. data points that are
+        outside the expected frequency (or the most common frequency if not known) of data points.
+        This is based on the min and max of the index, which means no extra point might be found
+        if min or max are the extra points (in that case, there might be missing periods!)
+        :param dti: a datetime index, without NaN
+        :param expected_freq: the expected freq of the datetime index if known, default None.
+        :return: extra data points
+        """
+
+        # get freq if None
+        if not expected_freq:
+            expected_freq = TimeSeries.find_most_common_frequency(dti, skip_duplicate_timestamps=True)
+
+        # inspect extra periods: we must work on a sorted dti without index
+        data_index = dti.drop_duplicates().sort_values()
+        expected_index = pd.date_range(data_index[0], data_index[-1], freq=expected_freq)
+        extra_points = data_index.difference(expected_index)
+
+        return extra_points
+
+    @staticmethod
+    def find_duplicates_and_extra_points(
+            time_series: Union[pd.DatetimeIndex, pd.Series],
+            expected_freq: Union[str, pd.Timedelta] = None
+    ) -> tuple[pd.DatetimeIndex, pd.DatetimeIndex]:
+        """
+        Check for extra data points in the timeseries, i.e. data points that are duplicated and/or data points that are
+        outside the expected frequency (or the most common frequency if not known) of data points.
+        :param time_series: a time_series
+        :param expected_freq: the expected freq of the datetime index if known, default None.
+        :return: extra data points
+        """
+        return TimeSeries.find_duplicates(time_series), TimeSeries.find_extra_points(time_series, expected_freq)
+
+    @staticmethod
+    @enda.decorators.handle_series_as_datetimeindex(arg_name='dti', return_input_type=True)
+    def find_missing_points(
+            dti: pd.DatetimeIndex,
+            expected_freq: Union[str, pd.Timedelta] = None,
+            expected_start_datetime=None,
+            expected_excl_end_datetime=None,
+    ) -> pd.DatetimeIndex:
+        """
+        Check for missing periods in the time series with an expected frequency.
+        :param dti: a datetime index, without NaN
+        :param expected_freq: the expected freq of the datetime index if known, default None.
+        :param expected_start_datetime: the expected start time of the datetime index, default None
+        :param expected_excl_end_datetime: the expected exclusive end time of the datetime index, default None
+        :return: missing points as a datetime index
+        """
+
+        if TimeSeries.has_nan_or_empty(dti):
+            raise ValueError("Nan or empty datetime index")
+
+        # process freq
+        if not expected_freq:
+            expected_freq = TimeSeries.find_most_common_frequency(dti)
+
+        # drop duplicates and sort
+        dti = dti.drop_duplicates().sort_values()
+
+        # start date
+        if expected_start_datetime is not None:
+            if not isinstance(expected_start_datetime, pd.Timestamp):
+                raise TypeError("expected_start_datetime must be a pandas.Datetime")
+            start_datetime = expected_start_datetime
+        else:
+            start_datetime = dti[0]
+
+        # end date
+        if expected_excl_end_datetime is not None:
+            if not isinstance(expected_excl_end_datetime, pd.Timestamp):
+                raise TypeError("expected_end_datetime must be a pandas.Datetime")
+            end_datetime = TimeSeries.subtract_timedelta(expected_excl_end_datetime, expected_freq)
+        else:
+            end_datetime = dti[-1]
+
+        # compute the expected index
+        expected_index = pd.date_range(start_datetime, end_datetime, freq=expected_freq)
+        missing_points = expected_index.difference(dti)
+
+        return missing_points
+
+    @staticmethod
+    @enda.decorators.handle_series_as_datetimeindex(arg_name='dti', return_input_type=False)
+    def collapse_to_periods(
+            dti: pd.DatetimeIndex,
+            freq: [str, pd.Timedelta]
+    ) -> list[tuple[Union[pd.Timestamp, datetime.date, datetime.datetime],
+                    Union[pd.Timestamp, datetime.date, datetime.datetime]]
+              ]:
+        """
+        Given a datetime index and a frequency, it gives the list of regular periods found in the datetime index, as
+        a collection of tuples that contain the start time and exclusive time of the periods found. More precisely,
+        if a timestamp is missing (ie if t is present but t + freq is missing), a new period is defined (t
+        becomes the end time of the current period, and the next timestamp found after t defines the beginning of a new
+        period).
+        Duplicates are dropped in the operation.
+        :param dti: a datetime index, without NaN
+        :param freq: the freq of the datetime index used to find missing periods.
+        :return: a list of tuples that contain the regular periods in the datetime index (defined as the start and
+        inclusive end times of the period).
+        """
+
+        if dti.shape[0] == 0:
+            return []
+
+        # drop duplicates and sort the index
+        dti = dti.drop_duplicates().sort_values()
+
+        current_period_start = dti[0]
+        periods_list = []
+        for i in range(1, dti.shape[0]):
+
+            if TimeSeries.add_timedelta(dti[i - 1], freq) != dti[i]:
+                # end the current period and start a new one
+                periods_list.append((current_period_start, dti[i - 1]))
+                current_period_start = dti[i]
+
+        periods_list.append((current_period_start, dti[-1]))  # Don't forget last period
+
+        return periods_list
+
+    @staticmethod
+    @enda.decorators.handle_series_as_datetimeindex(arg_name='dti', return_input_type=False)
+    def find_missing_periods(
             dti: pd.DatetimeIndex,
             expected_freq=None,
             expected_start_datetime=None,
-            expected_end_datetime=None) -> (pd.Timedelta, ):
+            expected_excl_end_datetime=None
+    ) -> list:
+        """
+        Find missing periods in a datetimeIndex. It finds all missing points, and collapse them
+        in periods
+        :param dti: a datetime index, without NaN
+        :param expected_freq: the expected freq of the datetime index if known, default None.
+        :param expected_start_datetime: the expected start time of the datetime index, default None
+        :param expected_excl_end_datetime: the expected exclusive end time of the datetime index, default None
+        :return: missing periods as a list of tuples of start and end times of the missing periods.
+        """
+
+        freq = expected_freq
+        if expected_freq is None:
+            freq = TimeSeries.find_most_common_frequency(dti)
+
+        missing_points = TimeSeries.find_missing_points(dti,
+                                                        expected_freq=freq,
+                                                        expected_start_datetime=expected_start_datetime,
+                                                        expected_excl_end_datetime=expected_excl_end_datetime
+                                                        )
+
+        return TimeSeries.collapse_to_periods(missing_points, freq=freq)
+
+    @staticmethod
+    @enda.decorators.handle_series_as_datetimeindex(arg_name='dti', return_input_type=False)
+    def has_single_frequency(dti: pd.DatetimeIndex,
+                             variable_duration_freq_included: bool = True,
+                             skip_duplicate_timestamps=False
+                             ) -> bool:
+        """
+        Return True if the provided datetime index has a single frequency, i.e.
+        does not have missing periods, extra points, nor change of frequency
+        :param dti: pd.DatetimeIndex to investigate
+        :param variable_duration_freq_included: 'Frequency' may have a double meaning, whether fixed-time frequencies
+                                           are considered or not. For instance, a frequency of one month leads to
+                                           intervals with different absolute length (in terms of days, and seconds).
+                                           Setting True means the datetimeindex is inspected with absolute duration
+                                           in mind. It is useful when we expect:
+                                           * an x-min difference between timestamps
+                                           * an x-day difference between dates
+        :param skip_duplicate_timestamps: If True, the function will not consider duplicate timestamps
+        :return: True if the data has a clean single frequency defined.
+        """
+
+        if skip_duplicate_timestamps:
+            dti = dti.drop_duplicates()
+
+        # easy case: check the exact differences in duration between timestamps / dates
+        if variable_duration_freq_included is False:
+            return len(TimeSeries.find_gap_distribution(dti)) == 1
+
+        # else, it might be more tricky, because the frequency may be irregular in terms of total_seconds
+        # (eg. when freq is months, years, or even days because of change of hour). We need to rely on pd.infer_freq().
+        # Safer way is to reconstruct a time-series index from scratch using the most common frequency found in the
+        # input index, and compare it to the index.
+
+        # most common freq
+        most_common_freq = TimeSeries.find_most_common_frequency(dti)
+
+        # we rely on find extra points and missing points to detect it.
+        extra_points = TimeSeries.find_extra_points(dti, expected_freq=most_common_freq)
+        if len(extra_points) > 0:
+            return False
+
+        missing_points = TimeSeries.find_missing_points(dti, expected_freq=most_common_freq)
+        if len(missing_points) > 0:
+            return False
+
+        return True
+
+    # ----------------------------------
+    # DEPRECATED FUNCTIONS AND CALL
+    # ----------------------------------
+
+    @classmethod
+    @enda.decorators.warning_deprecated_name(namespace_name='TimeSeries',
+                                             new_namespace_name='TimezoneUtils',
+                                             new_function_name='convert_dtype_from_object_to_tz_aware')
+    def align_timezone(
+            cls,
+            time_series: pd.Series,
+            tzinfo: Union[
+                str,
+                pytz.timezone,
+            ],
+    ):
+        return pd.DatetimeIndex(enda.timezone_utils.TimezoneUtils.convert_dtype_from_object_to_tz_aware(
+            time_series=time_series,
+            tz_info=tzinfo)
+        )
+
+    @classmethod
+    @enda.decorators.warning_deprecated_name(namespace_name='TimeSeries',
+                                             new_function_name='find_missing_periods and find_extra_points')
+    def find_missing_and_extra_periods(
+            cls,
+            dti,
+            expected_freq=None,
+            expected_start_datetime=None,
+            expected_end_datetime=None,
+    ):
         """
         Check for missing and extra data points
         :param dti: a series of type DatetimeIndex, in ascending order and without duplicates or NaNs
@@ -69,88 +575,44 @@ class TimeSeries:
         :return: Missing and extra data points collapsed in periods
         """
 
-        if not isinstance(dti, pd.DatetimeIndex):
-            raise TypeError("parameter 'dti' should be a pandas.DatetimeIndex")
-
-        if dti.isna().sum() != 0:
-            raise ValueError("given dti has NaN values.")
+        # for the sake of compatibility
+        if not dti.equals(dti.sort_values(ascending=True)):
+            raise ValueError("given dti is not in ascending order")
 
         if dti.duplicated().sum() != 0:
             raise ValueError("given dti has duplicates.")
 
-        if not dti.equals(dti.sort_values(ascending=True)):
-            raise ValueError("given dti is not in ascending order")
-
-        if len(dti) == 0:
-            raise ValueError("given dti is empty")
-
-        if expected_start_datetime is not None:
-            if not isinstance(expected_start_datetime, pd.Timestamp):
-                raise TypeError("expected_start_datetime must be a pandas.Datetime")
-            start = expected_start_datetime
-        else:
-            start = dti[0]
-
-        if expected_end_datetime is not None:
-            if not isinstance(expected_end_datetime, pd.Timestamp):
-                raise TypeError("expected_end_datetime must be a pandas.Datetime")
-            end = expected_end_datetime
-        else:
-            end = dti[-1]
-
-        if expected_freq is not None:
-            if not isinstance(expected_freq, str) and not isinstance(
-                expected_freq, pd.Timedelta
-            ):
-                raise TypeError("expected_freq should be str or pd.Timedelta")
-            freq = expected_freq
-
-        else:
-            # Infer frequency
-
-            # compute the gap distribution
-            gap_dist = (pd.Series(dti[1:]) - pd.Series(dti[:-1])).value_counts()
-            # gap_dist =
-            #    01:00:00    1181
-            #    02:00:00     499
-            #    03:00:00     180
-            #    ....
-
-            # take the most common gap and use it as expected_freq
-            freq = gap_dist.index[0]  # this is a pd.Timedelta object
-            assert isinstance(freq, pd.Timedelta)
-
-        expected_index = pd.date_range(start, end, freq=freq)
-        missing_points = expected_index.difference(dti)
-        # group missing points together as "missing periods"
-        missing_periods = cls.collapse_dt_series_into_periods(missing_points, freq=freq)
-        extra_points = dti.difference(expected_index)
-
-        return freq, missing_periods, extra_points
+        freq = TimeSeries.find_most_common_frequency(dti)
+        missing_periods = TimeSeries.find_missing_periods(
+            dti,
+            expected_freq=expected_freq,
+            expected_start_datetime=expected_start_datetime,
+            expected_excl_end_datetime=expected_end_datetime
+        )
+        extra_points = TimeSeries.find_extra_points(dti)
+        return pd.to_timedelta(freq), missing_periods, extra_points
 
     @classmethod
+    @enda.decorators.warning_deprecated_name(namespace_name='TimeSeries',
+                                             new_function_name="collapse_to_periods")
     def collapse_dt_series_into_periods(
-        cls, dti: pd.DatetimeIndex, freq: [str, pd.Timedelta]
-    ):
+            cls, dti: pd.DatetimeIndex, freq: [str, pd.Timedelta]
+    ) -> list[tuple[Union[pd.Timestamp, datetime.date, datetime.datetime],
+                    Union[pd.Timestamp, datetime.date, datetime.datetime]]
+              ]:
         """
-        This function does not work if freq < 1s
-        :param freq:
-        :param dti: DatetimeIndex, must be sorted
-        :return:
+        Given a datetime index and a frequency, it gives the list of regular periods found in the datetime index, as
+        a collection of tuples that contain the start time and exclusive time of the periods found. More precisely,
+        if a timestamp is missing (ie if t is present but t + freq is missing), a new period is defined (t
+        becomes the end time of the current period, and the next timestamp found after t defines the beginning of a new
+        period).
+        :param dti: a datetime index, without NaN
+        :param freq: the freq of the datetime index used to find missing periods.
+        :return: a list of tuples that contain the regular periods in the datetime index (defined as the start and
+        inclusive end times of the period).
         """
 
-        assert isinstance(dti, pd.DatetimeIndex)
-        assert isinstance(freq, str) or isinstance(freq, pd.Timedelta)
-        if pd.to_timedelta(freq).total_seconds() < 1.0:
-            raise ValueError(
-                "freq must be more than 1 second, but given {}".format(freq)
-            )
-
-        if dti.shape[0] == 0:
-            return []
-
-        current_period_start = dti[0]
-        periods_list = []
+        # legacy: check duplicates and multiple of period
         for i in range(1, dti.shape[0]):
             if dti[i] <= dti[i - 1]:
                 raise ValueError("dti must be sorted and without duplicates!")
@@ -164,156 +626,68 @@ class TimeSeries:
                     )
                 )
 
-            if (
-                pd.to_timedelta(freq) != dti[i] - dti[i - 1]
-            ):  # End the current period and start a new one
-                periods_list.append((current_period_start, dti[i - 1]))
-                current_period_start = dti[i]
-        periods_list.append((current_period_start, dti[-1]))  # Don't forget last period
-        return periods_list
+        return TimeSeries.collapse_to_periods(dti=dti, freq=freq)
 
     @staticmethod
+    @enda.decorators.warning_deprecated_name(namespace_name='TimeSeries',
+                                             new_function_name='find_most_common_frequency')
     def get_timeseries_frequency(index: pd.DatetimeIndex):
         """
         Retrieve the frequency of a pandas dataframe's index.
-        This calls pd.infer_freq() under the hood,
-        but strictly forces the frequency to be defined.
         """
-        if type(index) != pd.DatetimeIndex:
-            raise TypeError("The dataframe index must be a DatetimeIndex")
+        if not TimeSeries.has_single_frequency(index):
+            raise ValueError("Found several frequencies in the datetimeIndex")
 
-        differences = index.to_series().sort_values().diff()
-        if differences.nunique() != 1:
-            str_error = (
-                "Frequency could not be inferred from the original data. "
-                "There are at least two different time intervals found: "
-                f"{differences.unique()[1] / np.timedelta64(1, 'm')} min, and "
-                f"{differences.unique()[2] / np.timedelta64(1, 'm')} min. "
-                "The function cannot be used."
-            )
-            raise ValueError(str_error)
-        else:
-            freq = pd.infer_freq(index)
-            return freq if freq[0].isdecimal() else "1" + freq
+        return TimeSeries.find_most_common_frequency(dti=index)
 
     @staticmethod
-    @handle_multiindex
+    @enda.decorators.warning_deprecated_name(namespace_name='TimeSeries',
+                                             new_namespace_name='Resample',
+                                             new_function_name='upsample_and_interpolate'
+                                             )
     def interpolate_freq_to_sub_freq_data(
-        df: pd.DataFrame,
-        freq: [str, pd.Timedelta],
-        tz: [str, datetime.tzinfo],
-        index_name: str = None,
-        method: str = "linear",
-        enforce_single_freq=True,
+            df: pd.DataFrame,
+            freq: [str, pd.Timedelta],
+            tz: [str, datetime.tzinfo],
+            index_name: str = None,
+            method: str = "linear",
+            enforce_single_freq=True,
     ):
         """
         Interpolate dataframe data on a smaller frequency than the one initially defined
         in the dataframe
-        The original index of the data must have a well-defined frequency, ie. it must be
+        The original index of the data must have a well-defined frequency, i.e. it must be
         able to retrieve its frequency with inferred_freq
         :param df: pd.DataFrame
-        :param freq: a frequency e.g. 'H', '30min', '15min', etc)
-        :param tz: the time zone (None not accepted because important)
+        :param freq: a frequency e.g. 'H', '30min', '15min', etc.
+        :param tz: the target time zone.
         :param index_name: name to give to the new index. Usually going from 'date' to 'time'.
-        :param method: how are data interpolated between two consecutive dates (e.g. 'ffill', 'linear', etc)
+        :param method: how are data interpolated between two consecutive dates (e.g. 'ffill', 'linear', etc.)
+        :param enforce_single_freq: is there a single frequency in the original dataframe
         :return: pd.DataFrame
         """
 
-        if type(df.index) != pd.DatetimeIndex:
-            raise TypeError("The dataframe index must be a DatetimeIndex")
+        df = enda.resample.Resample.upsample_and_interpolate(timeseries_df=df, freq=freq, method=method,
+                                                             forward_fill=False,
+                                                             is_original_frequency_unique=enforce_single_freq,
+                                                             index_name=index_name)
 
-        if enforce_single_freq:
-            freq_original = TimeSeries.get_timeseries_frequency(df.index)
-            if freq_original is None:
-                raise ValueError("We do not interpolate a dataframe with no frequency")
+        df = enda.timezone_utils.TimezoneUtils.set_timezone(df, tz_info=tz)
 
-            if (
-                pd.to_timedelta(freq).total_seconds()
-                > pd.to_timedelta(freq_original).total_seconds()
-            ):
-                raise ValueError(
-                    "Cannot interpolate on a frequency greater than the original one"
-                )
-
-        if df.index.tzinfo is None:
-            df.index = pd.to_datetime(df.index).tz_localize(tz)
-        else:
-            df.index = pd.to_datetime(df.index).tz_convert(tz)
-
-        result = df.copy().resample(freq).interpolate(method=method)
-
-        if index_name is not None:
-            result.index.name = index_name
-
-        return result
+        return df
 
     @staticmethod
-    @handle_multiindex
+    @enda.decorators.handle_multiindex(arg_name='df')
+    @enda.decorators.warning_deprecated_name(namespace_name='TimeSeries',
+                                             new_namespace_name='Resample')
     def forward_fill_final_record(
-        df: pd.DataFrame,
-        gap_frequency: [str, pd.Timedelta],
-        cut_off_frequency: [str, pd.Timedelta] = None,
+            df: pd.DataFrame,
+            gap_frequency: [str, pd.Timedelta],
+            cut_off_frequency: [str, pd.Timedelta] = None,
     ):
         """
-        Forward-fill the final record of a dataframe whose DatetimeIndex has a frequency freq
-        The new final index of the resulting dataframe is determined using the parameter
-        'gap_frequency' so that new_final_index = final_index + timedelta(gap_frequency).
-        The resampling frequency is determined from the frequency of the given dataframe.
-        The extra parameter 'cut_off_frequency' can be used to set-up a limit not to overpass
-        This function is typically used in junction with interpolate_freq_to_sub_freq()
-        to forward-fill the last record. gap_frequency is thus the initial frequency of
-        the dataframe before the interpolation.
-
-        Here are some examples:
-
-        1. Given df:
-        time_index                value
-        2021-01-01 00:00:00+01:00 1
-        2021-01-01 12:00:00+01:00 2
-        2021-01-02 00:00:00+01:00 3
-
-        forward_fill_final_record(df, extend_frequency='1D'):
-        2021-01-01 00:00:00+01:00 1
-        2021-01-01 12:00:00+01:00 2
-        2021-01-02 00:00:00+01:00 3
-        2021-01-02 12:00:00+01:00 3
-
-        2. Given df:
-        time_index                value
-        2021-01-01 19:00:00+01:00 1
-        2021-01-01 20:00:00+01:00 2
-        2021-01-01 21:00:00+01:00 3
-        2021-01-01 22:00:00+01:00 4
-
-        forward_fill_final_record(df, extend_frequency='3H', cut_off_frequency=None):
-        2021-01-01 19:00:00+01:00 1
-        2021-01-01 20:00:00+01:00 2
-        2021-01-01 21:00:00+01:00 3
-        2021-01-01 22:00:00+01:00 4
-        2021-01-01 23:00:00+01:00 4
-        2021-01-02 00:00:00+01:00 4
-
-        3. Given df:
-        time_index                value
-        2021-01-01 19:00:00+01:00 1
-        2021-01-01 20:00:00+01:00 2
-        2021-01-01 21:00:00+01:00 3
-        2021-01-01 22:00:00+01:00 4
-
-        forward_fill_final_record(df, extend_frequency='3H', cut_off_frequency='1D'):
-        2021-01-01 19:00:00+01:00 1
-        2021-01-01 20:00:00+01:00 2
-        2021-01-01 21:00:00+01:00 3
-        2021-01-01 22:00:00+01:00 4
-        2021-01-01 23:00:00+01:00 4
-
-        :param df: input dataframe to be extended
-        :param gap_frequency: the frequency to use to extend the final record
-
+        Forward-fill last record
         """
-
-        if type(df.index) != pd.DatetimeIndex:
-            raise TypeError("The dataframe index must be a DatetimeIndex")
 
         freq = TimeSeries.get_timeseries_frequency(df.index)
         if freq is None:
@@ -324,39 +698,27 @@ class TimeSeries:
             > pd.to_timedelta(gap_frequency).total_seconds()
         ):
             raise ValueError(
-                "Cannot extend the datframe on a smaller frequency than itself"
+                "Cannot extend the dataframe on a smaller frequency than itself"
             )
 
-        end_date = df.index.max()
-        end_row = df.loc[[end_date], :]
-        extra_end_date = end_date + pd.to_timedelta(gap_frequency)
-        extra_row = pd.DataFrame(
-            df.loc[[end_date], :].values, index=[extra_end_date], columns=df.columns
-        )
-        extra_row.index.name = df.index.name
-
-        result = pd.concat([end_row, extra_row], ignore_index=False)
-        result = result.resample(freq).interpolate(method="ffill")
-        result = result.drop([end_date, extra_end_date])
-
-        if cut_off_frequency is not None:
-            cut_off_end = end_date.floor(cut_off_frequency) + pd.to_timedelta(
-                cut_off_frequency
-            )
-            result = result[result.index < cut_off_end]
-
-        result = pd.concat([df, result], axis=0)
-        result.index.freq = freq
-        return result
+        df = enda.resample.Resample.forward_fill_final_record(timeseries_df=df,
+                                                              gap_timedelta=gap_frequency,
+                                                              cut_off=cut_off_frequency)
+        df.index.freq = freq
+        return df
 
     @staticmethod
-    @handle_multiindex
+    @enda.decorators.handle_multiindex(arg_name='df')
+    @enda.decorators.warning_deprecated_name(namespace_name='TimeSeries',
+                                             new_namespace_name='Resample',
+                                             new_function_name='upsample_and_interpolate'
+                                             )
     def interpolate_daily_to_sub_daily_data(
-        df: pd.DataFrame,
-        freq: [str, pd.Timedelta],
-        tz: [str, datetime.tzinfo],
-        index_name: str = "time",
-        method: str = "ffill",
+            df: pd.DataFrame,
+            freq: [str, pd.Timedelta],
+            tz: [str, datetime.tzinfo],
+            index_name: str = "time",
+            method: str = "ffill",
     ):
         """
         Interpolate daily data in a dataframe (with a DatetimeIndex) to sub-daily data using a given method.
@@ -369,39 +731,23 @@ class TimeSeries:
         :return: pd.DataFrame
         """
 
-        if type(df.index) != pd.DatetimeIndex:
-            raise TypeError("The dataframe index must be a DatetimeIndex")
-
-        freq_original = TimeSeries.get_timeseries_frequency(df.index)
-        if freq_original != "1D":
-            raise ValueError("The dataframe index has not a daily frequency")
-
-        if pd.to_timedelta(freq).total_seconds() > 24 * 60 * 60:
-            raise ValueError("The required frequency should be < '1D'")
-
-        # interpolated to subdaily data
-        df_interpolated = TimeSeries.interpolate_freq_to_sub_freq_data(
-            df=df, freq=freq, tz=tz, index_name=index_name, method=method
-        )
-
-        # forward-fill the last record
-        df_final = TimeSeries.forward_fill_final_record(
-            df=df_interpolated, gap_frequency="1D"
-        )
-
-        return df_final
+        return enda.resample.Resample.upsample_and_interpolate(timeseries_df=df, freq=freq, method=method,
+                                                               forward_fill=True, index_name=index_name,
+                                                               tz_info=tz)
 
     @staticmethod
-    @handle_multiindex
+    @enda.decorators.warning_deprecated_name(namespace_name='TimeSeries',
+                                             new_namespace_name='Resample',
+                                             new_function_name='downsample')
     def average_to_upper_freq(
-        df: pd.DataFrame,
-        freq: [str, pd.Timedelta],
-        tz: [str, datetime.tzinfo],
-        index_name: str = None,
-        enforce_single_freq=True,
+            df: pd.DataFrame,
+            freq: [str, pd.Timedelta],
+            tz: [str, datetime.tzinfo],
+            index_name: str = None,
+            enforce_single_freq=True,
     ):
         """
-        Upsample data provided in a given dataframe with a DatetimeIndex, or a two-levels
+        Downsample data provided in a given dataframe with a DatetimeIndex, or a two-levels
         compatible Multiindex.
         The provided frequency serves as a basis to group the data and average.
         If the initial dataframe has no frequency, we raise an error.
@@ -419,27 +765,13 @@ class TimeSeries:
         2021-01-02 00:00:00+01:00 3
         """
 
-        if type(df.index) != pd.DatetimeIndex:
-            raise TypeError("The dataframe index must be a DatetimeIndex")
+        df = enda.resample.Resample.downsample(df,
+                                               freq=freq,
+                                               agg_functions='mean',
+                                               is_original_frequency_unique=enforce_single_freq,
+                                               index_name=index_name
+                                               )
 
-        if enforce_single_freq:
-            freq_original = TimeSeries.get_timeseries_frequency(df.index)
-            if (
-                pd.to_timedelta(freq).total_seconds()
-                < pd.to_timedelta(freq_original).total_seconds()
-            ):
-                raise ValueError(
-                    "The required frequency is smaller than the original one"
-                )
+        df = enda.timezone_utils.TimezoneUtils.set_timezone(df, tz_info=tz)
 
-        if df.index.tzinfo is None:
-            df.index = pd.to_datetime(df.index).tz_localize(tz)
-        else:
-            df.index = pd.to_datetime(df.index).tz_convert(tz)
-
-        result = df.resample(freq).mean()
-
-        if index_name is not None:
-            result.index.name = index_name
-
-        return result
+        return df
