@@ -83,7 +83,6 @@ class Scoring:
         """
         :return: A DataFrame of the mean absolute error grouped by month
         """
-        # TODO : checker que grouper par numéro de mois est ok (1 au lieu de 2023-01)
         abs_error = self.absolute_error()
         return abs_error.groupby(abs_error.index.month).mean()
 

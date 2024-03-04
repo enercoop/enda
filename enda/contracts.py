@@ -5,6 +5,7 @@ from pandas.api.types import is_string_dtype, is_datetime64_dtype
 from dateutil.relativedelta import relativedelta
 import pytz
 
+from enda.timeseries import TimeSeries
 from enda.timezone_utils import TimezoneUtils
 
 
@@ -232,6 +233,10 @@ class Contracts:
         portfolio = df_by_day.cumsum(axis=0)
         portfolio.index.name = "date"  # now values are not increments on an event_date but the total on this date
 
+        # if max_date is given, forward_fill the final record to that date
+        #if max_date_exclusive is not None:
+        #    portfolio = TimeSeries.forward_fill_final_record(portfolio, max_date_exclusive)
+
         return portfolio
 
     @staticmethod
@@ -374,7 +379,7 @@ class Contracts:
         Forecast using exponential smoothing (Holt method) for the next nb_days
         The output has the same frequency as input portfolio_df.
 
-        :param portfolio_df: The portfolio DataFrame to perform the forecast on #TODO describe more
+        :param portfolio_df: The portfolio DataFrame to perform the forecast on
         :param start_forecast_date: when we stop the portfolio data and start forecasting
         :param nb_days: number of days after 'end_date' to forecast
         :param past_days: max number of days to use in the past used to make the forecast

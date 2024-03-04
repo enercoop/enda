@@ -36,6 +36,7 @@ class EndaH2OEstimator(EndaEstimator):
     def __init__(self, h2o_estimator):
         self.model = h2o_estimator
         self.__model_binary = None
+        self.training_performance = None
 
     def train(self, df: pandas.DataFrame, target_col: str):
         x = [
@@ -46,6 +47,7 @@ class EndaH2OEstimator(EndaEstimator):
             df
         )  # H20 training frame containing both features and target
         self.model.train(x, y, training_frame)
+        self.training_performance = self.model.scoring_history()
 
     def predict(self, df: pandas.DataFrame, target_col: str):
         test_data = h2o.H2OFrame(df)  # convert to H20 Frame

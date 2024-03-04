@@ -5,7 +5,6 @@ import pandas as pd
 from pandas.api.types import is_string_dtype
 
 from enda.contracts import Contracts
-from enda.timeseries import TimeSeries
 
 
 class PowerStations:
@@ -66,55 +65,22 @@ class PowerStations:
     # ------ Build daily dataframes
 
     @staticmethod
-    def __station_to_events(
+    def _station_to_events(
         stations: pd.DataFrame, date_start_col: str, date_end_exclusive_col: str
     ) -> pd.DataFrame:
         """
-        This function is basically the same as Contracts.__contract_to_event()
+        This function is basically the same as Contracts._contract_to_events()
         :param stations: The DataFrame containing station information
         :param date_start_col: The column containing start date information
         :param date_end_exclusive_col: The column containing exclusive end date information
         :return: A DataFrame containing events information
         """
 
-        # TODO : déprécier pour rediriger vers contracts._contract_to_events
-
-        # check that no column is named "event_type" or "event_date"
-        for c in ["event_type", "event_date"]:
-            if c in stations.columns:
-                raise ValueError(
-                    f"stations has a column named {c}, but this name is reserved in this"
-                    "function; rename your column."
-                )
-
-        columns_to_keep = [
-            c
-            for c in stations.columns
-            if c not in [date_start_col, date_end_exclusive_col]
-        ]
-        events_columns = ["event_type", "event_date"] + columns_to_keep
-
-        # compute "station start" and "station end" events
-        start_station_events = stations.copy(
-            deep=True
-        )  # all stations must have a start date
-        start_station_events["event_type"] = "start"
-        start_station_events["event_date"] = start_station_events[date_start_col]
-        start_station_events = start_station_events[events_columns]
-
-        # for "station end" events, only keep stations with an end date (NaT = station is not over)
-        end_station_events = stations[stations[date_end_exclusive_col].notna()].copy(
-            deep=True
+        return Contracts._contract_to_events(
+            contracts=stations,
+            date_start_col=date_start_col,
+            date_end_exclusive_col=date_end_exclusive_col,
         )
-        end_station_events["event_type"] = "end"
-        end_station_events["event_date"] = end_station_events[date_end_exclusive_col]
-        end_station_events = end_station_events[events_columns]
-
-        # concat all events together and sort them chronologically
-        all_events = pd.concat([start_station_events, end_station_events])
-        all_events.sort_values(by=["event_date", "event_type"], inplace=True)
-
-        return all_events
 
     @classmethod
     def get_stations_daily(
@@ -124,6 +90,7 @@ class PowerStations:
         date_start_col: str = "date_start",
         date_end_exclusive_col: str = "date_end_exclusive",
         max_date_exclusive: pd.Timestamp = None,
+        drop_gaps=False,
     ) -> pd.DataFrame:
         """
         This function creates a daily dataframe from a power station contracts dataframe.
@@ -133,6 +100,11 @@ class PowerStations:
         :param date_start_col: The column containing start date information
         :param date_end_exclusive_col: The column containing exclusive end date information
         :param max_date_exclusive: A Timestamp indicating the maximum date until which to keep data
+        :param drop_gaps: if True, will drop daily values that are gaps within the range of input contracts.
+            By default, these days are kept in the index with 0 as values
+            (For example, if we have a station with a first contract from 2023-01-01 to 2023-02-01 and a second
+            contract from 2023-03-01 to 2023-06-01, the period from 2023-02-01 to 2023-03-01 will be kept by default
+            with 0s for all values)
         :return: A DataFrame with daily station information
         """
 
@@ -148,7 +120,7 @@ class PowerStations:
         )
 
         # get an event-like dataframe
-        events = cls.__station_to_events(
+        events = cls._station_to_events(
             stations, date_start_col, date_end_exclusive_col
         )
 
@@ -166,6 +138,17 @@ class PowerStations:
                 lambda row: row[c] if row["event_type"] == "start" else 0, axis=1
             )
 
+        if drop_gaps:
+            if "control_column" in events.columns:
+                raise ValueError(
+                    "control_column should not be one of the columns in the events DataFrame, it is used"
+                    "in this function"
+                )
+
+            # We create a control column which is used to keep only days included in the events DataFrame period
+            events["control_column"] = "0"
+            events.loc[events.event_type == "start", "control_column"] = "control"
+
         events = events.groupby([station_col, "event_date"]).last().reset_index()
         events = events.drop(columns=["event_type"])
 
@@ -180,6 +163,16 @@ class PowerStations:
             df = pd.concat([df, station_contracts], axis=0)
 
         df.index.name = "date"
+
+        if drop_gaps:
+            # The way we compute a daily DataFrame, there is a problem if there is a gap between an end event and the
+            # next start event : for example, if a contract line ends on 2022 December 31st and next one begins on
+            # 2024 January 1st, the days in 2023 will still be present in df_daily_pf.
+            # However, the columns other than plant identification column will have '0' as a value,
+            # so using this control column we can keep only relevant dates.
+            df = df.loc[df.control_column == "control"]
+            df.drop("control_column", axis=1, inplace=True)
+
         return df.reset_index().set_index([station_col, "date"])
 
     @staticmethod
@@ -268,15 +261,54 @@ class PowerStations:
                 (data.index.get_level_values(date_col) >= start_datetime)
                 & (data.index.get_level_values(date_col) < end_datetime_exclusive)
             ]
-            assert (
-                data.isnull().sum().sum() == 0
-            )  # check that there is no missing value
+
+            # check that there is no missing value
+            if data.isnull().sum().sum() > 0 :
+                raise ValueError("Found null values in output DataFrame")
 
             df_new = pd.concat([df_new, data], axis=0)
 
         return df_new
 
     # ------ Outages
+
+    @staticmethod
+    def get_outages_from_file(
+        file_path: str,
+        time_start_col: str = "time_start",
+        time_end_exclusive_col: str = "time_end_exclusive",
+        tzinfo: str = "Europe/Paris",
+        pct_outages_col: str = None,
+    ):
+        """
+        Reads outages from a file. This will convert start and end date columns into dtype=datetime64 (tz-naive) and
+        check that pct_outages_col is present in the DataFrame if specified, with values between 0 and 100 when not None
+        :param file_path: where the source file is located.
+        :param time_start_col: the name of the outage time start column.
+        :param time_end_exclusive_col: the name of the outage time end column, end date is exclusive.
+        :param tzinfo: The time zone of the data we read
+        :param pct_outages_col: The percentage of unavailability of the power plant (100 means complete shutdown).
+        :return: a pandas.DataFrame with an outage on each row.
+        """
+
+        outages_df = pd.read_csv(file_path)
+        for c in [time_start_col, time_end_exclusive_col]:
+            if is_string_dtype(outages_df[c]):
+                outages_df[c] = pd.to_datetime(outages_df[c])
+                outages_df[c] = outages_df[c].dt.tz_localize(tzinfo)
+
+        # check pct_outage_col
+        if pct_outages_col is not None:
+            if pct_outages_col not in outages_df.columns:
+                raise ValueError(
+                    f"Provided column {pct_outages_col} is not present in dataframe"
+                )
+            if not (outages_df[pct_outages_col].dropna().between(0, 100)).all():
+                raise ValueError(
+                    f"Some values in {pct_outages_col} are not percentages between 0 and 100"
+                )
+
+        return outages_df
 
     @classmethod
     def read_outages_from_file(
@@ -289,36 +321,26 @@ class PowerStations:
         pct_outages_col: str = None,
     ) -> pd.DataFrame:
         """
-        Reads outages from a file. This will convert start and end date columns into dtype=datetime64 (tz-naive)
+        Reads outages from a file and checks that the resulting DataFrame is coherent. This will convert start and end
+        date columns into dtype=datetime64 (tz-naive)
         :param file_path: where the source file is located.
         :param station_col: the name of the column containing stations names
         :param time_start_col: the name of the outage time start column.
         :param time_end_exclusive_col: the name of the outage time end column, end date is exclusive.
         :param tzinfo: The time zone of the data we read
-        :param pct_outages_col: the percentage of availability of the power plant.
-               If none is given, it is assumed the power plant is simply shutdown.
+        :param pct_outages_col: The percentage of unavailability of the power plant (100 means complete shutdown).
         :return: a pandas.DataFrame with an outage on each row.
         """
 
-        df = pd.read_csv(file_path)
-        for c in [time_start_col, time_end_exclusive_col]:
-            if is_string_dtype(df[c]):
-                df[c] = pd.to_datetime(df[c])
-                df[c] = TimeSeries.align_timezone(df[c], tzinfo=tzinfo)
+        # Read the data and convert time columns to the correct type
+        df = cls.get_outages_from_file(
+            file_path, time_start_col, time_end_exclusive_col, tzinfo, pct_outages_col
+        )
 
-        # check stations
+        # Check that the resulting DataFrame is coherent
         cls.check_stations(
             df, station_col, time_start_col, time_end_exclusive_col, is_naive=False
         )
-
-        # check pct_outage_col
-        if pct_outages_col is not None:
-            if pct_outages_col not in df.columns:
-                raise ValueError(
-                    f"Provided column {pct_outages_col} is not present in dataframe"
-                )
-            if not (df[pct_outages_col].dropna().between(0, 100)).all():
-                raise ValueError(f"Some values in {pct_outages_col} are not percentage")
 
         return df
 
@@ -350,7 +372,8 @@ class PowerStations:
         :param station_col: The column containing the station identifier
         :param time_start_col: The column containing the start time of the outage
         :param time_end_exclusive_col: The column containing the exclusive end time of the outage
-        :param pct_outages_col: The column containing the information of outage impact on capacity
+        :param pct_outages_col: The column containing the information of outage impact on capacity.
+            If a null value is given, it is assumed the power plant is simply shutdown.
         :param availability_col: The name of the availability column in the new DataFrame
         """
 
@@ -407,7 +430,7 @@ class PowerStations:
 
             availability = (
                 0
-                if outage[pct_outages_col] is None
+                if pd.isna(outage[pct_outages_col])
                 else 1 - (outage[pct_outages_col] / 100.0)
             )
             if abs(availability) < 1e-6:
@@ -429,7 +452,8 @@ class PowerStations:
         the availability of the station.
         :param df: The dataframe to be changed.
         :param installed_capacity_kw: The column of df that contains the installed_capacity in kW
-        :param stations_availability: The name of the helper column used to compute installed capacity
+        :param stations_availability: The name of the helper column used to compute installed capacity.
+            Values should be between 0 and 1, 0 meaning a shutdown and 1 meaning full installed capacity available
         :param drop_availability: boolean flag which indicates whether the availability
                                    column shall be dropped.
         :return: The DataFrame with corrected installed capacity
@@ -491,8 +515,10 @@ class PowerStations:
         """
 
         # check station availability_col
-        if "availability" in df_stations.columns:
-            raise ValueError("'availability' is a reserved keyword for this function")
+        if "availability_col" in df_stations.columns:
+            raise ValueError(
+                "'availability_col' is a reserved keyword for this function"
+            )
 
         df = PowerStations.integrate_availability_from_outages(
             df_stations=df_stations,

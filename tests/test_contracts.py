@@ -412,14 +412,6 @@ class TestContracts(unittest.TestCase):
 
         pd.testing.assert_frame_equal(output_df, expected_output_df)
 
-    def test_compute_portfolio_by_day_current(self):
-        """
-        Test the compute_portfolio_by_day function
-        """
-
-
-
-
 
     @staticmethod
     def get_simple_portfolio_by_day():

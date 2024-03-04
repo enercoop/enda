@@ -148,7 +148,6 @@ class EndaNormalizedEstimator(EndaEstimator):
                 f"target should be None or {self.target_col}, but given: {target_col}"
             )
 
-        # TODO : fonctionnement bizarre avec drop_where_normalization_under_zero ?
         if drop_where_normalization_under_zero:
             df = df.loc[df[self.normalisation_col] > 0, :]
         df_norm = self.normalize(df)
@@ -195,7 +194,7 @@ class EndaStackingEstimator(EndaEstimator):
         re-train base_estimators on the full train-set
     We have to train base_estimators twice, because if we trained them on the full set and then predict on
     train_set[x:] for training final_estimator, we would be making a prediction on part of the data that was used to
-    train them, which would be a huge risk of overfitting
+    train them, which would be a huge risk of over-fitting
     """
 
     def __init__(
