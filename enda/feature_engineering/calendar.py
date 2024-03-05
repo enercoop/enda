@@ -4,7 +4,7 @@ import datetime
 import warnings
 import pandas as pd
 from enda.feature_engineering.datetime_features import DatetimeFeature
-from enda.timeseries import TimeSeries
+from enda.tools.timeseries import TimeSeries
 
 try:
     import unidecode

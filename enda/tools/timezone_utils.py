@@ -6,7 +6,7 @@ from dateutil.relativedelta import relativedelta
 import pandas as pd
 import pytz
 
-import enda.decorators
+import enda.tools.decorators
 
 
 class TimezoneUtils:
@@ -68,7 +68,7 @@ class TimezoneUtils:
         return day_naive
 
     @staticmethod
-    @enda.decorators.handle_series_as_datetimeindex(
+    @enda.tools.decorators.handle_series_as_datetimeindex(
         arg_name="time_series", return_input_type=True
     )
     def _set_timezone_dti(
@@ -121,7 +121,7 @@ class TimezoneUtils:
         return new_time_series
 
     @staticmethod
-    @enda.decorators.handle_multiindex(arg_name="df")
+    @enda.tools.decorators.handle_multiindex(arg_name="df")
     def _set_timezone_frame(
         df: pd.DataFrame,
         tz_info: Union[str, datetime.tzinfo],

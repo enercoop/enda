@@ -5,8 +5,8 @@ from pandas.api.types import is_string_dtype, is_datetime64_dtype
 from dateutil.relativedelta import relativedelta
 import pytz
 
-from enda.timeseries import TimeSeries
-from enda.timezone_utils import TimezoneUtils
+from enda.tools.timezone_utils import TimezoneUtils
+from enda.tools.resample import Resample
 
 
 class Contracts:
@@ -162,6 +162,7 @@ class Contracts:
         date_start_col: str = "date_start",
         date_end_exclusive_col: str = "date_end_exclusive",
         max_date_exclusive: pd.Timestamp = None,
+        ffill_until_max_date: bool = False,
     ) -> pd.DataFrame:
         """
         Given a list of contracts_with_group ,
@@ -181,7 +182,8 @@ class Contracts:
         :param date_end_exclusive_col: the name of your contract date end column, end date is exclusive.
         :param max_date_exclusive: restricts the output to strictly before this date.
                                    Useful if you have end_dates far in the future.
-
+        :param ffill_until_max_date: Whether to forward fill the last available value until max_date_exclusive.
+            Default False
         :return: a 'portfolio' dataframe with one day per row,
                  and the following column hierarchy: (columns_to_sum, group_column)
                  Each day, we have the running sum of each columns_to_sum, for each group of contracts.
@@ -233,9 +235,15 @@ class Contracts:
         portfolio = df_by_day.cumsum(axis=0)
         portfolio.index.name = "date"  # now values are not increments on an event_date but the total on this date
 
-        # if max_date is given, forward_fill the final record to that date
-        #if max_date_exclusive is not None:
-        #    portfolio = TimeSeries.forward_fill_final_record(portfolio, max_date_exclusive)
+        # Forward fill the last available value until max_date_exclusive if specified
+        if ffill_until_max_date:
+            if max_date_exclusive is None:
+                raise ValueError(
+                    "ffill_until_max_date has been set to True, but no max_date_exclusive given"
+                )
+            portfolio = Resample.forward_fill_final_record(
+                timeseries_df=portfolio, excl_end_time=max_date_exclusive
+            )
 
         return portfolio
 

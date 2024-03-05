@@ -5,16 +5,16 @@ import datetime
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 
-import enda.timeseries
-import enda.timezone_utils
-import enda.decorators
+import enda.tools.timeseries
+import enda.tools.timezone_utils
+import enda.tools.decorators
 
 
 class Resample:
     """This class contains methods to resample (up or down) timeseries DataFrames"""
 
     @staticmethod
-    @enda.decorators.handle_multiindex(arg_name="timeseries_df")
+    @enda.tools.decorators.handle_multiindex(arg_name="timeseries_df")
     def downsample(
         timeseries_df: pd.DataFrame,
         freq: Union[str, pd.Timedelta],
@@ -76,7 +76,7 @@ class Resample:
 
         # get frequency from the initial dataframe
         # it return None only if the dataframe has a single record, else it returns the most common frequency
-        original_freq = enda.timeseries.TimeSeries.find_most_common_frequency(
+        original_freq = enda.tools.timeseries.TimeSeries.find_most_common_frequency(
             timeseries_df.index,
             skip_duplicate_timestamps=skip_duplicates_for_unique_freq_check,
         )
@@ -85,7 +85,7 @@ class Resample:
             (original_freq is not None)
             and is_original_frequency_unique
             and (
-                not enda.timeseries.TimeSeries.has_single_frequency(
+                not enda.tools.timeseries.TimeSeries.has_single_frequency(
                     timeseries_df.index,
                     variable_duration_freq_included=True,
                     skip_duplicate_timestamps=skip_duplicates_for_unique_freq_check,
@@ -96,8 +96,8 @@ class Resample:
 
         # make sure we downsample
         if (original_freq is not None) and (
-            enda.timeseries.TimeSeries.freq_as_approximate_nb_days(freq)
-            < enda.timeseries.TimeSeries.freq_as_approximate_nb_days(original_freq)
+                enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_days(freq)
+                < enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_days(original_freq)
         ):
             raise RuntimeError(
                 f"The required frequency {freq}"
@@ -127,7 +127,7 @@ class Resample:
         return resampled_df
 
     @staticmethod
-    @enda.decorators.handle_multiindex(arg_name="timeseries_df")
+    @enda.tools.decorators.handle_multiindex(arg_name="timeseries_df")
     def upsample_and_divide_evenly(
         timeseries_df: pd.DataFrame,
         freq: Union[str, pd.Timedelta],
@@ -159,7 +159,7 @@ class Resample:
 
         # check it's not a one-row dataframe, because it cannot be upsampled.
         # Consider using forward_fill and give a gap_timedelta to achieve the objective.
-        if enda.timeseries.TimeSeries.find_nb_records(timeseries_df.index) <= 1:
+        if enda.tools.timeseries.TimeSeries.find_nb_records(timeseries_df.index) <= 1:
             raise ValueError(
                 "Cannot upsample an empty or single-record time series; because its initial"
                 " frequency cannot be determined. Consider using 'forward_fill_last_record prior."
@@ -170,18 +170,18 @@ class Resample:
 
         # set timezone in case it's been indicated
         if tz_info is not None:
-            timeseries_df = enda.timezone_utils.TimezoneUtils.set_timezone(
+            timeseries_df = enda.tools.timezone_utils.TimezoneUtils.set_timezone(
                 timeseries_df, tz_info
             )
 
         # get frequency from the initial dataframe
-        original_freq = enda.timeseries.TimeSeries.find_most_common_frequency(
+        original_freq = enda.tools.timeseries.TimeSeries.find_most_common_frequency(
             timeseries_df.index
         )
 
         # if it's not a regular frequency, this function cannot work
-        if (not enda.timeseries.TimeSeries.is_regular_freq(original_freq)) or (
-            not enda.timeseries.TimeSeries.is_regular_freq(freq)
+        if (not enda.tools.timeseries.TimeSeries.is_regular_freq(original_freq)) or (
+            not enda.tools.timeseries.TimeSeries.is_regular_freq(freq)
         ):
             raise ValueError(
                 f"Cannot upsample and divide for an input dataframe with an irregular frequency, "
@@ -189,7 +189,7 @@ class Resample:
                 f" and target freq = {freq}"
             )
 
-        if not enda.timeseries.TimeSeries.has_single_frequency(
+        if not enda.tools.timeseries.TimeSeries.has_single_frequency(
             timeseries_df.index,
             variable_duration_freq_included=False,
             skip_duplicate_timestamps=False,
@@ -214,7 +214,7 @@ class Resample:
         # added when resampling which will make the sum of values in the numerical columns false
         # Note this implies the last record of the resulting index is greater than the initial one.
         timeseries_df.loc[
-            enda.timeseries.TimeSeries.add_timedelta(
+            enda.tools.timeseries.TimeSeries.add_timedelta(
                 timeseries_df.index.max(), original_freq
             )
         ] = 0
@@ -227,7 +227,7 @@ class Resample:
         return timeseries_df
 
     @staticmethod
-    @enda.decorators.handle_multiindex(arg_name="timeseries_df")
+    @enda.tools.decorators.handle_multiindex(arg_name="timeseries_df")
     def upsample_monthly_data_and_divide_evenly(
         timeseries_df: pd.DataFrame,
         freq: Union[str, pd.Timedelta],
@@ -254,7 +254,7 @@ class Resample:
             raise TypeError("The dataframe index must be a DatetimeIndex")
 
         # get frequency from the initial dataframe
-        original_freq = enda.timeseries.TimeSeries.find_most_common_frequency(
+        original_freq = enda.tools.timeseries.TimeSeries.find_most_common_frequency(
             timeseries_df.index
         )
 
@@ -262,7 +262,7 @@ class Resample:
         (
             amount_months,
             month_freq,
-        ) = enda.timeseries.TimeSeries.split_amount_and_unit_from_freq(original_freq)
+        ) = enda.tools.timeseries.TimeSeries.split_amount_and_unit_from_freq(original_freq)
         if month_freq not in ["MS", "M"] or amount_months != 1:
             raise ValueError(f"Frequency should be monthly but found {original_freq}")
 
@@ -270,7 +270,7 @@ class Resample:
 
         # set timezone in case it's been indicated
         if tz_info is not None:
-            resampled_df = enda.timezone_utils.TimezoneUtils.set_timezone(
+            resampled_df = enda.tools.timezone_utils.TimezoneUtils.set_timezone(
                 resampled_df, tz_info
             )
 
@@ -290,7 +290,7 @@ class Resample:
         return resampled_df
 
     @staticmethod
-    @enda.decorators.handle_multiindex(arg_name="timeseries_df")
+    @enda.tools.decorators.handle_multiindex(arg_name="timeseries_df")
     def upsample_and_interpolate(
         timeseries_df: pd.DataFrame,
         freq: [str, pd.Timedelta],
@@ -317,7 +317,7 @@ class Resample:
             raise TypeError("The dataframe index must be a DatetimeIndex")
 
         # check it's not a one-row dataframe, because it cannot be upsampled.
-        if enda.timeseries.TimeSeries.find_nb_records(timeseries_df.index) <= 1:
+        if enda.tools.timeseries.TimeSeries.find_nb_records(timeseries_df.index) <= 1:
             raise ValueError(
                 "Cannot upsample an empty or single-record time series; because it's initial"
                 " frequency cannot be determined. Consider using 'forward_fill_last_record' prior."
@@ -327,17 +327,17 @@ class Resample:
 
         # set timezone in case it's been indicated
         if tz_info is not None:
-            timeseries_df = enda.timezone_utils.TimezoneUtils.set_timezone(
+            timeseries_df = enda.tools.timezone_utils.TimezoneUtils.set_timezone(
                 timeseries_df, tz_info
             )
 
         # get frequency from the initial dataframe
-        original_freq = enda.timeseries.TimeSeries.find_most_common_frequency(
+        original_freq = enda.tools.timeseries.TimeSeries.find_most_common_frequency(
             timeseries_df.index
         )
 
         if is_original_frequency_unique and (
-            not enda.timeseries.TimeSeries.has_single_frequency(
+            not enda.tools.timeseries.TimeSeries.has_single_frequency(
                 timeseries_df.index,
                 variable_duration_freq_included=True,
                 skip_duplicate_timestamps=False,
@@ -346,9 +346,9 @@ class Resample:
             raise ValueError("Frequency is not unique in the dataframe")
 
         # make sure we downsample
-        if enda.timeseries.TimeSeries.freq_as_approximate_nb_days(
+        if enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_days(
             freq
-        ) >= enda.timeseries.TimeSeries.freq_as_approximate_nb_days(original_freq):
+        ) >= enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_days(original_freq):
             raise ValueError(
                 f"The required frequency {freq}"
                 f" is higher than the original one {original_freq}"
@@ -371,7 +371,7 @@ class Resample:
         return timeseries_df
 
     @staticmethod
-    @enda.decorators.handle_multiindex(arg_name="timeseries_df")
+    @enda.tools.decorators.handle_multiindex(arg_name="timeseries_df")
     def equal_sample_fillna(
         timeseries_df: pd.DataFrame,
         fill_value: any = None,
@@ -401,13 +401,13 @@ class Resample:
             )
 
         # get frequency from the initial dataframe.
-        freq = enda.timeseries.TimeSeries.find_most_common_frequency(
+        freq = enda.tools.timeseries.TimeSeries.find_most_common_frequency(
             timeseries_df.index, skip_duplicate_timestamps=True
         )
 
         if safe_run:
             # check duplicates
-            duplicates = enda.timeseries.TimeSeries.find_duplicates(timeseries_df.index)
+            duplicates = enda.tools.timeseries.TimeSeries.find_duplicates(timeseries_df.index)
             if len(duplicates) > 0:
                 raise RuntimeError(
                     f"Duplicates found in the index of the dataframe. The function would delete them, "
@@ -415,7 +415,7 @@ class Resample:
                 )
 
             # check extra-periods
-            extra_periods = enda.timeseries.TimeSeries.find_extra_points(
+            extra_periods = enda.tools.timeseries.TimeSeries.find_extra_points(
                 timeseries_df.index
             )
             if len(extra_periods) > 0:
@@ -435,7 +435,7 @@ class Resample:
         return result_df
 
     @staticmethod
-    @enda.decorators.handle_multiindex(arg_name="timeseries_df")
+    @enda.tools.decorators.handle_multiindex(arg_name="timeseries_df")
     def forward_fill_final_record(
         timeseries_df: pd.DataFrame,
         gap_timedelta: [str, pd.Timedelta] = None,
@@ -510,7 +510,7 @@ class Resample:
                  using the initial frequency of the dataframe index.
         """
 
-        freq = enda.timeseries.TimeSeries.find_most_common_frequency(
+        freq = enda.tools.timeseries.TimeSeries.find_most_common_frequency(
             timeseries_df.index
         )
 
@@ -522,7 +522,7 @@ class Resample:
                 "Cannot provide both arguments excl_end_time and gap_timedelta at once"
             )
         if gap_timedelta is not None:
-            extra_excl_end_time = enda.timeseries.TimeSeries.add_timedelta(
+            extra_excl_end_time = enda.tools.timeseries.TimeSeries.add_timedelta(
                 incl_end_time, gap_timedelta
             )
         elif excl_end_time is not None:
@@ -554,7 +554,7 @@ class Resample:
         result = result.drop([incl_end_time, extra_excl_end_time])
 
         if cut_off is not None:
-            cut_off_end = enda.timeseries.TimeSeries.add_timedelta(
+            cut_off_end = enda.tools.timeseries.TimeSeries.add_timedelta(
                 incl_end_time.floor(cut_off), cut_off
             )
             result = result[result.index < cut_off_end]

@@ -3,7 +3,7 @@
 import logging
 import unittest
 import pandas as pd
-import enda.resample
+import enda.tools.resample
 
 
 class TestResample(unittest.TestCase):
@@ -112,7 +112,7 @@ class TestResample(unittest.TestCase):
 
         # test that we can't downsample to a smaller period
         with self.assertRaises(RuntimeError):
-            enda.resample.Resample.downsample(self.perfect_df, freq="6H")
+            enda.tools.resample.Resample.downsample(self.perfect_df, freq="6H")
 
         # test down-sampling to a 1D (24H) frequency, 'sum as agg_function, and change of index name
         # with perfect df (test check frequency unique)
@@ -129,7 +129,7 @@ class TestResample(unittest.TestCase):
         ).set_index("date")
         expected_df.index.freq = "1D"
 
-        result_df = enda.resample.Resample.downsample(
+        result_df = enda.tools.resample.Resample.downsample(
             self.perfect_df,
             freq="1D",
             agg_functions="sum",
@@ -153,7 +153,7 @@ class TestResample(unittest.TestCase):
         ).set_index("time")
         expected_df.index.freq = "1D"
 
-        result_df = enda.resample.Resample.downsample(
+        result_df = enda.tools.resample.Resample.downsample(
             self.imperfect_df, freq="24H", agg_functions="sum"
         )
         pd.testing.assert_frame_equal(result_df, expected_df)
@@ -169,7 +169,7 @@ class TestResample(unittest.TestCase):
         ).set_index("date")
         expected_df.index.freq = None
 
-        result_df = enda.resample.Resample.downsample(
+        result_df = enda.tools.resample.Resample.downsample(
             self.imperfect_two_columns_df,
             freq="3D",
             agg_functions="sum",
@@ -180,7 +180,7 @@ class TestResample(unittest.TestCase):
 
         # test changing the origin, and the agg function to dict
         # use the implicit conversion bool -> int for is_start_week
-        result_df = enda.resample.Resample.downsample(
+        result_df = enda.tools.resample.Resample.downsample(
             self.imperfect_two_columns_df,
             freq="2D",
             agg_functions={"value": "sum", "is_start_week": "mean"},
@@ -201,7 +201,7 @@ class TestResample(unittest.TestCase):
         pd.testing.assert_frame_equal(result_df, expected_df)
 
         # test changing the origin with group by
-        result_df = enda.resample.Resample.downsample(
+        result_df = enda.tools.resample.Resample.downsample(
             self.imperfect_two_columns_df,
             freq="2D",
             agg_functions="sum",
@@ -223,7 +223,7 @@ class TestResample(unittest.TestCase):
         pd.testing.assert_frame_equal(result_df, expected_df)
 
         # test with a multi-index
-        result_df = enda.resample.Resample.downsample(
+        result_df = enda.tools.resample.Resample.downsample(
             self.imperfect_multi_df, freq="1D", agg_functions="sum"
         )
         expected_df = pd.DataFrame(
@@ -244,7 +244,7 @@ class TestResample(unittest.TestCase):
         pd.testing.assert_frame_equal(result_df, expected_df)
 
         # test with monthly dataframe
-        result_df = enda.resample.Resample.downsample(
+        result_df = enda.tools.resample.Resample.downsample(
             self.monthly_df, freq="2MS", agg_functions="mean"
         )
         expected_df = pd.DataFrame(
@@ -259,7 +259,7 @@ class TestResample(unittest.TestCase):
         pd.testing.assert_frame_equal(result_df, expected_df)
 
         # test with single row dataframe
-        result_df = enda.resample.Resample.downsample(
+        result_df = enda.tools.resample.Resample.downsample(
             self.single_row_df, freq="Y", agg_functions="mean"
         )
         expected_df = pd.DataFrame(
@@ -277,11 +277,11 @@ class TestResample(unittest.TestCase):
 
         # check with self.df_12h_imperfect: error because duplicates and extra periods
         with self.assertRaises(RuntimeError):
-            enda.resample.Resample.equal_sample_fillna(self.imperfect_df)
+            enda.tools.resample.Resample.equal_sample_fillna(self.imperfect_df)
 
         # in case both options are active
         with self.assertRaises(ValueError):
-            enda.resample.Resample.equal_sample_fillna(
+            enda.tools.resample.Resample.equal_sample_fillna(
                 self.perfect_df, fill_value=2, method_filling="bfill"
             )
 
@@ -310,7 +310,7 @@ class TestResample(unittest.TestCase):
             columns=["time", "value"],
         ).set_index("time")
 
-        outcome_df = enda.resample.Resample.equal_sample_fillna(
+        outcome_df = enda.tools.resample.Resample.equal_sample_fillna(
             df_12h_imperfect_no_extra_value
         )
 
@@ -336,19 +336,19 @@ class TestResample(unittest.TestCase):
         pd.testing.assert_frame_equal(outcome_df, expected_df)
 
         # test with other input parameters
-        outcome_df = enda.resample.Resample.equal_sample_fillna(
+        outcome_df = enda.tools.resample.Resample.equal_sample_fillna(
             df_12h_imperfect_no_extra_value, fill_value=4
         )
         expected_df.loc[pd.to_datetime("2021-01-02 00:00:00+01:00"), "value"] = 4
         pd.testing.assert_frame_equal(outcome_df, expected_df)
 
-        outcome_df = enda.resample.Resample.equal_sample_fillna(
+        outcome_df = enda.tools.resample.Resample.equal_sample_fillna(
             df_12h_imperfect_no_extra_value, method_filling="ffill"
         )
         expected_df.loc[pd.to_datetime("2021-01-02 00:00:00+01:00"), "value"] = 3
         pd.testing.assert_frame_equal(outcome_df, expected_df)
 
-        outcome_df = enda.resample.Resample.equal_sample_fillna(
+        outcome_df = enda.tools.resample.Resample.equal_sample_fillna(
             df_12h_imperfect_no_extra_value, method_filling="bfill"
         )
         expected_df.loc[pd.to_datetime("2021-01-02 00:00:00+01:00"), "value"] = 2
@@ -361,7 +361,7 @@ class TestResample(unittest.TestCase):
 
         # test that we can't upsample to a higher period
         with self.assertRaises(ValueError):
-            enda.resample.Resample.upsample_and_divide_evenly(
+            enda.tools.resample.Resample.upsample_and_divide_evenly(
                 self.perfect_df, freq="1D"
             )
 
@@ -400,7 +400,7 @@ class TestResample(unittest.TestCase):
         ).set_index("six_hours")
         expected_df.index.freq = "6H"
 
-        result_df = enda.resample.Resample.upsample_and_interpolate(
+        result_df = enda.tools.resample.Resample.upsample_and_interpolate(
             self.perfect_df,
             freq="6H",
             is_original_frequency_unique=True,
@@ -420,7 +420,7 @@ class TestResample(unittest.TestCase):
         )
         expected_df.index.freq = "6H"
 
-        result_df = enda.resample.Resample.upsample_and_interpolate(
+        result_df = enda.tools.resample.Resample.upsample_and_interpolate(
             self.perfect_df, freq="6H", forward_fill=True, index_name="six_hours"
         )
         pd.testing.assert_frame_equal(result_df, expected_df)
@@ -456,19 +456,19 @@ class TestResample(unittest.TestCase):
             columns=["name", "is_start_week", "time", "value"],
         ).set_index(["name", "is_start_week", "time"])
 
-        result_df = enda.resample.Resample.upsample_and_interpolate(
+        result_df = enda.tools.resample.Resample.upsample_and_interpolate(
             self.perfect_multi_df, freq="6H", forward_fill=True
         )
         pd.testing.assert_frame_equal(result_df, expected_df)
 
         # test error with duplicates
         with self.assertRaises(ValueError):
-            enda.resample.Resample.upsample_and_interpolate(
+            enda.tools.resample.Resample.upsample_and_interpolate(
                 self.imperfect_df, freq="6H"
             )
         # test with a single row df
         with self.assertRaises(ValueError):
-            enda.resample.Resample.upsample_and_interpolate(
+            enda.tools.resample.Resample.upsample_and_interpolate(
                 self.single_row_df, freq="W"
             )
 
@@ -479,7 +479,7 @@ class TestResample(unittest.TestCase):
 
         # test that we can't upsample because initial period (12 hours) is lower than the aimed one (24 hours)
         with self.assertRaises(ValueError):
-            enda.resample.Resample.upsample_and_divide_evenly(
+            enda.tools.resample.Resample.upsample_and_divide_evenly(
                 self.perfect_df, freq="24H"
             )
 
@@ -519,7 +519,7 @@ class TestResample(unittest.TestCase):
         ).set_index("six_hours")
         expected_df.index.freq = "6H"
 
-        result_df = enda.resample.Resample.upsample_and_divide_evenly(
+        result_df = enda.tools.resample.Resample.upsample_and_divide_evenly(
             self.perfect_df, freq="6H", index_name="six_hours"
         )
         pd.testing.assert_frame_equal(result_df, expected_df)
@@ -555,26 +555,26 @@ class TestResample(unittest.TestCase):
             columns=["name", "is_start_week", "time", "value"],
         ).set_index(["name", "is_start_week", "time"])
 
-        result_df = enda.resample.Resample.upsample_and_divide_evenly(
+        result_df = enda.tools.resample.Resample.upsample_and_divide_evenly(
             self.perfect_multi_df, freq="6H"
         )
         pd.testing.assert_frame_equal(result_df, expected_df)
 
         # test error with duplicates
         with self.assertRaises(ValueError):
-            enda.resample.Resample.upsample_and_divide_evenly(
+            enda.tools.resample.Resample.upsample_and_divide_evenly(
                 self.imperfect_df, freq="6H"
             )
 
         # test with a single row df
         with self.assertRaises(ValueError):
-            enda.resample.Resample.upsample_and_divide_evenly(
+            enda.tools.resample.Resample.upsample_and_divide_evenly(
                 self.single_row_df, freq="1D"
             )
 
         # error with monthly data
         with self.assertRaises(ValueError):
-            enda.resample.Resample.upsample_and_divide_evenly(
+            enda.tools.resample.Resample.upsample_and_divide_evenly(
                 self.monthly_df, freq="1D"
             )
 
@@ -624,7 +624,7 @@ class TestResample(unittest.TestCase):
         ).asfreq("30min")
         expected_output_df.index.name = "time"
 
-        output_df = enda.resample.Resample.upsample_monthly_data_and_divide_evenly(
+        output_df = enda.tools.resample.Resample.upsample_monthly_data_and_divide_evenly(
             timeseries_df=input_df, freq="30min"
         )
 
@@ -658,27 +658,27 @@ class TestResample(unittest.TestCase):
             ]
         )
 
-        result_df = enda.resample.Resample.forward_fill_final_record(
+        result_df = enda.tools.resample.Resample.forward_fill_final_record(
             timeseries_df=input_df, gap_timedelta="1D"
         )
         pd.testing.assert_frame_equal(expected_df, result_df)
 
         # test with excl_end_time as timestamp
-        result_df = enda.resample.Resample.forward_fill_final_record(
+        result_df = enda.tools.resample.Resample.forward_fill_final_record(
             timeseries_df=input_df,
             excl_end_time=pd.Timestamp("2021-01-03 00:00:00+01:00"),
         )
         pd.testing.assert_frame_equal(expected_df, result_df)
 
         # test with excl_end_time as string
-        result_df = enda.resample.Resample.forward_fill_final_record(
+        result_df = enda.tools.resample.Resample.forward_fill_final_record(
             timeseries_df=input_df, excl_end_time="2021-01-03 00:00:00+01:00"
         )
         pd.testing.assert_frame_equal(expected_df, result_df)
 
         # test error excl_end_time
         with self.assertRaises(ValueError):
-            enda.resample.Resample.forward_fill_final_record(
+            enda.tools.resample.Resample.forward_fill_final_record(
                 timeseries_df=input_df, excl_end_time="2021-01-02 00:00:00+01:00"
             )
 
@@ -707,7 +707,7 @@ class TestResample(unittest.TestCase):
             .set_index("time")
         )
 
-        result_df = enda.resample.Resample.forward_fill_final_record(
+        result_df = enda.tools.resample.Resample.forward_fill_final_record(
             timeseries_df=input_df, gap_timedelta="3H", cut_off="1D"
         )
         pd.testing.assert_frame_equal(expected_df, result_df)

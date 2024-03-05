@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from enda.contracts import Contracts
-from enda.timeseries import TimeSeries
+from enda.tools.timeseries import TimeSeries
 
 
 class TestContracts(unittest.TestCase):

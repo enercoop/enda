@@ -29,4 +29,4 @@ from enda.contracts import Contracts  # noqa
 from enda.feature_engineering.datetime_features import DatetimeFeature  # noqa
 from enda.power_predictor import PowerPredictor  # noqa
 from enda.power_stations import PowerStations  # noqa
-from enda.timeseries import TimeSeries  # noqa
+from enda.tools.timeseries import TimeSeries  # noqa

@@ -5,7 +5,7 @@ from collections.abc import Generator
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 
-from enda.timezone_utils import TimezoneUtils
+from enda.tools.timezone_utils import TimezoneUtils
 
 
 class BackTesting:
@@ -100,26 +100,25 @@ class BackTesting:
 
             time_col = df.index.levels[1].name
 
-            # TODO : this line fails if the DatetimeIndex col has no name
-            if str(df.index.get_level_values(time_col).tz) != str(
+            if str(df.index.levels[1].tz) != str(
                 start_eval_datetime.tzinfo
             ):
                 raise ValueError(
-                    f"df.index (tzinfo={df.index.get_level_values(time_col).tz}) and start_eval_datetime "
+                    f"df.index (tzinfo={df.index.levels[1].tz}) and start_eval_datetime "
                     f"(tzinfo={start_eval_datetime.tzinfo}) must have the same tzinfo."
                 )
 
-            if start_eval_datetime <= df.index.get_level_values(time_col).min():
+            if start_eval_datetime <= df.index.levels[1].min():
                 raise ValueError(
                     f"start_eval_datetime ({start_eval_datetime}) must be after the beginning of df "
                     f"({df.index.get_level_values(time_col).min()})"
                 )
 
             # go through the dataset and yield pairs of (train set, test set)
-            while start_test < df.index.get_level_values(time_col).max():
-                yield df[df.index.get_level_values(time_col) < end_train], df[
-                    (df.index.get_level_values(time_col) >= start_test)
-                    & (df.index.get_level_values(time_col) < end_test)
+            while start_test < df.index.levels[1].max():
+                yield df[df.index.levels[1] < end_train], df[
+                    (df.index.levels[1] >= start_test)
+                    & (df.index.levels[1] < end_test)
                 ]
 
                 end_train = TimezoneUtils.add_interval_to_day_dt(

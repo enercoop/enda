@@ -5,7 +5,7 @@ import unittest
 import warnings
 import pandas as pd
 
-import enda.decorators
+import enda.tools.decorators
 
 
 class TestDecorator(unittest.TestCase):
@@ -72,7 +72,7 @@ class TestDecorator(unittest.TestCase):
         We set return_input_type to True
         """
 
-        @enda.decorators.handle_series_as_datetimeindex(
+        @enda.tools.decorators.handle_series_as_datetimeindex(
             arg_name="time_series", return_input_type=True
         )
         def tz_localize_time_series(time_series: pd.DatetimeIndex) -> pd.DatetimeIndex:
@@ -121,7 +121,7 @@ class TestDecorator(unittest.TestCase):
         """
 
         # compared to previous example, return_input_type is set to False
-        @enda.decorators.handle_series_as_datetimeindex(
+        @enda.tools.decorators.handle_series_as_datetimeindex(
             arg_name="dti", return_input_type=False
         )
         def tz_localize_time_series(dti: pd.DatetimeIndex) -> pd.DatetimeIndex:
@@ -159,7 +159,7 @@ class TestDecorator(unittest.TestCase):
         Test errors in handle_series_as_datetimeindex
         """
 
-        @enda.decorators.handle_series_as_datetimeindex(
+        @enda.tools.decorators.handle_series_as_datetimeindex(
             arg_name="dti", return_input_type=False
         )
         def tz_localize_time_series(dti: pd.DatetimeIndex) -> pd.DatetimeIndex:
@@ -174,7 +174,7 @@ class TestDecorator(unittest.TestCase):
         Test handle_multiindex in the case it returns a float (convertible to series)
         """
 
-        @enda.decorators.handle_multiindex(arg_name="df")
+        @enda.tools.decorators.handle_multiindex(arg_name="df")
         def compute_mean_as_float(df: pd.DataFrame):
             return df.mean().squeeze()
 
@@ -207,7 +207,7 @@ class TestDecorator(unittest.TestCase):
         Test handle_multiindex in the case it returns a series (single-valued)
         """
 
-        @enda.decorators.handle_multiindex(arg_name="df")
+        @enda.tools.decorators.handle_multiindex(arg_name="df")
         def compute_mean_as_series(df: pd.DataFrame):
             return df.mean()
 
@@ -242,7 +242,7 @@ class TestDecorator(unittest.TestCase):
         Test handle_multiindex in the case it returns a dataframe with the same index
         """
 
-        @enda.decorators.handle_multiindex(arg_name="test_df")
+        @enda.tools.decorators.handle_multiindex(arg_name="test_df")
         def add_one(test_df: pd.DataFrame, col_name="value"):
             test_df = test_df.copy()
             test_df[col_name] += 1
@@ -279,7 +279,7 @@ class TestDecorator(unittest.TestCase):
         Test handle_multiindex with a function that returns a dataframe with a new index
         """
 
-        @enda.decorators.handle_multiindex(arg_name="timeseries_df")
+        @enda.tools.decorators.handle_multiindex(arg_name="timeseries_df")
         def twelve_hours_resampler(timeseries_df: pd.DataFrame):
             return timeseries_df.resample("12H").ffill()
 
@@ -386,7 +386,7 @@ class TestDecorator(unittest.TestCase):
         """
 
         # simple function with three arguments that returns the length of axis in df
-        @enda.decorators.handle_multiindex(arg_name="df")
+        @enda.tools.decorators.handle_multiindex(arg_name="df")
         def return_len_df(
             df: pd.DataFrame, axis: int, reverse_sign: bool = False
         ) -> int:
@@ -420,7 +420,7 @@ class TestDecorator(unittest.TestCase):
         pd.testing.assert_frame_equal(result_df, expected_df)
 
         # same function, but invert df and axis arguments (BAD PRACTICE)
-        @enda.decorators.handle_multiindex(arg_name="df")
+        @enda.tools.decorators.handle_multiindex(arg_name="df")
         def alternative_return_len_df(
             axis: int, df: pd.DataFrame, reverse_sign: bool = False
         ) -> int:
@@ -445,7 +445,7 @@ class TestDecorator(unittest.TestCase):
         Test several errors
         """
 
-        @enda.decorators.handle_multiindex(arg_name="df")
+        @enda.tools.decorators.handle_multiindex(arg_name="df")
         def return_len_df(
             df: pd.DataFrame, axis: int, reverse_sign: bool = False
         ) -> int:
@@ -478,7 +478,7 @@ class TestDecorator(unittest.TestCase):
         logging.captureWarnings(False)
 
         # decorate a function
-        @enda.decorators.warning_deprecated_name(
+        @enda.tools.decorators.warning_deprecated_name(
             namespace_name="Old",
             new_namespace_name="New",
             new_function_name="alternative_return_len_df",

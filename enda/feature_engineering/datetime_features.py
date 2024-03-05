@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype as is_datetime
 
-from enda.decorators import handle_multiindex
+from enda.tools.decorators import handle_multiindex
 
 
 class DatetimeFeature:
@@ -15,7 +15,7 @@ class DatetimeFeature:
     functions (mainly to be usable by machine learning algorithms)"""
 
     @staticmethod
-    @handle_multiindex
+    @handle_multiindex(arg_name="df")
     def split_datetime(
         df: pd.DataFrame,
         split_list: list[str] = None,
@@ -196,7 +196,7 @@ class DatetimeFeature:
         return result
 
     @staticmethod
-    @handle_multiindex
+    @handle_multiindex(arg_name="df")
     def encode_cyclic_datetime_index(df: pd.DataFrame, split_list: list[str] = None):
         """
         Split and encode a datetime index into different date and time attributes (given by split list).

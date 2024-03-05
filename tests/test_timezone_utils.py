@@ -5,7 +5,7 @@ import pandas as pd
 import pytz
 from dateutil.relativedelta import relativedelta
 from dateutil import parser as date_parser
-from enda.timezone_utils import TimezoneUtils
+from enda.tools.timezone_utils import TimezoneUtils
 
 
 class TestTimezoneUtils(unittest.TestCase):

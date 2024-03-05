@@ -7,9 +7,9 @@ from dateutil.relativedelta import relativedelta
 import pandas as pd
 import pytz
 
-import enda.decorators
-import enda.timezone_utils
-import enda.resample
+import enda.tools.decorators
+import enda.tools.timezone_utils
+import enda.tools.resample
 
 
 class TimeSeries:
@@ -215,7 +215,7 @@ class TimeSeries:
     # ------------
 
     @staticmethod
-    @enda.decorators.handle_series_as_datetimeindex(
+    @enda.tools.decorators.handle_series_as_datetimeindex(
         arg_name="dti", return_input_type=False
     )
     def has_nan_or_empty(dti: pd.DatetimeIndex) -> bool:
@@ -236,7 +236,7 @@ class TimeSeries:
         return False
 
     @staticmethod
-    @enda.decorators.handle_series_as_datetimeindex(
+    @enda.tools.decorators.handle_series_as_datetimeindex(
         arg_name="dti", return_input_type=False
     )
     def find_nb_records(dti: pd.DatetimeIndex, skip_duplicate_timestamps=False) -> int:
@@ -254,7 +254,7 @@ class TimeSeries:
         return len(dti)
 
     @staticmethod
-    @enda.decorators.handle_series_as_datetimeindex(
+    @enda.tools.decorators.handle_series_as_datetimeindex(
         arg_name="dti", return_input_type=False
     )
     def find_gap_distribution(
@@ -291,7 +291,7 @@ class TimeSeries:
         return gap_dist
 
     @staticmethod
-    @enda.decorators.handle_series_as_datetimeindex(
+    @enda.tools.decorators.handle_series_as_datetimeindex(
         arg_name="dti", return_input_type=False
     )
     def find_most_common_frequency(
@@ -347,7 +347,7 @@ class TimeSeries:
         return freq
 
     @staticmethod
-    @enda.decorators.handle_series_as_datetimeindex(
+    @enda.tools.decorators.handle_series_as_datetimeindex(
         arg_name="dti", return_input_type=True
     )
     def find_duplicates(dti: pd.DatetimeIndex) -> pd.DatetimeIndex:
@@ -359,7 +359,7 @@ class TimeSeries:
         return dti[dti.duplicated()]
 
     @staticmethod
-    @enda.decorators.handle_series_as_datetimeindex(
+    @enda.tools.decorators.handle_series_as_datetimeindex(
         arg_name="dti", return_input_type=True
     )
     def find_extra_points(
@@ -407,7 +407,7 @@ class TimeSeries:
         )
 
     @staticmethod
-    @enda.decorators.handle_series_as_datetimeindex(
+    @enda.tools.decorators.handle_series_as_datetimeindex(
         arg_name="dti", return_input_type=True
     )
     def find_missing_points(
@@ -460,7 +460,7 @@ class TimeSeries:
         return missing_points
 
     @staticmethod
-    @enda.decorators.handle_series_as_datetimeindex(
+    @enda.tools.decorators.handle_series_as_datetimeindex(
         arg_name="dti", return_input_type=False
     )
     def collapse_to_periods(
@@ -503,7 +503,7 @@ class TimeSeries:
         return periods_list
 
     @staticmethod
-    @enda.decorators.handle_series_as_datetimeindex(
+    @enda.tools.decorators.handle_series_as_datetimeindex(
         arg_name="dti", return_input_type=False
     )
     def find_missing_periods(
@@ -536,7 +536,7 @@ class TimeSeries:
         return TimeSeries.collapse_to_periods(missing_points, freq=freq)
 
     @staticmethod
-    @enda.decorators.handle_series_as_datetimeindex(
+    @enda.tools.decorators.handle_series_as_datetimeindex(
         arg_name="dti", return_input_type=False
     )
     def has_single_frequency(
@@ -592,7 +592,7 @@ class TimeSeries:
     # ----------------------------------
 
     @classmethod
-    @enda.decorators.warning_deprecated_name(
+    @enda.tools.decorators.warning_deprecated_name(
         namespace_name="TimeSeries",
         new_namespace_name="TimezoneUtils",
         new_function_name="convert_dtype_from_object_to_tz_aware",
@@ -623,13 +623,13 @@ class TimeSeries:
         :return: a DatetimeIndex of dtype: datetime[ns, tzinfo]
         """
         return pd.DatetimeIndex(
-            enda.timezone_utils.TimezoneUtils.convert_dtype_from_object_to_tz_aware(
+            enda.tools.timezone_utils.TimezoneUtils.convert_dtype_from_object_to_tz_aware(
                 time_series=time_series, tz_info=tzinfo
             )
         )
 
     @classmethod
-    @enda.decorators.warning_deprecated_name(
+    @enda.tools.decorators.warning_deprecated_name(
         namespace_name="TimeSeries",
         new_function_name="find_missing_periods and find_extra_points",
     )
@@ -668,7 +668,7 @@ class TimeSeries:
         return pd.to_timedelta(freq), missing_periods, extra_points
 
     @classmethod
-    @enda.decorators.warning_deprecated_name(
+    @enda.tools.decorators.warning_deprecated_name(
         namespace_name="TimeSeries", new_function_name="collapse_to_periods"
     )
     def collapse_dt_series_into_periods(
@@ -706,7 +706,7 @@ class TimeSeries:
         return TimeSeries.collapse_to_periods(dti=dti, freq=freq)
 
     @staticmethod
-    @enda.decorators.warning_deprecated_name(
+    @enda.tools.decorators.warning_deprecated_name(
         namespace_name="TimeSeries", new_function_name="find_most_common_frequency"
     )
     def get_timeseries_frequency(index: pd.DatetimeIndex):
@@ -719,7 +719,7 @@ class TimeSeries:
         return TimeSeries.find_most_common_frequency(dti=index)
 
     @staticmethod
-    @enda.decorators.warning_deprecated_name(
+    @enda.tools.decorators.warning_deprecated_name(
         namespace_name="TimeSeries",
         new_namespace_name="Resample",
         new_function_name="upsample_and_interpolate",
@@ -746,7 +746,7 @@ class TimeSeries:
         :return: pd.DataFrame
         """
 
-        df = enda.resample.Resample.upsample_and_interpolate(
+        df = enda.tools.resample.Resample.upsample_and_interpolate(
             timeseries_df=df,
             freq=freq,
             method=method,
@@ -755,13 +755,13 @@ class TimeSeries:
             index_name=index_name,
         )
 
-        df = enda.timezone_utils.TimezoneUtils.set_timezone(df, tz_info=tz)
+        df = enda.tools.timezone_utils.TimezoneUtils.set_timezone(df, tz_info=tz)
 
         return df
 
     @staticmethod
-    @enda.decorators.handle_multiindex(arg_name="df")
-    @enda.decorators.warning_deprecated_name(
+    @enda.tools.decorators.handle_multiindex(arg_name="df")
+    @enda.tools.decorators.warning_deprecated_name(
         namespace_name="TimeSeries", new_namespace_name="Resample"
     )
     def forward_fill_final_record(
@@ -785,15 +785,15 @@ class TimeSeries:
                 "Cannot extend the dataframe on a smaller frequency than itself"
             )
 
-        df = enda.resample.Resample.forward_fill_final_record(
+        df = enda.tools.resample.Resample.forward_fill_final_record(
             timeseries_df=df, gap_timedelta=gap_frequency, cut_off=cut_off_frequency
         )
         df.index.freq = freq
         return df
 
     @staticmethod
-    @enda.decorators.handle_multiindex(arg_name="df")
-    @enda.decorators.warning_deprecated_name(
+    @enda.tools.decorators.handle_multiindex(arg_name="df")
+    @enda.tools.decorators.warning_deprecated_name(
         namespace_name="TimeSeries",
         new_namespace_name="Resample",
         new_function_name="upsample_and_interpolate",
@@ -816,7 +816,7 @@ class TimeSeries:
         :return: pd.DataFrame
         """
 
-        return enda.resample.Resample.upsample_and_interpolate(
+        return enda.tools.resample.Resample.upsample_and_interpolate(
             timeseries_df=df,
             freq=freq,
             method=method,
@@ -826,7 +826,7 @@ class TimeSeries:
         )
 
     @staticmethod
-    @enda.decorators.warning_deprecated_name(
+    @enda.tools.decorators.warning_deprecated_name(
         namespace_name="TimeSeries",
         new_namespace_name="Resample",
         new_function_name="downsample",
@@ -857,7 +857,7 @@ class TimeSeries:
         2021-01-02 00:00:00+01:00 3
         """
 
-        df = enda.resample.Resample.downsample(
+        df = enda.tools.resample.Resample.downsample(
             df,
             freq=freq,
             agg_functions="mean",
@@ -865,6 +865,6 @@ class TimeSeries:
             index_name=index_name,
         )
 
-        df = enda.timezone_utils.TimezoneUtils.set_timezone(df, tz_info=tz)
+        df = enda.tools.timezone_utils.TimezoneUtils.set_timezone(df, tz_info=tz)
 
         return df

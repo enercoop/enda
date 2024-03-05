@@ -4,7 +4,7 @@ import pandas as pd
 from enda.contracts import Contracts
 from enda.feature_engineering.datetime_features import DatetimeFeature
 from enda.power_stations import PowerStations
-from enda.timeseries import TimeSeries
+from enda.tools.timeseries import TimeSeries
 
 
 class TestUtils:

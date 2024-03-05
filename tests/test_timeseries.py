@@ -6,7 +6,7 @@ import unittest
 import pandas as pd
 import pytz
 
-from enda.timeseries import TimeSeries
+from enda.tools.timeseries import TimeSeries
 
 
 class TestTimeSeries(unittest.TestCase):

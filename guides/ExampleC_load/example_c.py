@@ -38,7 +38,7 @@ from enda.estimators import (
     EndaEstimator,
 )
 from enda.ml_backends.h2o_estimator import EndaH2OEstimator
-from enda.timezone_utils import TimezoneUtils
+from enda.tools.timezone_utils import TimezoneUtils
 from enda.feature_engineering.calendar import Calendar
 
 
