@@ -67,12 +67,12 @@ class Scoring:
 
     def absolute_error_statistics(self) -> pd.DataFrame:
         """
-        :return: A DataFrame describing the statistics of the error between target and predictions,
+        :return: A DataFrame describing the statistics of the absolute error between target and predictions,
             such as mean, std and some quantiles
         """
-        return self.error().describe(percentiles=[0.5, 0.75, 0.9, 0.95, 0.99])
+        return self.absolute_error().describe(percentiles=[0.5, 0.75, 0.9, 0.95, 0.99])
 
-    def mean_absolute_error(self) -> pd.DataFrame:
+    def mean_absolute_error(self) -> pd.Series:
         """
         :return: A Series of the mean absolute error between each algorithm and the target,
             with algorithm names as the index

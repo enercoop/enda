@@ -18,7 +18,7 @@ source {path-to-venv}/bin/activate
 which python  # check python path
 ```
 
-Install the some dependencies in your virtual environment in order for the tests to succeed : 
+Install some dependencies in your virtual environment in order for the tests to succeed : 
 ```shell
 pip install --upgrade pip 
 pip install --upgrade pandas scikit-learn joblib h2o statsmodels

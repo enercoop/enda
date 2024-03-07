@@ -187,144 +187,151 @@ class TestContracts(unittest.TestCase):
             is_naive=False,
         )
 
-    def test_contracts_to_events(self):
+    def test_compute_portfolio_by_day(self):
         """
-        Test the _contracts_to_events function
+        Test the compute_portfolio_by_day function
         """
 
-        # Check that having 'event_type' or 'event_date' as a column in the original DataFrame raises an error
-
-        wrong_input_df = pd.DataFrame(
+        input_contracts_df = pd.DataFrame(
             data=[
                 {
-                    "station": "station1",
+                    "contract_id": "contract_1",
                     "start_date": pd.Timestamp(2023, 1, 1),
-                    "excl_end_date": pd.Timestamp(2024, 1, 1),
-                    "power_installed_kw": 100,
-                    "event_type": "event1",
+                    "excl_end_date": pd.Timestamp(2023, 2, 1),
+                    "subscribed_kva": 6,
                 },
                 {
-                    "station": "station1",
-                    "start_date": pd.Timestamp(2024, 1, 1),
-                    "excl_end_date": pd.Timestamp(2024, 6, 1),
-                    "power_installed_kw": 100,
-                    "event_type": "event2",
+                    "contract_id": "contract_2",
+                    "start_date": pd.Timestamp(2023, 1, 2),
+                    "excl_end_date": pd.Timestamp(2023, 1, 4),
+                    "subscribed_kva": 4,
+                },
+                {
+                    "contract_id": "contract_3",
+                    "start_date": pd.Timestamp(2023, 1, 1),
+                    "excl_end_date": pd.Timestamp(2023, 1, 3),
+                    "subscribed_kva": 10,
+                },
+                {
+                    "contract_id": "contract_3",
+                    "start_date": pd.Timestamp(2023, 1, 3),
+                    "excl_end_date": pd.Timestamp(2023, 1, 5),
+                    "subscribed_kva": 15,
                 },
             ]
         )
 
+        input_contracts_df["contracts_count"] = 1
+
+        # Check when "date" column is already present in DataFrame
+
+        wrong_colname_df = input_contracts_df.copy()
+        wrong_colname_df.rename(columns={"start_date": "date"}, inplace=True)
+
         with self.assertRaises(ValueError):
-            Contracts._contract_to_events(
-                contracts=wrong_input_df,
+            Contracts.compute_portfolio_by_day(
+                contracts=wrong_colname_df,
+                columns_to_sum=["contracts_count", "subscribed_kva"],
                 date_start_col="start_date",
                 date_end_exclusive_col="excl_end_date",
             )
 
-        # Check with normal case
+        # Check with a missing column to sum
 
-        input_df = pd.DataFrame(
-            data=[
-                {
-                    "station": "station1",
-                    "start_date": pd.Timestamp(2023, 1, 1),
-                    "excl_end_date": pd.Timestamp(2024, 1, 1),
-                    "power_installed_kw": 100,
-                },
-                {
-                    "station": "station1",
-                    "start_date": pd.Timestamp(2024, 1, 1),
-                    "excl_end_date": pd.Timestamp(2024, 6, 1),
-                    "power_installed_kw": 100,
-                },
-                {
-                    "station": "station1",
-                    "start_date": pd.Timestamp(2024, 6, 1),
-                    "excl_end_date": pd.NaT,
-                    "power_installed_kw": 100,
-                },
-                {
-                    "station": "station2",
-                    "start_date": pd.Timestamp(2023, 6, 1),
-                    "excl_end_date": pd.Timestamp(2023, 7, 1),
-                    "power_installed_kw": 80,
-                },
-                {
-                    "station": "station2",
-                    "start_date": pd.Timestamp(2023, 8, 1),
-                    "excl_end_date": pd.Timestamp(2023, 9, 1),
-                    "power_installed_kw": 50,
-                },
-            ]
-        )
+        with self.assertRaises(ValueError):
+            Contracts.compute_portfolio_by_day(
+                contracts=input_contracts_df,
+                columns_to_sum=["number_contracts", "subscribed_kva"],
+                date_start_col="start_date",
+                date_end_exclusive_col="excl_end_date",
+            )
+
+        # Check with nan values
+
+        nan_df = input_contracts_df.copy()
+        nan_df.loc[1, "contracts_count"] = np.nan
+
+        with self.assertRaises(ValueError):
+            Contracts.compute_portfolio_by_day(
+                contracts=nan_df,
+                columns_to_sum=["contracts_count", "subscribed_kva"],
+                date_start_col="start_date",
+                date_end_exclusive_col="excl_end_date",
+            )
+
+        # Check when ffill_until_max_date is True but no max_date_exclusive is given
+
+        with self.assertRaises(ValueError):
+            Contracts.compute_portfolio_by_day(
+                contracts=input_contracts_df,
+                columns_to_sum=["contracts_count", "subscribed_kva"],
+                date_start_col="start_date",
+                date_end_exclusive_col="excl_end_date",
+                ffill_until_max_date=True,
+            )
+
+        # Check the result with no max_date_exclusive
 
         expected_output_df = pd.DataFrame(
             data=[
-                {
-                    "event_type": "start",
-                    "event_date": pd.Timestamp(2023, 1, 1),
-                    "station": "station1",
-                    "power_installed_kw": 100,
-                },
-                {
-                    "event_type": "start",
-                    "event_date": pd.Timestamp(2023, 6, 1),
-                    "station": "station2",
-                    "power_installed_kw": 80,
-                },
-                {
-                    "event_type": "end",
-                    "event_date": pd.Timestamp(2023, 7, 1),
-                    "station": "station2",
-                    "power_installed_kw": 80,
-                },
-                {
-                    "event_type": "start",
-                    "event_date": pd.Timestamp(2023, 8, 1),
-                    "station": "station2",
-                    "power_installed_kw": 50,
-                },
-                {
-                    "event_type": "end",
-                    "event_date": pd.Timestamp(2023, 9, 1),
-                    "station": "station2",
-                    "power_installed_kw": 50,
-                },
-                {
-                    "event_type": "end",
-                    "event_date": pd.Timestamp(2024, 1, 1),
-                    "station": "station1",
-                    "power_installed_kw": 100,
-                },
-                {
-                    "event_type": "start",
-                    "event_date": pd.Timestamp(2024, 1, 1),
-                    "station": "station1",
-                    "power_installed_kw": 100,
-                },
-                {
-                    "event_type": "end",
-                    "event_date": pd.Timestamp(2024, 6, 1),
-                    "station": "station1",
-                    "power_installed_kw": 100,
-                },
-                {
-                    "event_type": "start",
-                    "event_date": pd.Timestamp(2024, 6, 1),
-                    "station": "station1",
-                    "power_installed_kw": 100,
-                },
+                {"contracts_count": 2.0, "subscribed_kva": 16.0},
+                {"contracts_count": 3, "subscribed_kva": 20},
+                {"contracts_count": 3, "subscribed_kva": 25},
+                {"contracts_count": 2, "subscribed_kva": 21},
             ]
+            + [{"contracts_count": 1, "subscribed_kva": 6} for _ in range(27)]
+            + [{"contracts_count": 0, "subscribed_kva": 0}],
+            index=pd.date_range(
+                start=pd.Timestamp(2023, 1, 1),
+                end=pd.Timestamp(2023, 2, 1),
+                freq="D",
+            ),
         )
 
-        output_df = Contracts._contract_to_events(
-            contracts=input_df,
+        expected_output_df.index.name = "date"
+
+        output_df = Contracts.compute_portfolio_by_day(
+            contracts=input_contracts_df,
+            columns_to_sum=["contracts_count", "subscribed_kva"],
             date_start_col="start_date",
             date_end_exclusive_col="excl_end_date",
         )
 
-        pd.testing.assert_frame_equal(
-            output_df.reset_index(drop=True), expected_output_df.reset_index(drop=True)
+        pd.testing.assert_frame_equal(output_df, expected_output_df)
+
+        # Check the result with max_date_exclusive
+
+        expected_output_maxdate_df = expected_output_df.loc[
+            expected_output_df.index <= pd.Timestamp(2023, 1, 5)
+        ].astype(int)
+        max_date_exclusive = pd.Timestamp(2023, 1, 10)
+
+        output_maxdate_df = Contracts.compute_portfolio_by_day(
+            contracts=input_contracts_df,
+            columns_to_sum=["contracts_count", "subscribed_kva"],
+            date_start_col="start_date",
+            date_end_exclusive_col="excl_end_date",
+            max_date_exclusive=max_date_exclusive,
         )
+
+        pd.testing.assert_frame_equal(output_maxdate_df, expected_output_maxdate_df)
+
+        # Check the result with ffill_until_max_date
+
+        expected_output_ffill_df = expected_output_df.loc[
+            expected_output_df.index <= pd.Timestamp(2023, 1, 9)
+        ]
+
+        output_ffill_df = Contracts.compute_portfolio_by_day(
+            contracts=input_contracts_df,
+            columns_to_sum=["contracts_count", "subscribed_kva"],
+            date_start_col="start_date",
+            date_end_exclusive_col="excl_end_date",
+            max_date_exclusive=max_date_exclusive,
+            ffill_until_max_date=True,
+        )
+
+        pd.testing.assert_frame_equal(output_ffill_df, expected_output_ffill_df)
 
     def test_get_portfolio_between_dates(self):
         """
@@ -358,15 +365,18 @@ class TestContracts(unittest.TestCase):
                 end_datetime_exclusive=pd.Timestamp(2023, 1, 5),
             )
 
-        # Check that having no frequency on the index raises an error
+        # Check that providing a DataFrame with no inferrable frequency raises an error
 
-        no_freq_df = input_portfolio_df.copy()
-        no_freq_df.index = input_portfolio_df.index.copy(deep=True)
-        no_freq_df.index.freq = None
+        wrong_index_df = input_portfolio_df.copy()
+        wrong_index_df.index = [
+            pd.Timestamp(2023, 1, 1),
+            pd.Timestamp(2023, 1, 2),
+            pd.Timestamp(2023, 1, 4),
+        ]
 
         with self.assertRaises(ValueError):
             Contracts.get_portfolio_between_dates(
-                portfolio=no_freq_df,
+                portfolio=wrong_index_df,
                 start_datetime=pd.Timestamp(2023, 1, 1),
                 end_datetime_exclusive=pd.Timestamp(2023, 1, 5),
             )
@@ -388,8 +398,8 @@ class TestContracts(unittest.TestCase):
 
         expected_output_df = pd.DataFrame(
             data=[
-                {"total_power_kw": 0., "stations_count": 0.},
-                {"total_power_kw": 0., "stations_count": 0.},
+                {"total_power_kw": 0.0, "stations_count": 0.0},
+                {"total_power_kw": 0.0, "stations_count": 0.0},
                 {"total_power_kw": 1500, "stations_count": 35},
                 {"total_power_kw": 1480, "stations_count": 33},
                 {"total_power_kw": 1470, "stations_count": 32},
@@ -412,9 +422,9 @@ class TestContracts(unittest.TestCase):
 
         pd.testing.assert_frame_equal(output_df, expected_output_df)
 
-
     @staticmethod
     def get_simple_portfolio_by_day():
+        """Reads a simple portfolio file and converts it to daily data. This is used by other testing functions """
         contracts = Contracts.read_contracts_from_file(TestContracts.CONTRACTS_PATH)
         contracts[
             "contracts_count"

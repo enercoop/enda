@@ -10,7 +10,6 @@ import pandas as pd
 
 from enda.contracts import Contracts
 from enda.power_stations import PowerStations
-from enda.tools.timeseries import TimeSeries
 
 
 class TestPowerStations(unittest.TestCase):
@@ -468,6 +467,157 @@ class TestPowerStations(unittest.TestCase):
                 pct_outages_col="pct_outages",
             )
 
+    def test_get_daily_stations(self):
+        """Test the get_daily_stations function"""
+
+        input_stations_df = pd.DataFrame(
+            data=[
+                {
+                    "station": "station1",
+                    "date_start": pd.Timestamp(2023, 1, 1),
+                    "date_end_excl": pd.Timestamp(2023, 1, 4),
+                    "power_installed_kw": 30,
+                },
+                {
+                    "station": "station1",
+                    "date_start": pd.Timestamp(2023, 1, 7),
+                    "date_end_excl": pd.Timestamp(2023, 1, 10),
+                    "power_installed_kw": 60,
+                },
+                {
+                    "station": "station2",
+                    "date_start": pd.Timestamp(2023, 1, 1),
+                    "date_end_excl": None,
+                    "power_installed_kw": 100,
+                },
+            ]
+        )
+
+        max_date_exclusive = pd.Timestamp(2023, 1, 8)
+        dti = pd.date_range(
+            start=pd.Timestamp(2023, 1, 1), end=pd.Timestamp(2023, 1, 9), freq="D"
+        )
+
+        # Check when input DataFrame has a "date" or "event_date" column
+
+        wrong_colname_df = input_stations_df.copy()
+        wrong_colname_df["date"] = "oups"
+        wrong_colname_df["control_column"] = "I did it again"
+
+        with self.assertRaises(ValueError):
+            PowerStations.get_stations_daily(
+                stations=wrong_colname_df,
+                station_col="station",
+                date_start_col="date_start",
+                date_end_exclusive_col="date_end_excl",
+            )
+
+        # Check when input DataFrame has a "control_column" and drop_gaps = True
+
+        wrong_colname_df.drop("date", axis=1, inplace=True)
+
+        with self.assertRaises(ValueError):
+            PowerStations.get_stations_daily(
+                stations=wrong_colname_df,
+                station_col="station",
+                date_start_col="date_start",
+                date_end_exclusive_col="date_end_excl",
+                drop_gaps=True,
+            )
+
+        # Check the result with no specified max_date_exclusive and drop_gaps = False
+
+        expected_output_df = pd.DataFrame(
+            data=[
+                {"date": x, "station": "station1", "power_installed_kw": 30}
+                for x in dti[:3]
+            ]
+            + [
+                {"date": x, "station": "station1", "power_installed_kw": 0}
+                for x in dti[3:6]
+            ]
+            + [
+                {"date": x, "station": "station1", "power_installed_kw": 60}
+                for x in dti[6:]
+            ]
+        )
+
+        expected_output_df.set_index(["station", "date"], inplace=True)
+
+        output_df = PowerStations.get_stations_daily(
+            stations=input_stations_df,
+            station_col="station",
+            date_start_col="date_start",
+            date_end_exclusive_col="date_end_excl",
+        )
+
+        pd.testing.assert_frame_equal(output_df, expected_output_df)
+
+        # Check the result with drop_gaps = True
+
+        expected_drop_gaps_df = expected_output_df.loc[
+            expected_output_df.power_installed_kw > 0
+        ]
+
+        output_drop_gaps_df = PowerStations.get_stations_daily(
+            stations=input_stations_df,
+            station_col="station",
+            date_start_col="date_start",
+            date_end_exclusive_col="date_end_excl",
+            drop_gaps=True,
+        )
+
+        pd.testing.assert_frame_equal(output_drop_gaps_df, expected_drop_gaps_df)
+
+        # Check the result with a max_date_exclusive specified
+
+        expected_max_date_df = pd.DataFrame(
+            data=[
+                {"date": x, "station": "station1", "power_installed_kw": 30}
+                for x in dti[:3]
+            ]
+            + [
+                {"date": x, "station": "station1", "power_installed_kw": 0}
+                for x in dti[3:6]
+            ]
+            + [{"date": dti[6], "station": "station1", "power_installed_kw": 60}]
+            + [
+                {"date": x, "station": "station2", "power_installed_kw": 100}
+                for x in dti[:7]
+            ]
+        )
+
+        expected_max_date_df.set_index(["station", "date"], inplace=True)
+
+        output_maxdate_df = PowerStations.get_stations_daily(
+            stations=input_stations_df,
+            station_col="station",
+            date_start_col="date_start",
+            date_end_exclusive_col="date_end_excl",
+            max_date_exclusive=max_date_exclusive,
+        )
+
+        pd.testing.assert_frame_equal(output_maxdate_df, expected_max_date_df)
+
+        # Check the result with a max_date_exclusive specified and drop_gaps = True
+
+        expected_drop_gaps_max_date_df = expected_max_date_df.loc[
+            expected_max_date_df.power_installed_kw > 0
+        ]
+
+        output_drop_gaps_max_date_df = PowerStations.get_stations_daily(
+            stations=input_stations_df,
+            station_col="station",
+            date_start_col="date_start",
+            date_end_exclusive_col="date_end_excl",
+            max_date_exclusive=max_date_exclusive,
+            drop_gaps=True,
+        )
+
+        pd.testing.assert_frame_equal(
+            output_drop_gaps_max_date_df, expected_drop_gaps_max_date_df
+        )
+
     def test_integrate_availability_from_outages(self):
         """Test the integrate_availability_from_outages function"""
 
@@ -714,74 +864,3 @@ class TestPowerStations(unittest.TestCase):
         )
 
         pd.testing.assert_frame_equal(output_df, self.power_df)
-
-    @staticmethod
-    def get_simple_stations_by_day():
-        stations = Contracts.read_contracts_from_file(TestPowerStations.STATIONS_PATH)
-
-        # count the running total, each day, of some columns
-        stations_by_day = PowerStations.get_stations_daily(
-            stations,
-            station_col="station",
-            date_start_col="date_start",
-            date_end_exclusive_col="date_end_exclusive",
-        )
-
-        return stations_by_day
-
-    def test_get_stations_daily(self):
-        stations = TestPowerStations.get_simple_stations_by_day()
-
-        self.assertEqual(stations.shape, (4612, 1))
-        self.assertEqual(stations.iloc[[1], 0].item(), 1200.0)
-        self.assertEqual(stations.loc[["eo_4"], "installed_capacity_kw"].max(), 3750.0)
-        self.assertEqual(stations.index.get_level_values(0).nunique(), 4)
-
-    def test_get_stations_between_dates(self):
-        # test with a daily frequency
-
-        stations = TestPowerStations.get_simple_stations_by_day()
-
-        stations = PowerStations.get_stations_between_dates(
-            stations=stations,
-            start_datetime=pd.to_datetime("2020-02-18"),
-            end_datetime_exclusive=pd.to_datetime("2020-02-20"),
-        )
-
-        # print(stations.loc[(['eo_4'], [start_datetime]),
-        #                               "installed_capacity_kw"])
-        # stations.loc[(['eo_4'], [start_datetime]), "installed_capacity_kw"] = 2
-
-        # print(stations.loc[(['eo_4'], [start_datetime]),
-        #                               "installed_capacity_kw"])
-
-        self.assertEqual(stations.shape, (8, 1))
-        self.assertEqual(stations.index.get_level_values(0).nunique(), 4)
-        self.assertEqual(stations.iloc[[-1], 0].item(), 3000.0)
-        self.assertEqual(stations.iloc[[-2], 0].item(), 3750.0)
-
-    def test_get_stations_between_dates_2(self):
-        # test with a different frequency
-
-        stations = TestPowerStations.get_simple_stations_by_day()
-        tz_str = "Europe/Paris"
-
-        stations = TimeSeries.interpolate_daily_to_sub_daily_data(
-            stations, freq="30min", tz=tz_str
-        )
-
-        stations = PowerStations.get_stations_between_dates(
-            stations=stations,
-            start_datetime=pd.to_datetime("2020-02-18 00:00:00+01:00").tz_convert(
-                tz_str
-            ),
-            end_datetime_exclusive=pd.to_datetime(
-                "2020-02-20 00:00:00+01:00"
-            ).tz_convert(tz_str),
-        )
-
-        self.assertEqual(stations.shape, (384, 1))
-        self.assertEqual(stations.index.get_level_values(0).nunique(), 4)
-        self.assertEqual(stations.iloc[[0], 0].item(), 1200.0)
-        self.assertEqual(stations.iloc[[300], 0].item(), 3750.0)
-        self.assertEqual(stations.iloc[[-1], 0].item(), 3000.0)

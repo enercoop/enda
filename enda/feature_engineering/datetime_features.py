@@ -21,7 +21,6 @@ class DatetimeFeature:
         split_list: list[str] = None,
         index: bool = True,
         colname: str = None,
-        a: int = 0,
     ) -> pd.DataFrame:
         """
         Split a specific datetime column or datetime index into different date and time attributes (given by split list)
@@ -33,8 +32,6 @@ class DatetimeFeature:
         :param colname: str (only if index=False)
         :return: pd.DataFrame with new columns (split_list)
         """
-
-        print(a)
 
         if index is False and colname is None:
             raise ValueError(

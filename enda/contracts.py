@@ -7,6 +7,8 @@ import pytz
 
 from enda.tools.timezone_utils import TimezoneUtils
 from enda.tools.resample import Resample
+from enda.tools.portfolio_tools import PortfolioTools
+import enda.tools.decorators
 
 
 class Contracts:
@@ -113,47 +115,6 @@ class Contracts:
                 f"Some ending date happens before starting date:\n{contracts_with_end[not_ok]}"
             )
 
-    @staticmethod
-    def _contract_to_events(
-        contracts: pd.DataFrame, date_start_col: str, date_end_exclusive_col: str
-    ) -> pd.DataFrame:
-        # check that no column is named "event_type" or "event_date"
-        for c in ["event_type", "event_date"]:
-            if c in contracts.columns:
-                raise ValueError(
-                    f"contracts has a column named {c}, but this name is reserved in this"
-                    "function; rename your column."
-                )
-
-        columns_to_keep = [
-            c
-            for c in contracts.columns
-            if c not in [date_start_col, date_end_exclusive_col]
-        ]
-        events_columns = ["event_type", "event_date"] + columns_to_keep
-
-        # compute "contract start" and "contract end" events
-        start_contract_events = contracts.copy(
-            deep=True
-        )  # all contracts must have a start date
-        start_contract_events["event_type"] = "start"
-        start_contract_events["event_date"] = start_contract_events[date_start_col]
-        start_contract_events = start_contract_events[events_columns]
-
-        # for "contract end" events, only keep contracts with an end date (NaT = contract is not over)
-        end_contract_events = contracts[contracts[date_end_exclusive_col].notna()].copy(
-            deep=True
-        )
-        end_contract_events["event_type"] = "end"
-        end_contract_events["event_date"] = end_contract_events[date_end_exclusive_col]
-        end_contract_events = end_contract_events[events_columns]
-
-        # concat all events together and sort them chronologically
-        all_events = pd.concat([start_contract_events, end_contract_events])
-        all_events.sort_values(by=["event_date", "event_type"], inplace=True)
-
-        return all_events
-
     @classmethod
     def compute_portfolio_by_day(
         cls,
@@ -212,7 +173,9 @@ class Contracts:
         # keep only useful columns
         df = contracts[[date_start_col, date_end_exclusive_col] + columns_to_sum]
         # create start and end events for each contract, sorted chronologically
-        events = cls._contract_to_events(df, date_start_col, date_end_exclusive_col)
+        events = PortfolioTools.portfolio_to_events(
+            df, date_start_col, date_end_exclusive_col
+        )
 
         # remove events after max_date if they are not wanted
         if max_date_exclusive is not None:
@@ -248,6 +211,9 @@ class Contracts:
         return portfolio
 
     @staticmethod
+    @enda.tools.decorators.warning_deprecated_name(
+        namespace_name="Contracts", new_namespace_name="PortfolioTools"
+    )
     def get_portfolio_between_dates(
         portfolio: pd.DataFrame,
         start_datetime: pd.Timestamp,
@@ -264,44 +230,11 @@ class Contracts:
         :return: A portfolio DataFrame with values between specified dates
         """
 
-        df = portfolio.copy(deep=True)
-
-        if not isinstance(df.index, pd.DatetimeIndex):
-            raise TypeError(
-                f"The index of portfolio should be a pd.DatetimeIndex, but given {df.index.dtype}"
-            )
-
-        if df.index.freq is None:
-            raise ValueError(
-                "portfolio.index needs to have a freq. "
-                "Maybe try to set one using df.index.inferred_freq"
-            )
-
-        freq = df.index.freq
-
-        # check that there is no missing value
-        if not df.isnull().sum().sum() == 0:
-            raise ValueError("daily_portfolio has NaN values.")
-
-        if start_datetime is not None and df.index.min() > start_datetime:
-            # add days with empty portfolio at the beginning
-            df = df.append(pd.Series(name=start_datetime, dtype="object"))
-            df.sort_index(inplace=True)  # put the new row first
-            df = df.asfreq(freq).fillna(0)
-
-        if (
-            end_datetime_exclusive is not None
-            and df.index.max() < end_datetime_exclusive
-        ):
-            # add days at the end, with the same portfolio as the last available day
-            df = df.append(pd.Series(name=end_datetime_exclusive, dtype="object"))
-            df.sort_index(inplace=True)  # make sure this new row is last
-            df = df.asfreq(freq, method="ffill")
-
-        # remove dates outside desired range
-        df = df[(df.index >= start_datetime) & (df.index < end_datetime_exclusive)]
-
-        return df
+        return PortfolioTools.get_portfolio_between_dates(
+            portfolio_df=portfolio,
+            start_datetime=start_datetime,
+            end_datetime_exclusive=end_datetime_exclusive,
+        )
 
     @classmethod
     def forecast_portfolio_linear(

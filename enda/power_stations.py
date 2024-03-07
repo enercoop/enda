@@ -5,6 +5,8 @@ import pandas as pd
 from pandas.api.types import is_string_dtype
 
 from enda.contracts import Contracts
+from enda.tools.portfolio_tools import PortfolioTools
+import enda.tools.decorators
 
 
 class PowerStations:
@@ -64,24 +66,6 @@ class PowerStations:
 
     # ------ Build daily dataframes
 
-    @staticmethod
-    def _station_to_events(
-        stations: pd.DataFrame, date_start_col: str, date_end_exclusive_col: str
-    ) -> pd.DataFrame:
-        """
-        This function is basically the same as Contracts._contract_to_events()
-        :param stations: The DataFrame containing station information
-        :param date_start_col: The column containing start date information
-        :param date_end_exclusive_col: The column containing exclusive end date information
-        :return: A DataFrame containing events information
-        """
-
-        return Contracts._contract_to_events(
-            contracts=stations,
-            date_start_col=date_start_col,
-            date_end_exclusive_col=date_end_exclusive_col,
-        )
-
     @classmethod
     def get_stations_daily(
         cls,
@@ -99,7 +83,9 @@ class PowerStations:
         :param station_col: The column containing station name
         :param date_start_col: The column containing start date information
         :param date_end_exclusive_col: The column containing exclusive end date information
-        :param max_date_exclusive: A Timestamp indicating the maximum date until which to keep data
+        :param max_date_exclusive: A Timestamp indicating the maximum date until which to keep data. This is
+            mainly useful if you have contracts with no specified end date, as they will not be taken into account by
+            default.
         :param drop_gaps: if True, will drop daily values that are gaps within the range of input contracts.
             By default, these days are kept in the index with 0 as values
             (For example, if we have a station with a first contract from 2023-01-01 to 2023-02-01 and a second
@@ -120,13 +106,24 @@ class PowerStations:
         )
 
         # get an event-like dataframe
-        events = cls._station_to_events(
+        events = PortfolioTools.portfolio_to_events(
             stations, date_start_col, date_end_exclusive_col
         )
 
         # remove events after max_date if they are not wanted
         if max_date_exclusive is not None:
             events = events[events["event_date"] <= max_date_exclusive]
+
+            # For stations where the last event before max_date_exclusive is a start, it means that a contract is still
+            # active at the time of max_date_exclusive. We add a 'fake' end for these contracts so that daily data is
+            # computed until max_date_exclusive (otherwise there would be no row to ffill to)
+            last_event_df = events.copy()
+            last_event_df = last_event_df.groupby(station_col).last().reset_index()
+            last_event_df = last_event_df.loc[last_event_df.event_type == "start"]
+            last_event_df["event_type"] = 'end'
+            last_event_df["event_date"] = max_date_exclusive
+
+            events = pd.concat([events, last_event_df])
 
         other_columns = set(stations.columns) - {
             station_col,
@@ -176,6 +173,11 @@ class PowerStations:
         return df.reset_index().set_index([station_col, "date"])
 
     @staticmethod
+    @enda.tools.decorators.warning_deprecated_name(
+        namespace_name="PowerStations",
+        new_namespace_name="PortfolioTools",
+        new_function_name="get_portfolio_between_dates",
+    )
     def get_stations_between_dates(
         stations: pd.DataFrame,
         start_datetime: pd.Timestamp,
@@ -195,80 +197,12 @@ class PowerStations:
         :return: a station portfolio with characteristics between date_start and date_end.
         """
 
-        df = stations.copy()
-
-        if not isinstance(df.index, pd.MultiIndex):
-            raise TypeError("daily_stations must be a MultiIndex")
-
-        if len(df.index.levels) != 2:
-            raise TypeError(
-                "daily_stations must be a MultiIndex with two levels (stations and date)"
-            )
-
-        if not isinstance(df.index.levels[1], pd.DatetimeIndex):
-            raise TypeError(
-                f"The second index of daily_stations should be a pd.DatetimeIndex, but given {df.index.levels[1].dtype}"
-            )
-
-        if freq is None:
-            try:
-                freq = df.index.levels[1].inferred_freq
-            except Exception as exc:
-                raise ValueError(
-                    "No freq has been provided, and it could not be inferred"
-                    "from the index itself. Please set it or check the data."
-                ) from exc
-
-        # check that there is no missing value
-        if not df.isnull().sum().sum() == 0:
-            raise ValueError("daily_stations has NaN values.")
-
-        key_col = df.index.levels[0].name
-        date_col = df.index.levels[1].name
-
-        df_new = pd.DataFrame()
-        for station, data in df.groupby(level=0):
-            if (
-                start_datetime is not None
-                and data.index.levels[1].min() > start_datetime
-            ):
-                # add days with empty portfolio at the beginning
-                data.loc[(station, start_datetime), :] = tuple(
-                    0 for _ in range(len(df.columns))
-                )
-                data.sort_index(inplace=True)  # put the new row first
-                data = (
-                    data.reset_index().set_index(date_col).asfreq(freq, method="ffill")
-                )
-                data = data.reset_index().set_index([key_col, date_col])
-
-            if (
-                end_datetime_exclusive is not None
-                and data.index.levels[1].max() < end_datetime_exclusive
-            ):
-                # add days at the end, with the same portfolio as the last available day
-                data.loc[(station, end_datetime_exclusive), :] = tuple(
-                    0 for _ in range(len(df.columns))
-                )
-                data.sort_index(inplace=True)
-                data = (
-                    data.reset_index().set_index(date_col).asfreq(freq, method="ffill")
-                )
-                data = data.reset_index().set_index([key_col, date_col])
-
-            # remove dates outside desired range
-            data = data[
-                (data.index.get_level_values(date_col) >= start_datetime)
-                & (data.index.get_level_values(date_col) < end_datetime_exclusive)
-            ]
-
-            # check that there is no missing value
-            if data.isnull().sum().sum() > 0 :
-                raise ValueError("Found null values in output DataFrame")
-
-            df_new = pd.concat([df_new, data], axis=0)
-
-        return df_new
+        return PortfolioTools.get_portfolio_between_dates(
+            portfolio_df=stations,
+            start_datetime=start_datetime,
+            end_datetime_exclusive=end_datetime_exclusive,
+            freq=freq,
+        )
 
     # ------ Outages
 
