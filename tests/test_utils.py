@@ -4,7 +4,10 @@ import pandas as pd
 from enda.contracts import Contracts
 from enda.feature_engineering.datetime_features import DatetimeFeature
 from enda.power_stations import PowerStations
+from enda.tools.portfolio_tools import PortfolioTools
+from enda.tools.resample import Resample
 from enda.tools.timeseries import TimeSeries
+from enda.tools.timezone_utils import TimezoneUtils
 
 
 class TestUtils:
@@ -37,15 +40,15 @@ class TestUtils:
         )
 
         # restrict/extend the portfolio_by_day to desired dates
-        portfolio_by_day = Contracts.get_portfolio_between_dates(
+        portfolio_by_day = PortfolioTools.get_portfolio_between_dates(
             portfolio_by_day,
             start_datetime=pd.to_datetime("2020-09-16"),
             end_datetime_exclusive=pd.to_datetime("2020-09-24"),
         )
 
         # turn the portfolio_by_day into a portfolio timeseries with our desired freq and timezone
-        portfolio = TimeSeries.interpolate_daily_to_sub_daily_data(
-            portfolio_by_day, freq="15min", tz="Europe/Berlin"
+        portfolio = Resample.upsample_and_interpolate(
+            portfolio_by_day, freq="15min", tz_info="Europe/Berlin", forward_fill=True, index_name='time'
         )
 
         # read historical load, weather and TSO forecast data
@@ -60,7 +63,7 @@ class TestUtils:
             df["time"] = pd.to_datetime(df["time"])
             # for now df['time'] can be of dtype "object" because there are 2 french timezones: +60min and +120min.
             # it is important to align time-zone to 'Europe/Paris' to make sure the df has a pandas.DatetimeIndex
-            df["time"] = TimeSeries.align_timezone(df["time"], tzinfo="Europe/Berlin")
+            df["time"] = TimezoneUtils.convert_dtype_from_object_to_tz_aware(df["time"], tz_info="Europe/Berlin")
             df.set_index("time", inplace=True)
 
         # prepare datasets
@@ -133,15 +136,15 @@ class TestUtils:
         )
 
         # between dates of interest
-        stations = PowerStations.get_stations_between_dates(
+        stations = PortfolioTools.get_portfolio_between_dates(
             stations,
             start_datetime=pd.to_datetime("2020-01-01"),
             end_datetime_exclusive=pd.to_datetime("2021-01-11"),
         )
 
         # on a 30-minutes scale
-        stations = TimeSeries.interpolate_daily_to_sub_daily_data(
-            stations, freq="30min", tz="Europe/Paris", index_name="time"
+        stations = Resample.upsample_and_interpolate(
+            stations, freq="30min", tz_info="Europe/Paris", forward_fill=True, index_name="time"
         )
 
         # get events like outages and shutdowns
@@ -172,14 +175,20 @@ class TestUtils:
             )
         )
         production["time"] = pd.to_datetime(production["time"])
-        production["time"] = TimeSeries.align_timezone(
-            production["time"], tzinfo="Europe/Paris"
+        production["time"] = TimezoneUtils.convert_dtype_from_object_to_tz_aware(
+            production["time"], tz_info="Europe/Paris"
         )
         production.set_index(["station", "time"], inplace=True)
 
-        production = TimeSeries.average_to_upper_freq(
-            production, freq="30min", tz="Europe/Paris", index_name="time"
+        production = Resample.downsample(
+            production,
+            freq="30min",
+            agg_functions="mean",
+            is_original_frequency_unique=True,
+            index_name="time"
         )
+
+        production = TimezoneUtils.set_timezone(production, tz_info="Europe/Paris")
 
         dataset = pd.merge(
             stations, production, how="inner", left_index=True, right_index=True
@@ -195,8 +204,8 @@ class TestUtils:
                 )
             )
             weather["time"] = pd.to_datetime(weather["time"])
-            weather["time"] = TimeSeries.align_timezone(
-                weather["time"], tzinfo="Europe/Paris"
+            weather["time"] = TimezoneUtils.convert_dtype_from_object_to_tz_aware(
+                weather["time"], tz_info="Europe/Paris"
             )
             weather.set_index(["station", "time"], inplace=True)
 
@@ -250,8 +259,5 @@ class TestUtils:
             dataset.index.get_level_values(1)
             < pd.to_datetime("2021-01-01 00:00:00+01:00")
         ]
-
-        # assert train_set.shape == (66518, 4)
-        # assert test_set.shape == (1287, 3)
 
         return train_set, test_set, target_col

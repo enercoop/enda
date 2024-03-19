@@ -28,7 +28,7 @@ from enda.power_predictor import PowerPredictor
 
 class TestPowerPredictor(unittest.TestCase):
     def setUp(self):
-        logging.captureWarnings(True)
+        # logging.captureWarnings(True)
         logging.disable(logging.ERROR)
         h2o.init(nthreads=-1)  # starts a h2o local server
         h2o.no_progress()  # don't print out progress bars

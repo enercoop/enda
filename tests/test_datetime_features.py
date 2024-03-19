@@ -14,7 +14,6 @@ class TestDatetimeFeatures(unittest.TestCase):
     """
 
     def setUp(self):
-        logging.captureWarnings(True)
         logging.disable(logging.INFO)
 
         self.timeseries_df = pd.DataFrame(

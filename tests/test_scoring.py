@@ -10,7 +10,6 @@ class TestScoring(unittest.TestCase):
     """This class aims at testing the functions of the Scoring class in enda/scoring.py"""
 
     def setUp(self):
-        logging.captureWarnings(True)
         logging.disable(logging.ERROR)
 
         self.index = [

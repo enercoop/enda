@@ -1,10 +1,11 @@
 """This module contains various functions for dealing with timezones in temporal data in Python"""
 
 import datetime
-from typing import Union
-from dateutil.relativedelta import relativedelta
+from pandas.api.types import is_string_dtype
 import pandas as pd
 import pytz
+from dateutil.relativedelta import relativedelta
+from typing import Union
 
 import enda.tools.decorators
 
@@ -203,3 +204,38 @@ class TimezoneUtils:
         result = time_series.map(lambda x: x.astimezone(tz_info))
 
         return result
+
+    @staticmethod
+    def read_csv_and_set_tz_aware_columns(
+        file_path: str,
+        time_cols_list: list[str],
+        tz_info: Union[str, datetime.tzinfo],
+        **kwargs
+    ) -> pd.DataFrame:
+        """
+        Given a file path, read it and set datetime columns to tz-aware columns
+        :param file_path: path to a csv file
+        :param time_cols_list: list of columns that contain time information to set to the correct time zone.
+        :param tz_info: a str or a datetime.tzinfo
+        :return: a Dataframe with date columns translated into the correct target timezone.
+        """
+
+        # parse the file as a dataframe
+        result_df = pd.read_csv(file_path, parse_dates=time_cols_list, **kwargs)
+
+        for time_col in time_cols_list:
+            if is_string_dtype(result_df[time_col]):
+                # time columns have not been turned to a datetime-like column by read_csv() function
+                # if it's because of a mixture of timezone, next time correct it.
+                # else, it's because the column contains information that cannot be turned to datetime, and next
+                # snippet fail.
+                result_df[time_col] = TimezoneUtils.convert_dtype_from_object_to_tz_aware(
+                    result_df[time_col],
+                    tz_info=tz_info
+                )
+            else:
+                # in that case it's been correctly read by read_csv().
+                # next line set it to the correct timezone
+                result_df[time_col] = TimezoneUtils.set_timezone(result_df[time_col], tz_info=tz_info)
+
+        return result_df

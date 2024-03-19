@@ -597,19 +597,19 @@ class TestResample(unittest.TestCase):
             pd.Timestamp(2023, 1, 1),
             pd.Timestamp(2023, 2, 1),
             freq="30min",
-            closed="left",
+            inclusive="left",
         )
         index_2 = pd.date_range(
             pd.Timestamp(2023, 2, 1),
             pd.Timestamp(2023, 3, 1),
             freq="30min",
-            closed="left",
+            inclusive="left",
         )
         index_3 = pd.date_range(
             pd.Timestamp(2023, 3, 1),
             pd.Timestamp(2023, 4, 1),
             freq="30min",
-            closed="left",
+            inclusive="left",
         )
         value1 = 100 / 1488  # len(index_1)
         value2 = 200 / 1344  # len(index_2)

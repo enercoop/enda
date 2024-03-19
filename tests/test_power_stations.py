@@ -23,8 +23,54 @@ class TestPowerStations(unittest.TestCase):
             pathlib.Path(__file__).parent.absolute(), "data/outages"
         )
         self.correct_outages_filepath = os.path.join(self.outages_path, "outages.csv")
+        self.correct_outages_timestamp_filepath = os.path.join(self.outages_path, "outages_timestamp.csv")
 
         self.expected_outages_df = pd.DataFrame(
+            data=[
+                {
+                    "station": "station1",
+                    "start_date": pd.Timestamp(
+                        year=2023, month=1, day=1, tz="Europe/Paris"
+                    ),
+                    "excl_end_date": pd.Timestamp(
+                        year=2023, month=6, day=1, tz="Europe/Paris"
+                    ),
+                    "pct_outages": 100,
+                },
+                {
+                    "station": "station1",
+                    "start_date": pd.Timestamp(
+                        year=2023, month=6, day=1, tz="Europe/Paris"
+                    ),
+                    "excl_end_date": pd.Timestamp(
+                        year=2023, month=6, day=2, tz="Europe/Paris"
+                    ),
+                    "pct_outages": 30,
+                },
+                {
+                    "station": "station1",
+                    "start_date": pd.Timestamp(
+                        year=2023, month=6, day=2, tz="Europe/Paris"
+                    ),
+                    "excl_end_date": pd.Timestamp(
+                        year=2023, month=7, day=1, tz="Europe/Paris"
+                    ),
+                    "pct_outages": 100,
+                },
+                {
+                    "station": "station2",
+                    "start_date": pd.Timestamp(
+                        year=2023, month=1, day=1, tz="Europe/Paris"
+                    ),
+                    "excl_end_date": pd.Timestamp(
+                        year=2023, month=6, day=1, tz="Europe/Paris"
+                    ),
+                    "pct_outages": 100,
+                },
+            ]
+        )
+
+        self.expected_outages_timestamp_df = pd.DataFrame(
             data=[
                 {
                     "station": "station1",

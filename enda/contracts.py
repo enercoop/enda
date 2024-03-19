@@ -277,7 +277,7 @@ class Contracts:
             end=end_forecast_date_exclusive,
             freq=freq,
             name=portfolio_df.index.name,
-            closed="left",
+            inclusive="left",
         )
 
         if tzinfo is not None:
@@ -389,7 +389,7 @@ class Contracts:
             end_forecast_date,
             freq=freq,
             name=pf.index.name,
-            closed="left",
+            inclusive="left"
         )
         if tzinfo is not None:
             future_index = future_index.tz_convert(tzinfo)

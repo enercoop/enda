@@ -112,12 +112,12 @@ class PortfolioTools:
                 )
 
         # check that there is no missing value
-        if not df.isnull().sum().sum() == 0:
+        if df.isnull().sum().sum() != 0:
             raise ValueError("daily_portfolio has NaN values.")
 
         if start_datetime is not None and df.index.min() > start_datetime:
             # add days with empty portfolio at the beginning
-            df = df.append(pd.Series(name=start_datetime, dtype="object"))
+            df = pd.concat([df, pd.DataFrame(index=pd.Index([start_datetime], name=df.index.name), dtype="object")])
             df.sort_index(inplace=True)  # put the new row first
             df = df.asfreq(freq).fillna(0)
 
@@ -128,6 +128,7 @@ class PortfolioTools:
             # add days at the end, with the same portfolio as the last available day
             df.loc[end_datetime_exclusive] = np.nan
             df.sort_index(inplace=True)  # make sure this new row is last
+            df = df.asfreq(freq, method="ffill")
             df = df.asfreq(freq, method="ffill")
 
         # remove dates outside desired range

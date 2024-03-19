@@ -72,7 +72,7 @@ class Resample:
         # If we need to group by other columns than the index, it means that there might be duplicates in time index.
         # That could lead 'find_most_common_frequency' to return null frequency as the most frequent.
         # Note this does NOT imply the duplicates are reset when downsampling !
-        skip_duplicates_for_unique_freq_check = not len(groupby) > 0
+        skip_duplicates_for_unique_freq_check = len(groupby) <= 0
 
         # get frequency from the initial dataframe
         # it return None only if the dataframe has a single record, else it returns the most common frequency
@@ -82,7 +82,7 @@ class Resample:
         )
 
         if (
-            (original_freq is not None)
+            original_freq
             and is_original_frequency_unique
             and (
                 not enda.tools.timeseries.TimeSeries.has_single_frequency(
@@ -95,7 +95,7 @@ class Resample:
             raise RuntimeError("Frequency is not unique in the dataframe")
 
         # make sure we downsample
-        if (original_freq is not None) and (
+        if original_freq and (
                 enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_days(freq)
                 < enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_days(original_freq)
         ):

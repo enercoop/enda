@@ -6,6 +6,7 @@ from pandas.api.types import is_string_dtype
 
 from enda.contracts import Contracts
 from enda.tools.portfolio_tools import PortfolioTools
+from enda.tools.timezone_utils import TimezoneUtils
 import enda.tools.decorators
 
 
@@ -225,11 +226,11 @@ class PowerStations:
         :return: a pandas.DataFrame with an outage on each row.
         """
 
-        outages_df = pd.read_csv(file_path)
-        for c in [time_start_col, time_end_exclusive_col]:
-            if is_string_dtype(outages_df[c]):
-                outages_df[c] = pd.to_datetime(outages_df[c])
-                outages_df[c] = outages_df[c].dt.tz_localize(tzinfo)
+        outages_df = TimezoneUtils.read_csv_and_set_tz_aware_columns(
+            file_path=file_path,
+            time_cols_list=[time_start_col, time_end_exclusive_col],
+            tz_info=tzinfo
+        )
 
         # check pct_outage_col
         if pct_outages_col is not None:

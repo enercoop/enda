@@ -1,10 +1,13 @@
 """A module for testing the TimezoneUtils class in enda/timezone_utils.py"""
 
-import unittest
+from dateutil import parser as date_parser
+from dateutil.relativedelta import relativedelta
+import os
+import pathlib
 import pandas as pd
 import pytz
-from dateutil.relativedelta import relativedelta
-from dateutil import parser as date_parser
+import unittest
+
 from enda.tools.timezone_utils import TimezoneUtils
 
 
@@ -392,3 +395,48 @@ class TestTimezoneUtils(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             TimezoneUtils.set_timezone(naive_dti, tz_info="Europe/Paris", tz_base=5)
+
+    def test_read_csv_and_set_tz_aware_columns(self):
+        """
+        Test read_csv_and_set_tz_aware_columns
+        """
+
+        # test with outages files
+        folder_path = os.path.join(
+            pathlib.Path(__file__).parent.absolute(), "data/outages"
+        )
+
+        # test with  a file that contains dates
+        date_filepath = os.path.join(folder_path, "outages.csv")
+        result_df = TimezoneUtils.read_csv_and_set_tz_aware_columns(
+            date_filepath,
+            time_cols_list = ['start_date', 'excl_end_date'],
+            tz_info = self.TZ_PARIS,
+            dayfirst=True
+        )
+
+        expected_df = pd.DataFrame(
+            [('station1', pd.Timestamp('2023-01-01 00:00:00+01', tz='Europe/Paris'),
+              pd.Timestamp('2023-06-01 00:00:00+02', tz='Europe/Paris'), 100),
+             ('station1', pd.Timestamp('2023-06-01 00:00:00+02', tz='Europe/Paris'),
+              pd.Timestamp('2023-06-02 00:00:00+02', tz='Europe/Paris'), 30),
+             ('station1', pd.Timestamp('2023-06-02 00:00:00+02', tz='Europe/Paris'),
+              pd.Timestamp('2023-07-01 00:00:00+02', tz='Europe/Paris'), 100),
+             ('station2', pd.Timestamp('2023-01-01 00:00:00+01', tz='Europe/Paris'),
+              pd.Timestamp('2023-06-01 00:00:00+02', tz='Europe/Paris'), 100)],
+            columns = ['station', 'start_date', 'excl_end_date', 'pct_outages'],
+        )
+
+        pd.testing.assert_frame_equal(result_df, expected_df)
+
+        # test with  a file that contains timestamp
+        timestamp_filepath = os.path.join(folder_path, "outages_timestamp.csv")
+
+        result_df = TimezoneUtils.read_csv_and_set_tz_aware_columns(
+            timestamp_filepath,
+            time_cols_list = ['start_time', 'excl_end_time'],
+            tz_info = self.TZ_PARIS)
+
+        expected_df = expected_df.rename(columns={"start_date": "start_time", "excl_end_date": "excl_end_time"})
+
+        pd.testing.assert_frame_equal(result_df, expected_df)

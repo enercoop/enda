@@ -119,7 +119,7 @@ class DatetimeFeature:
                 d.date() + datetime.timedelta(days=1),
                 tz=d.tzinfo,
                 freq="H",
-                closed="left",
+                inclusive="left",
             )
         )
 
@@ -141,7 +141,7 @@ class DatetimeFeature:
 
         df = pd.DataFrame(
             index=pd.date_range(
-                "1995-01-01", "2030-01-01", freq="H", tz=tz, closed="left"
+                "1995-01-01", "2030-01-01", freq="H", tz=tz, inclusive="left"
             )
         )
         df["nb_hour"] = df.index.hour
