@@ -118,7 +118,7 @@ class EndaH2OModel(EndaEstimator):
     ):
         """
         Allow grid search using self.algo_param_dict as hyperparameter space.
-        By default the research is done by sampling uniformly 10 sets from the set of all possible hyperparameter value
+        By default, the research is done by sampling uniformly 10 sets from the set of all possible hyperparameter value
         combinations.
         The best model is then the one showing the best 'score_performance' (RMSE by default) on the validation_frame.
         """

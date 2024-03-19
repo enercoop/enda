@@ -1,0 +1,5 @@
+station,start_date,excl_end_date,pct_outages
+station1,2023-01-01,2023-06-01,100
+station1,2023-06-01,2023-06-02,30
+station1,2023-06-02,2022-07-01,100
+station2,2023-01-01,2023-06-01,100

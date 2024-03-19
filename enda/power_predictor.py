@@ -1,3 +1,5 @@
+"""A class that handles day-ahead power prediction"""
+
 import copy
 
 import pandas as pd
@@ -8,13 +10,13 @@ from enda.estimators import EndaEstimator
 class PowerPredictor:
     """
     This class handles the day-ahead power prediction.
-    It access the train() and predict() methods of an EndaEstimator object.
+    It accesses the train() and predict() methods of an EndaEstimator object.
     We have the possibility to apply a standard power plant method
-    considering all observations to be occurences of the same theoretical plant
-    under different conditions (eg. meteo, or installed kw).
+    considering all observations to be occurrences of the same theoretical plant
+    under different conditions (e.g. meteo, or installed kw).
     This is applied for solar and wind plants notably.
     We also have the possibility to treat each plant independently. Even if
-    this is less interesting when applying an usual IA algorithm, this option
+    this is less interesting when applying a usual AI algorithm, this option
     is typically used with a naive estimator for plants along the run of rivers.
     For these plants, we simply recopy the most recent information available.
     """
@@ -32,7 +34,7 @@ class PowerPredictor:
     def train(self, df: pd.DataFrame, estimator: EndaEstimator, target_col: str):
         """
         We provide to this function an EndaEstimator, a training dataframe (two-levels
-        multiindexed), and the target column.
+        multi-indexed), and the target column.
 
         To train the estimator, we have two options. In the first case, we merge all the
         observations for all the plants, and consider them to be simple realizations
@@ -41,11 +43,11 @@ class PowerPredictor:
         The second option is used for power plants along river, for which no IA is required.
         It is a naive recopy estimator which is used.
 
-        The training sets self.prod_estimators as a dictionnary of stations ID - estimator
+        The training sets self.prod_estimators as a dictionary of stations ID - estimator
         In case of a standard plant approach, the returned dictionary has a single entry,
         called "standard_plant", which becomes a reserved ID.
 
-        :param df: the training two-levels multiindexed dataframe
+        :param df: the training two-levels multi-indexed dataframe
         :param estimator: an EndaEstimator that will serve as a canvas to create other
                estimators of the same type that will be trained over each plant or over
                all of them in case of non-standard plant.
@@ -81,13 +83,12 @@ class PowerPredictor:
             )
             estimator.train(df_train, target_col)
             prod_estimator = copy.deepcopy(estimator)
-            self.prod_estimators = dict()
-            self.prod_estimators["standard_plant"] = prod_estimator
+            self.prod_estimators = {"standard_plant": prod_estimator}
 
         else:
             # we consider the individual plants
             # create a dictionary with the id of the plant and a dedicated estimator
-            self.prod_estimators = dict()
+            self.prod_estimators = {}
             for station_id, data in df.groupby(level=0):
                 data = data.reset_index().set_index(date_col).drop(columns=[key_col])
                 estimator.train(data, target_col)
@@ -103,8 +104,10 @@ class PowerPredictor:
     ):
         """
         Predict target_column values once train() has been called.
-        :param df: the forecast two-levels multiindexed dataframe
+        :param df: the forecast two-levels multi-indexed dataframe
         :param target_col: the target column
+        :param is_positive: If True, will set negative predicted values to 0
+        :param is_normally_clamped: If True, will set negative predicted values to 0, and values higher than 1 to 1
         :return: the two-levels dataframe with the predicted target only.
         """
 
@@ -129,7 +132,7 @@ class PowerPredictor:
             if self.standard_plant:
                 data = self.prod_estimators["standard_plant"].predict(data, target_col)
             else:
-                if station_id in self.prod_estimators.keys():
+                if station_id in self.prod_estimators:
                     data = self.prod_estimators[station_id].predict(data, target_col)
                 else:
                     data[target_col] = 0
