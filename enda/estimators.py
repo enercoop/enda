@@ -53,7 +53,7 @@ class EndaNormalizedEstimator(EndaEstimator):
     The prediction is:
     predict(X) = X[normalization_col] * predict(X without normalization_col)
 
-    The predict(X without normalization_col) is made by another underlying estimator: inner_estimator.
+    predict(X without normalization_col) is made by another underlying estimator: inner_estimator.
     """
 
     def __init__(
