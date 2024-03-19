@@ -14,7 +14,7 @@ class Scoring:
     ):
         """
         Initialize the scoring object
-        :param predictions_df: A DataFrame containing the predictions that we want a score on as well as the target
+        :param predictions_df: A DataFrame containing the predictions to be scored in columns, as well as a column with the target. The index must be a datetime-index.
         :param target: The column containing the target values to compare predictions to
         :param normalizing_col: Optional, a normalizing column for computing normalized absolute error
         """
