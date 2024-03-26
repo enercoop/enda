@@ -1,192 +1,325 @@
 """A module useful for knowing special days such as public/school holidays or lockdown periods"""
 
+import abc
 import datetime
+from typing import Union
 import warnings
+import unidecode
+
 import pandas as pd
+
+from jours_feries_france import JoursFeries
+from vacances_scolaires_france import SchoolHolidayDates
+
 from enda.feature_engineering.datetime_features import DatetimeFeature
+from enda.tools.resample import Resample
 from enda.tools.timeseries import TimeSeries
-
-try:
-    import unidecode
-    from jours_feries_france import JoursFeries
-    from vacances_scolaires_france import SchoolHolidayDates, UnsupportedYearException
-except ImportError as exc:
-    raise ImportError(
-        "unidecode, jours_feries_france, vacances_scolaires_france are required if you want to use "
-        "enda's FrenchHolidays and FrenchCalendar classes. "
-        "Try: pip install jours-feries-france vacances-scolaires-france Unidecode"
-    ) from exc
+from enda.tools.decorators import warning_deprecated_name
 
 
-class FrenchHolidays:
+TZ_PARIS = "Europe/Paris"
+
+
+# --------- Holidays ------------
+
+class Holidays:
     """
-    Gather methods that allow to get special days such as public and school holidays in France
+    Factory class to gather holidays for different countries
     """
 
     @staticmethod
-    def get_public_holidays(
-        year_list: list[int] = None, orientation: str = "rows"
-    ) -> pd.DataFrame:
+    def get_public_holidays(country: str, years_list: list[int] = None):
         """
-        Compute a DataFrame indicating all public holidays in France
-        :param year_list: A list of integers representing the years for which we want public holidays information
-        :param orientation: Either 'rows' or 'columns', define the format of the DataFrame returned.
-            If 'rows', then the DataFrame will have 2 columns 'date' and 'nom_jour_ferie' indicating public holidays
-            name and associated date.
-            If 'columns', then the DataFrame will have the different public holidays types as columns, and each row
-            will contain associated dates for a year
-        :return: A DataFrame of public holidays.
+        Return public holidays for a year, and a country
+        :param country: the country for which holidays must be returned
+        :param years_list: list of years for which holidays must be returned
+        :return: a dataframe with the school holidays for the concerned country
+        """
+        if country == 'FR':
+            public_holidays = FrenchHolidays.get_public_holidays(years_list=years_list)
+        else:
+            raise NotImplementedError(f"Country '{country}' not supported.")
+
+        return public_holidays
+
+    @staticmethod
+    def get_school_holidays(country: str, years_list: list[int] = None):
+        """
+        Return school holidays for a list of years, and a country
+        :param country: the country for which holidays must be returned
+        :param years_list: list of years for which holidays must be returned
+        :return: a dataframe with the school holidays for the concerned country
+        """
+        if country == 'FR':
+            school_holidays = FrenchHolidays.get_school_holidays(years_list=years_list)
+        else:
+            raise NotImplementedError(f"Country '{country}' not supported.")
+
+        return school_holidays
+
+
+class BaseHolidays:
+    """
+    Base class for holidays (public and schools)
+    """
+
+    @staticmethod
+    @abc.abstractmethod
+    def get_public_holidays(years_list: list[int] = None,
+                            orientation: str = "rows"
+                            ) -> pd.DataFrame:
+        """
+        Return public holidays for a list of year, and a country
+        :param years_list: list of years for which holidays must be returned
+        :param orientation:
+        :return: a list of datetime which are the school holidays for the concerned country
+        """
+        raise NotImplementedError("Abstract method")
+
+    @staticmethod
+    @abc.abstractmethod
+    def get_school_holidays(years_list: list[int]) -> pd.DataFrame:
+        """
+        Return school holidays for a list of year
+        :param years_list: list of years for which holidays must be returned
+        :return: a list of datetime which are the school holidays for the concerned country
+        """
+        raise NotImplementedError("Abstract method")
+
+
+class FrenchHolidays(BaseHolidays):
+    """
+    Child class for French holidays (public and schools)
+    """
+
+    @staticmethod
+    def get_public_holidays(years_list: list[int] = None,
+                            orientation="rows") -> pd.DataFrame:
+        """
+        Return public French holidays for a list of years
+        :param years_list: list of years for which holidays must be returned
+        :param orientation: 'tows' or 'columns'. The way to orient the dataframe
+        :return: a list of datetime which are the school holidays for the concerned country
         """
 
-        if year_list is None:
-            year_list = range(2000, 2051)
+        if years_list is None:
+            years_list = range(2000, 2051)
 
-        result = pd.DataFrame()
-        for year in year_list:
+        all_years_holiday_df = pd.DataFrame()
+        for year in years_list:
             try:
-                res = JoursFeries.for_year(year)
-                df_res = pd.DataFrame.from_dict(res, orient="index")
-                df_res.index = df_res.index.map(unidecode.unidecode)
-                result = pd.concat([result, df_res.T], ignore_index=True)
-            except UnsupportedYearException as e:
-                warnings.warn(f"Missing french public holidays : {e}")
+                year_holiday_df = pd.DataFrame.from_dict(JoursFeries.for_year(year), orient="index")
+                year_holiday_df.index = year_holiday_df.index.map(unidecode.unidecode)
+                all_years_holiday_df = pd.concat([all_years_holiday_df, year_holiday_df.T], ignore_index=True)
+            except Exception as exception:
+                warnings.warn(f"Missing french public holidays : {exception}")
 
         if orientation != "columns":
-            result = result.stack().reset_index(level=0, drop=True)
-            result.index.name = "nom_jour_ferie"
-            result = result.to_frame("date")
-            result = result.reset_index(drop=False)
-            result = result[["date", "nom_jour_ferie"]]
 
-        return result
+            all_years_holiday_df = (
+                all_years_holiday_df
+                .stack()
+                .reset_index(level=0, drop=True)
+                .rename_axis("public_holiday_name")
+                .to_frame("date")
+                .reset_index(drop=False)
+                .filter(["date", "public_holiday_name"])
+            )
+
+            all_years_holiday_df["date"] = pd.to_datetime(all_years_holiday_df["date"])
+
+        return all_years_holiday_df
 
     @staticmethod
-    def get_school_holidays(year_list: list[int] = None) -> pd.DataFrame:
+    def get_school_holidays(years_list: list[int]) -> pd.DataFrame:
         """
-        Get a DataFrame indicating school holidays periods in France (these include weekends at the beginning/end of
-            each period)
-        :param year_list: A list of integers representing the years for which we want school holidays information
-        :return:
-            A DataFrame containing days for which at least one of the three French zones (A, B and C) is in holidays.
-            The DataFrame has a 'date' column which indicates the day, one column for each zone with booleans
-            indicating if the corresponding zone is in school holidays, and a 'nom_vacances' column indicating the
-            name of the related holiday period
+        Return school holidays for a list of year
+        :param years_list: list of years for which holidays must be returned
+        :return: a list of datetime which are the school holidays for the concerned country
         """
 
-        if year_list is None:
-            current_year = datetime.datetime.utcnow().year
-            year_list = range(2000, current_year + 2)
+        if years_list is None:
+            years_list = range(2000, 2051)
 
-        d = SchoolHolidayDates()
-        result = pd.DataFrame()
-        for year in year_list:
+        school_holidays_dates = SchoolHolidayDates()
+        all_years_holiday_df = pd.DataFrame()
+        for year in years_list:
             try:
-                res = d.holidays_for_year(year)
-                df_res = pd.DataFrame.from_dict(res, orient="index")
-                df_res["nom_vacances"] = df_res["nom_vacances"].map(unidecode.unidecode)
-                df_res = df_res.reset_index(drop=True)
-                result = pd.concat([result, df_res], ignore_index=True)
-            except UnsupportedYearException as e:
-                warnings.warn(f"Missing french school holidays : {e}")
+                year_holiday_df = pd.DataFrame.from_dict(school_holidays_dates.holidays_for_year(year), orient="index")
+                year_holiday_df = year_holiday_df.rename(columns={"nom_vacances": "school_holiday_name"})
+                year_holiday_df.loc[:, "school_holiday_name"] = year_holiday_df.loc[:, "school_holiday_name"].map(
+                    unidecode.unidecode
+                )
+                year_holiday_df = year_holiday_df.reset_index(drop=True)
+                all_years_holiday_df = pd.concat([all_years_holiday_df, year_holiday_df], ignore_index=True)
+            except Exception as exception:
+                warnings.warn(f"Missing french school holidays : {exception}")
 
-        return result
+        return all_years_holiday_df
+
+
+# --------- Calendar ------------
 
 
 class Calendar:
     """
-    A class allowing to gather special days (school/public holidays, lockdowns, long weekends) for a given country
+    Factory class allowing to gather special days (lockdowns, long weekends) for a given country
     """
 
-    def __init__(self, country: str = "FR"):
-        self.country = country
-
-    def get_french_lockdown(self) -> pd.DataFrame:
+    @staticmethod
+    def get_lockdown(country: str, years_list: list[int] = None):
         """
-        Return a dataframe from 2000-01-01 to 2050-12-25 indicating for each day if national lockdown was ongoing.
-        So far, the main lockdown period goes from 2020-03-17 to 2020-05-11.
-        :return:
-            A DataFrame with a daily DatetimeIndex and a float 'lockdown' column containing 1 if the day is within a
-            lockdown period and 0 otherwise
+        Return a dataframe indicating for each day if a national lockdown was ongoing.
+        :param country: country of interest
+        :param years_list: the list of target years
+        :return: a dataframe with a daily DatetimeIndex and a float 'lockdown' column containing
+                 1 if the day is within a lockdown period and 0 otherwise
         """
+        if country == 'FR':
+            return FrenchCalendar.get_lockdown(years_list=years_list)
+        raise NotImplementedError(f"Country '{country}' not supported.")
 
-        if self.country != "FR":
-            raise NotImplementedError(f"Public holidays in {self.country} unknown")
-
-        start_lockdown_date = pd.to_datetime("2020-03-17")
-        end_lockdown_date = pd.to_datetime("2020-05-11")
-        lockdown_period = pd.date_range(start_lockdown_date, end_lockdown_date)
-
-        df_lockdown = pd.DataFrame(index=lockdown_period, columns=["lockdown"], data=1)
-        df_lockdown.index.name = "date"
-
-        result = df_lockdown.reindex(pd.date_range("2000-01-01", "2050-12-25"))
-        result = result.fillna(0)
-
-        return result
-
-    def get_public_holidays(self) -> pd.DataFrame:
+    @staticmethod
+    def get_public_holidays(country: str, years_list: list[int] = None):
         """
-        Return a dataframe from 2000-01-01 to 2050-12-25 indicating for each day
+        Return a dataframe (at max from 2000-01-01 to 2050-12-31) indicating for each day
         whether it is a public holiday (denoted by a 1) or not (denoted by a 0)
-        :return:
-            A DataFrame with a daily DatetimeIndex and a float 'public holiday' column containing 1 if the day is a
-            public holiday and 0 otherwise
+        :param country: country of interest
+        :param years_list: list of years for which holidays must be returned
+        :return: a dataFrame with a daily DatetimeIndex and a float 'public holiday' column containing
+                 1 if the day is a public holiday and 0 otherwise
         """
+        return BaseCalendar.get_public_holidays(country, years_list=years_list)
 
-        if self.country == "FR":
-            public_holidays = FrenchHolidays.get_public_holidays()
-        else:
-            raise NotImplementedError(f"Public holidays in {self.country} unknown")
-
-        public_holidays = public_holidays.set_index("date")
-        public_holidays.index = pd.to_datetime(public_holidays.index)
-        public_holidays = public_holidays[
-            ~public_holidays.index.duplicated(keep="first")
-        ]  # 2008-05-01
-
-        public_holidays["public_holiday"] = 1
-        public_holidays = public_holidays.asfreq("D")
-        public_holidays = public_holidays.fillna(0)
-
-        return public_holidays[["public_holiday"]]
-
-    def get_school_holidays(self) -> pd.DataFrame:
+    @staticmethod
+    def get_extra_long_weekend(country: str, years_list: list[int] = None):
         """
-        Return a dataframe from 2000-01-01 to as far as possible (2021-08-29) indicating for each day
-        the number of school areas (zone A, B et C) in vacation (either 0, 1, 2 or 3)
-        :return:
-            A DataFrame with a daily DatetimeIndex and a float 'nb_schools_area_off' column indicating the number
-            of school areas in vacation
-        """
-
-        if self.country == "FR":
-            school_holidays = FrenchHolidays.get_school_holidays()
-        else:
-            raise NotImplementedError(f"School holidays in {self.country} unknown")
-
-        school_holidays = school_holidays.set_index("date")
-        school_holidays.index = pd.to_datetime(school_holidays.index)
-        school_holidays = school_holidays.drop("nom_vacances", axis=1)
-
-        school_holidays["nb_school_areas_off"] = school_holidays.sum(axis=1)
-        school_holidays = school_holidays.asfreq("D")
-        school_holidays = school_holidays.fillna(0)
-
-        return school_holidays[["nb_school_areas_off"]]
-
-    def get_extra_long_weekend(self) -> pd.DataFrame:
-        """
-        Return a dataframe from 2000-01-01 to 2050-12-25 indicating for each day
+        Return a dataframe (at max from 2000-01-01 to 2050-12-31) indicating for each day
         - if the previous (resp. the next day) is a public holiday
         AND
         - if the current day is a friday (resp. a monday)
         If both conditions are fulfilled then the day is denoted by a 1 (0 otherwise)
-        :return:
-            A DataFrame with a daily DatetimeIndex and an int 'extra_long_weekend' column containing 1 if the day meets
-            the criteria described above and 0 otherwise
+        :param country: country of interest
+        :param years_list: the list of target years
+        :return: a DataFrame with a daily DatetimeIndex and an int 'extra_long_weekend' column containing 1 if
+                 the day meets the criteria described above and 0 otherwise
+        """
+        return BaseCalendar.get_extra_long_weekend(country, years_list=years_list)
+
+    @staticmethod
+    def feature_special_days(country: str, years_list: list[int] = None, freq: Union[str, pd.Timedelta] = "30min"):
+        """
+        Return a DataFrame featuring all special days
+        :param country: country of interest
+        :param years_list: list of years for which special days must be returned
+        :param freq: A string indicating the frequency at which to interpolate the DataFrame
+        """
+        if country == 'FR':
+            return FrenchCalendar.feature_special_days(years_list=years_list, freq=freq)
+        raise NotImplementedError(f"Country '{country}' not supported.")
+
+    # ----- deprecated functions -----
+
+    @staticmethod
+    @warning_deprecated_name(
+        namespace_name="Calendar", new_namespace_name="Resample", new_function_name="upsample_and_interpolate"
+    )
+    def interpolate_daily_to_subdaily_data(
+            df: pd.DataFrame, freq: str, method: str = "ffill", tz: str = TZ_PARIS
+    ) -> pd.DataFrame:
+        """
+        Interpolate daily data in a dataframe (with a DatetimeIndex) to sub-daily data using a given method.
+        :param df: pd.DataFrame
+        :param freq: a frequency < 'D' (e.g. 'H', '30min', '15min', etc)
+        :param method: how are data interpolated between two consecutive dates (e.g. 'ffill', 'linear', etc)
+        :param tz: timezone (TZ_Paris)
+        :return: pd.DataFrame
+        """
+        return TimeSeries.interpolate_daily_to_sub_daily_data(
+            df, freq=freq, method=method, tz=tz
+        )
+
+    @warning_deprecated_name(
+        namespace_name="Calendar", new_namespace_name="FrenchCalendar", new_function_name="get_number_school_areas_off"
+    )
+    def get_school_holidays(self) -> pd.DataFrame:
+        """
+        Return number of school areas off in France
+        """
+        return FrenchCalendar.get_number_school_areas_off()
+
+    @warning_deprecated_name(namespace_name="Calendar", new_function_name="get_lockdown")
+    def get_french_lockdown(self) -> pd.DataFrame:
+        """
+        Return lockdown days for France
+        """
+        return Calendar.get_lockdown(country='FR')
+
+class BaseCalendar:
+    """
+    Base class allowing to define functions meant to gather special days
+    (lockdowns, long weekends) for a given country
+    """
+
+    @staticmethod
+    @abc.abstractmethod
+    def get_lockdown(years_list: list[int] = None) -> pd.DataFrame:
+        """
+        Return a dataframe indicating for each day if a national lockdown was ongoing.
+        :param years_list: the list of target years
+        :return: a dataframe with a daily DatetimeIndex and a float 'lockdown' column containing
+                 1 if the day is within a lockdown period and 0 otherwise
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    def get_public_holidays(country: str = 'FR', years_list: list[int] = None) -> pd.DataFrame:
+        """
+        Return a dataframe (at max from 2000-01-01 to 2050-12-31) indicating for each day
+        whether it is a public holiday (denoted by a 1) or not (denoted by a 0)
+        :param country: country of interest
+        :param years_list: list of years for which holidays must be returned
+        :return: a dataFrame with a daily DatetimeIndex and a float 'public holiday' column containing
+                 1 if the day is a public holiday and 0 otherwise
         """
 
-        public_holidays = self.get_public_holidays()
+        # get public holidays
+        public_holidays = Holidays.get_public_holidays(country=country, years_list=years_list)
+
+        # work it out
+        public_holidays = public_holidays.set_index("date")
+        public_holidays.index = pd.to_datetime(public_holidays.index)
+        public_holidays = public_holidays[
+            ~public_holidays.index.duplicated(keep="first")
+        ]
+        public_holidays["public_holiday"] = 1
+
+        # reindex and fillna
+        start_date = datetime.date(min(years_list), 1, 1)
+        incl_end_date = datetime.date(max(years_list), 12, 31)
+        public_holidays = (
+            public_holidays
+            .reindex(pd.date_range(start_date, incl_end_date))
+            .fillna(0)
+        )
+
+        return public_holidays[["public_holiday"]]
+
+    @staticmethod
+    def get_extra_long_weekend(country: str = 'FR', years_list: list[int] = None) -> pd.DataFrame:
+        """
+        Return a dataframe (at max from 2000-01-01 to 2050-12-31) indicating for each day
+        - if the previous (resp. the next day) is a public holiday
+        AND
+        - if the current day is a friday (resp. a monday)
+        If both conditions are fulfilled then the day is denoted by a 1 (0 otherwise)
+        :param country: country of interest
+        :param years_list: the list of target years
+        :return: a DataFrame with a daily DatetimeIndex and an int 'extra_long_weekend' column containing 1 if
+                 the day meets the criteria described above and 0 otherwise
+        """
+
+        public_holidays = Calendar.get_public_holidays(country, years_list=years_list)
         public_holidays = DatetimeFeature.split_datetime(
             public_holidays, split_list=["dayofweek"], index=True
         )
@@ -213,33 +346,80 @@ class Calendar:
         return public_holidays[["extra_long_weekend"]]
 
     @staticmethod
-    def interpolate_daily_to_subdaily_data(
-        df: pd.DataFrame, freq: str, method: str = "ffill", tz: str = "Europe/Paris"
-    ) -> pd.DataFrame:
+    @abc.abstractmethod
+    def feature_special_days(years_list: list[int] = None, freq: Union[str, pd.Timedelta] = "30min") -> pd.DataFrame:
         """
-        Interpolate daily data in a dataframe (with a DatetimeIndex) to subdaily data using a given method.
-        :param df: pd.DataFrame
-        :param freq: a frequency < 'D' (e.g. 'H', '30min', '15min', etc)
-        :param method: how are data interpolated between two consecutive dates (e.g. 'ffill', 'linear', etc)
-        :param tz: timezone ('Europe/Paris')
-        :return: pd.DataFrame
+        Return a DataFrame featuring all special days
+        :param years_list: list of years for which special days must be returned
+        :param freq: A string indicating the frequency at which to interpolate the DataFrame
+        """
+        raise NotImplementedError()
+
+class FrenchCalendar(BaseCalendar):
+    """
+    Child class for French calendar
+    """
+
+    @staticmethod
+    def get_lockdown(years_list: list[int] = None) -> pd.DataFrame:
+        """
+        Return a dataframe from indicating for each day if national lockdown was ongoing.
+        So far, the main lockdown period goes from 2020-03-17 to 2020-05-11.
+        :param years_list: the list of target years
+        :return: a dataframe with a daily DatetimeIndex and a float 'lockdown' column containing
+                 1 if the day is within a lockdown period and 0 otherwise
         """
 
-        warnings.warn(
-            "The Calendar.interpolate_daily_to_sub_daily_data method is deprecated "
-            "and will be removed from enda in a future version. "
-            "Use TimeSeries.interpolate_daily_to_sub_daily_data instead.",
-            FutureWarning,
+        # define years list
+        if years_list is None:
+            years_list = range(2000, 2051)
+
+        # build french lockdown
+        lockdown_period = pd.date_range(pd.to_datetime("2020-03-17"), pd.to_datetime("2020-05-11"))
+        lockdown_df = pd.DataFrame(index=lockdown_period, columns=["lockdown"], data=1)
+        lockdown_df.index.name = "date"
+
+        # reindex over the required years
+        start_date = datetime.date(years_list[0], 1, 1)
+        incl_end_date = datetime.date(years_list[-1], 12, 31)
+        lockdown_df = (
+            lockdown_df
+            .reindex(pd.date_range(start_date, incl_end_date))
+            .fillna(0)
         )
 
-        return TimeSeries.interpolate_daily_to_sub_daily_data(
-            df, freq=freq, method=method, tz=tz
-        )
+        lockdown_df = lockdown_df.loc[lockdown_df.index.year.isin(years_list)]
 
-    def get_french_special_days(self, freq: str = "30min") -> pd.DataFrame:
+        return lockdown_df
+
+    @staticmethod
+    def get_number_school_areas_off(years_list=None) -> pd.DataFrame:
+        """
+        Return a dataframe from 2000-01-01 to as far as possible indicating for each day
+        the number of school areas (zone A, B et C) in vacation (either 0, 1, 2 or 3)
+        :param years_list: the list of target years
+        :return: a DataFrame with a daily DatetimeIndex and a float 'nb_schools_area_off'
+                 column indicating the number of school areas in vacation
+        """
+
+        school_holidays = FrenchHolidays.get_school_holidays(years_list=years_list)
+
+        school_holidays = school_holidays.set_index("date")
+        school_holidays.index = pd.to_datetime(school_holidays.index)
+        school_holidays = school_holidays.drop("school_holiday_name", axis=1)
+
+        school_holidays["nb_school_areas_off"] = school_holidays.sum(axis=1)
+        school_holidays = school_holidays.asfreq("D")
+        school_holidays = school_holidays.fillna(0)
+
+        return school_holidays[["nb_school_areas_off"]]
+
+    @staticmethod
+    def feature_special_days(years_list: list[int] = None, freq: Union[str, pd.Timedelta] = "30min") -> pd.DataFrame:
         """
         Return a DataFrame containing all special french days: public and school holidays, lockdowns, and extra long
             weekends
+        :param years_list: the list of years
         :param freq: A string indicating the frequency at which to interpolate the DataFrame
         :return:
             A DataFrame with a DatetimeIndex at the specified frequency, and 4 float columns :
@@ -251,30 +431,32 @@ class Calendar:
             on Tuesday, or a Friday with a public holiday in Thursday) and 0 otherwise
         """
 
-        lockdown = self.get_french_lockdown()
-        public_holidays = self.get_public_holidays()
-        school_holidays = self.get_school_holidays()
-        extra_long_weekend = self.get_extra_long_weekend()
+        # get all constitutive elements of special days
+        lockdown_df = FrenchCalendar.get_lockdown(years_list=years_list)
+        public_holidays_df = FrenchCalendar.get_public_holidays(years_list=years_list)
+        school_areas_off_df = FrenchCalendar.get_number_school_areas_off(years_list=years_list)
+        extra_long_weekend_df = FrenchCalendar.get_extra_long_weekend(years_list=years_list)
 
-        lockdown_new_freq = TimeSeries.interpolate_daily_to_sub_daily_data(
-            lockdown, freq=freq, method="ffill", tz="Europe/Paris"
+        # resample everything to the desired freq
+        lockdown_df = Resample.upsample_and_interpolate(
+            lockdown_df, freq=freq, method="ffill", forward_fill=True, tz_info=TZ_PARIS
         )
-        public_holidays_new_freq = TimeSeries.interpolate_daily_to_sub_daily_data(
-            public_holidays, freq=freq, method="ffill", tz="Europe/Paris"
+        public_holidays_df = Resample.upsample_and_interpolate(
+            public_holidays_df, freq=freq, method="ffill", forward_fill=True, tz_info=TZ_PARIS
         )
-        school_holidays_new_freq = TimeSeries.interpolate_daily_to_sub_daily_data(
-            school_holidays, freq=freq, method="ffill", tz="Europe/Paris"
+        school_areas_off_df = Resample.upsample_and_interpolate(
+            school_areas_off_df, freq=freq, method="ffill", forward_fill=True, tz_info=TZ_PARIS
         )
-        extra_long_weekend_new_freq = TimeSeries.interpolate_daily_to_sub_daily_data(
-            extra_long_weekend, freq=freq, method="ffill", tz="Europe/Paris"
+        extra_long_weekend_df = Resample.upsample_and_interpolate(
+            extra_long_weekend_df, freq=freq, method="ffill", forward_fill=True, tz_info=TZ_PARIS
         )
 
         result = pd.concat(
             [
-                lockdown_new_freq,
-                public_holidays_new_freq,
-                school_holidays_new_freq,
-                extra_long_weekend_new_freq,
+                lockdown_df,
+                public_holidays_df,
+                school_areas_off_df,
+                extra_long_weekend_df,
             ],
             axis=1,
             join="outer",
