@@ -52,9 +52,10 @@ class EndaH2OEstimator(EndaEstimator):
     def predict(self, df: pandas.DataFrame, target_col: str):
         test_data = h2o.H2OFrame(df)  # convert to H20 Frame
         forecast = self.model.predict(test_data)  # returns an H20Frame named 'predict'
-        forecast = forecast.as_data_frame().rename(
-            columns={"predict": target_col}
-        )  # convert to pandas and rename
+        with h2o.utils.threading.local_context(polars_enabled=True, datatable_enabled=True):
+            forecast = forecast.as_data_frame().rename(
+                columns={"predict": target_col}  # convert to pandas and rename
+            )
         forecast.index = (
             df.index
         )  # put back the correct index (typically a pandas.DatetimeIndex)
