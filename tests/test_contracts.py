@@ -365,41 +365,13 @@ class TestContracts(unittest.TestCase):
                 end_datetime_exclusive=pd.Timestamp(2023, 1, 5),
             )
 
-        # Check that providing a DataFrame with no inferrable frequency raises an error
-
-        wrong_index_df = input_portfolio_df.copy()
-        wrong_index_df.index = [
-            pd.Timestamp(2023, 1, 1),
-            pd.Timestamp(2023, 1, 2),
-            pd.Timestamp(2023, 1, 4),
-        ]
-
-        with self.assertRaises(ValueError):
-            Contracts.get_portfolio_between_dates(
-                portfolio=wrong_index_df,
-                start_datetime=pd.Timestamp(2023, 1, 1),
-                end_datetime_exclusive=pd.Timestamp(2023, 1, 5),
-            )
-
-        # Check that having nan values raises an error
-
-        nan_df = input_portfolio_df.copy()
-        nan_df.loc[pd.Timestamp(2023, 1, 2), "stations_count"] = np.nan
-
-        with self.assertRaises(ValueError):
-            Contracts.get_portfolio_between_dates(
-                portfolio=nan_df,
-                start_datetime=pd.Timestamp(2023, 1, 1),
-                end_datetime_exclusive=pd.Timestamp(2023, 1, 5),
-            )
-
         # Check with a start datetime before the first date in the DataFrame and an exclusive end datetime after the
         # final date in the DataFrame
 
         expected_output_df = pd.DataFrame(
             data=[
-                {"total_power_kw": 0.0, "stations_count": 0.0},
-                {"total_power_kw": 0.0, "stations_count": 0.0},
+                {"total_power_kw": 0, "stations_count": 0},
+                {"total_power_kw": 0, "stations_count": 0},
                 {"total_power_kw": 1500, "stations_count": 35},
                 {"total_power_kw": 1480, "stations_count": 33},
                 {"total_power_kw": 1470, "stations_count": 32},

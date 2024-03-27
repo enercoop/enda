@@ -112,10 +112,6 @@ class PortfolioTools:
                     "from the index itself. Please set it or check the data."
                 )
 
-        # check that there is no missing value
-        if result_df.isnull().sum().sum() != 0:
-            raise ValueError("daily_portfolio has NaN values.")
-
         if start_datetime and result_df.index.min() > start_datetime:
             # add empty portfolio at the beginning with correct frequency
             new_index = pd.date_range(
