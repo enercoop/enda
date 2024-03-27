@@ -34,6 +34,7 @@ setup(
         "datatable~=1.1.0",
         "h2o~=3.36.2.2",
         "jours-feries-france~=0.7.0",
+        "numpy~=1.18",
         "pandas~=1.4.0",
         "polars~=0.20.0",
         "pyarrow>=15.0.2",
