@@ -1,6 +1,8 @@
+"""setup file meant to be used by pip, if this one does not rely on pyproject.toml file"""
+
+import os
 import pathlib
 from setuptools import setup, find_packages
-import os
 
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
@@ -29,10 +31,13 @@ setup(
     include_package_data=True,
     python_requires=">=3.9,<3.11",
     install_requires=[
-        "h2o>=3.36.2.2",
+        "datatable~=1.1.0",
+        "h2o~=3.36.2.2",
         "jours-feries-france~=0.7.0",
-        "pandas>=1.4.0,<2.0.0",
-        "scikit-learn>=1.0.2",
+        "pandas~=1.4.0",
+        "polars~=0.20.0",
+        "pyarrow>=15.0.2",
+        "scikit-learn~=1.0.2",
         "statsmodels<=0.13.5",
         "unidecode~=1.3.6",
         "vacances-scolaires-france~=0.10.0"
