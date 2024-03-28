@@ -255,6 +255,7 @@ class Calendar:
         """
         return Calendar.get_lockdown(country='FR')
 
+
 class BaseCalendar:
     """
     Base class allowing to define functions meant to gather special days

@@ -1,8 +1,8 @@
 """This module contains utility functions for transforming portfolio data"""
 
 import pandas as pd
-import numpy as np
 from enda.tools.decorators import handle_multiindex
+from enda.tools.timeseries import TimeSeries
 
 
 class PortfolioTools:
@@ -13,7 +13,7 @@ class PortfolioTools:
 
     @staticmethod
     def portfolio_to_events(
-        portfolio_df: pd.DataFrame, date_start_col: str, date_end_exclusive_col: str
+            portfolio_df: pd.DataFrame, date_start_col: str, date_end_exclusive_col: str
     ) -> pd.DataFrame:
         """
         Converts a portfolio DataFrame where each line has a start and an and date to an event DataFrame, where
@@ -36,17 +36,17 @@ class PortfolioTools:
         :return: A DataFrame with one row per start/end event, order by event date and event type
         """
         # check that no column is named "event_type" or "event_date"
-        for c in ["event_type", "event_date"]:
-            if c in portfolio_df.columns:
+        for col in ["event_type", "event_date"]:
+            if col in portfolio_df.columns:
                 raise ValueError(
-                    f"contracts has a column named {c}, but this name is reserved in this"
+                    f"contracts has a column named {col}, but this name is reserved in this"
                     "function; rename your column."
                 )
 
         columns_to_keep = [
-            c
-            for c in portfolio_df.columns
-            if c not in [date_start_col, date_end_exclusive_col]
+            col
+            for col in portfolio_df.columns
+            if col not in [date_start_col, date_end_exclusive_col]
         ]
         events_columns = ["event_type", "event_date"] + columns_to_keep
 
@@ -79,10 +79,10 @@ class PortfolioTools:
     @staticmethod
     @handle_multiindex(arg_name="portfolio_df")
     def get_portfolio_between_dates(
-        portfolio_df: pd.DataFrame,
-        start_datetime: pd.Timestamp,
-        end_datetime_exclusive: pd.Timestamp,
-        freq: str = None,
+            portfolio_df: pd.DataFrame,
+            start_datetime: pd.Timestamp,
+            end_datetime_exclusive: pd.Timestamp,
+            freq: str = None,
     ) -> pd.DataFrame:
         """
         Keeps portfolio data between the specified dates.
@@ -96,42 +96,53 @@ class PortfolioTools:
         :return: A portfolio DataFrame with values between specified dates
         """
 
-        df = portfolio_df.copy(deep=True)
+        result_df = portfolio_df.copy(deep=True)
 
-        if not isinstance(df.index, pd.DatetimeIndex):
+        if not isinstance(result_df.index, pd.DatetimeIndex):
             raise TypeError(
-                f"The index of portfolio should be a pd.DatetimeIndex, but given {df.index.dtype}"
+                f"The index of portfolio should be a pd.DatetimeIndex, but given {result_df.index.dtype}"
             )
 
         if freq is None:
-            freq = df.index.inferred_freq
+            freq = TimeSeries.find_most_common_frequency(result_df.index)
             if freq is None:
                 raise ValueError(
                     "No freq has been provided, and it could not be inferred"
                     "from the index itself. Please set it or check the data."
                 )
 
-        # check that there is no missing value
-        if df.isnull().sum().sum() != 0:
-            raise ValueError("daily_portfolio has NaN values.")
-
-        if start_datetime is not None and df.index.min() > start_datetime:
-            # add days with empty portfolio at the beginning
-            df = pd.concat([df, pd.DataFrame(index=pd.Index([start_datetime], name=df.index.name), dtype="object")])
-            df.sort_index(inplace=True)  # put the new row first
-            df = df.asfreq(freq).fillna(0)
+        if start_datetime and result_df.index.min() > start_datetime:
+            # add empty portfolio at the beginning with correct frequency
+            new_index = pd.date_range(
+                start_datetime,
+                result_df.index.min(),
+                inclusive='left',
+                freq=freq,
+                name=result_df.index.name
+            )
+            new_df = pd.DataFrame(index=new_index,
+                                  data=[[0 for _ in range(len(result_df.columns))] for _ in range(len(new_index))],
+                                  columns=result_df.columns)
+            result_df = pd.concat([new_df, result_df])
 
         if (
-            end_datetime_exclusive is not None
-            and df.index.max() < end_datetime_exclusive
+                end_datetime_exclusive is not None
+                and result_df.index.max() < end_datetime_exclusive
         ):
             # add days at the end, with the same portfolio as the last available day
-            df.loc[end_datetime_exclusive] = np.nan
-            df.sort_index(inplace=True)  # make sure this new row is last
-            df = df.asfreq(freq, method="ffill")
-            df = df.asfreq(freq, method="ffill")
+            new_index = pd.date_range(
+                result_df.index.max(),
+                end_datetime_exclusive,
+                inclusive='neither',
+                freq=freq,
+                name=result_df.index.name
+            )
+            new_df = pd.DataFrame(index=new_index,
+                                  data=[list(result_df.loc[result_df.index.max()]) for _ in range(len(new_index))],
+                                  columns=result_df.columns)
+            result_df = pd.concat([result_df, new_df])
 
         # remove dates outside desired range
-        df = df[(df.index >= start_datetime) & (df.index < end_datetime_exclusive)]
+        result_df = result_df[(result_df.index >= start_datetime) & (result_df.index < end_datetime_exclusive)]
 
-        return df
+        return result_df

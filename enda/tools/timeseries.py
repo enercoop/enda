@@ -392,18 +392,18 @@ class TimeSeries:
 
     @staticmethod
     def find_duplicates_and_extra_points(
-        time_series: Union[pd.DatetimeIndex, pd.Series],
+        dti: Union[pd.DatetimeIndex, pd.Series],
         expected_freq: Union[str, pd.Timedelta] = None,
     ) -> tuple[pd.DatetimeIndex, pd.DatetimeIndex]:
         """
         Check for extra data points in the timeseries, i.e. data points that are duplicated and/or data points that are
         outside the expected frequency (or the most common frequency if not known) of data points.
-        :param time_series: a time_series
+        :param dti: a time_series
         :param expected_freq: the expected freq of the datetime index if known, default None.
         :return: extra data points
         """
-        return TimeSeries.find_duplicates(time_series), TimeSeries.find_extra_points(
-            time_series, expected_freq
+        return TimeSeries.find_duplicates(dti), TimeSeries.find_extra_points(
+            dti, expected_freq
         )
 
     @staticmethod

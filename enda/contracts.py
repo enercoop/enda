@@ -3,12 +3,17 @@
 import pandas as pd
 from pandas.api.types import is_string_dtype, is_datetime64_dtype
 from dateutil.relativedelta import relativedelta
+import numpy as np
 import pytz
 
-from enda.tools.timezone_utils import TimezoneUtils
-from enda.tools.resample import Resample
-from enda.tools.portfolio_tools import PortfolioTools
+from sklearn.linear_model import LinearRegression
+
+from enda.ml_backends.sklearn_estimator import EndaSklearnEstimator
 import enda.tools.decorators
+from enda.tools.portfolio_tools import PortfolioTools
+from enda.tools.resample import Resample
+from enda.tools.timeseries import TimeSeries
+from enda.tools.timezone_utils import TimezoneUtils
 
 
 class Contracts:
@@ -60,11 +65,11 @@ class Contracts:
         """
 
         df = pd.read_csv(file_path)
-        for c in [date_start_col, date_end_exclusive_col]:
-            if c not in df.columns:
-                raise AttributeError(f"Column {c} is not present in the contracts file")
-            if is_string_dtype(df[c]):
-                df[c] = pd.to_datetime(df[c], format=date_format)
+        for col in [date_start_col, date_end_exclusive_col]:
+            if col not in df.columns:
+                raise AttributeError(f"Column {col} is not present in the contracts file")
+            if is_string_dtype(df[col]):
+                df[col] = pd.to_datetime(df[col], format=date_format)
         cls.check_contracts_dates(df, date_start_col, date_end_exclusive_col)
         return df
 
@@ -90,13 +95,13 @@ class Contracts:
         """
 
         # check required columns and their types
-        for c in [date_start_col, date_end_exclusive_col]:
-            if c not in df.columns:
-                raise ValueError(f"Required column not found : {c}")
+        for col in [date_start_col, date_end_exclusive_col]:
+            if col not in df.columns:
+                raise ValueError(f"Required column not found : {col}")
             # data at a 'daily' precision should not have TZ information
-            if not is_datetime64_dtype(df[c]) and is_naive:
+            if not is_datetime64_dtype(df[col]) and is_naive:
                 raise ValueError(
-                    f"Expected tz-naive datetime dtype for column {c}, but found dtype: {df[c].dtype}"
+                    f"Expected tz-naive datetime dtype for column {col}, but found dtype: {df[col].dtype}"
                 )
         # check NaN values for date_start
         if df[date_start_col].isnull().any():
@@ -152,22 +157,22 @@ class Contracts:
                  contract start or contract end date.
         """
 
-        for c in ["date"]:
-            if c in contracts.columns:
+        for col in ["date"]:
+            if col in contracts.columns:
                 raise ValueError(
-                    f"contracts has a column named {c}, but this name is reserved in this"
+                    f"contracts has a column named {col}, but this name is reserved in this"
                     "function; rename your column."
                 )
 
         cls.check_contracts_dates(contracts, date_start_col, date_end_exclusive_col)
 
-        for c in columns_to_sum:
-            if c not in contracts.columns:
-                raise ValueError(f"missing column_to_sum: {c}")
-            if contracts[c].isnull().any():
-                rows_with_nan_c = contracts[contracts[c].isnull()]
+        for col in columns_to_sum:
+            if col not in contracts.columns:
+                raise ValueError(f"missing column_to_sum: {col}")
+            if contracts[col].isnull().any():
+                rows_with_nan_c = contracts[contracts[col].isnull()]
                 raise ValueError(
-                    f"There are NaN values for column {c} in these rows:\n{rows_with_nan_c}"
+                    f"There are NaN values for column {col} in these rows:\n{rows_with_nan_c}"
                 )
 
         # keep only useful columns
@@ -182,13 +187,18 @@ class Contracts:
             events = events[events["event_date"] <= max_date_exclusive]
 
         # for each column to sum, replace the value by their "increment" (+X if contract starts; -X if contract ends)
-        for c in columns_to_sum:
-            events[c] = events.apply(
-                lambda row: row[c] if row["event_type"] == "start" else -row[c], axis=1
+        for col in columns_to_sum:
+            events[col] = events.apply(
+                lambda row: row[col] if row["event_type"] == "start" else -row[col], axis=1
             )
 
         # group events by day and sum the individual contract increments of columns_to_sum to have daily increments
-        df_by_day = events.groupby(["event_date"]).sum()
+        df_by_day = (
+            events
+            .drop(columns={"event_type"})
+            .groupby(["event_date"])
+            .sum()
+        )
 
         # add days that have no increment (with NA values), else the result can have gaps
         # new "NA" increments = no contract start or end event that day = increment is 0
@@ -242,10 +252,23 @@ class Contracts:
         portfolio_df: pd.DataFrame,
         start_forecast_date,
         end_forecast_date_exclusive,
-        freq: [pd.Timedelta, str],
+        freq: [pd.Timedelta, str] = None,
         max_allowed_gap: pd.Timedelta = pd.Timedelta(days=1),
         tzinfo: [pytz.timezone, str, None] = None,
     ) -> pd.DataFrame:
+        """
+        Forecast portfolio using a linear extrapolation for the next nb_days
+        The output has the frequency which is given as an input, and defaults to the one of input portfolio_df
+         if nothing is provided.
+        :param portfolio_df: The portfolio DataFrame to perform the forecast on
+        :param start_forecast_date: The start datetime from which to extend the portfolio
+        :param end_forecast_date_exclusive: The exclusive end datetime until which to extend the portfolio
+        :param freq: The frequency of the resulting linearly-extrapolated portfolio
+        :param max_allowed_gap: The max gap between the end of the portfolio and the start date of the extrapolation.
+                                Returns an error if exceeded.
+        :param tzinfo: The time-zone of the resulting dataframe, if we want to change it.
+        :return: pd.DataFrame (the linearly-extrapolated forecast portfolio data)
+        """
         if end_forecast_date_exclusive < start_forecast_date:
             raise ValueError("end_forecast_date must be after start_forecast_date")
 
@@ -262,15 +285,8 @@ class Contracts:
                 f"portfolio_df should have a pandas.DatetimeIndex, but given {portfolio_df.index.dtype}"
             )
 
-        try:
-            from enda.ml_backends.sklearn_estimator import EndaSklearnEstimator
-            from sklearn.linear_model import LinearRegression
-            import numpy as np
-        except ImportError as exc:
-            raise ImportError(
-                "sklearn is required is you want to use this function. "
-                "Try: pip install scikit-learn"
-            ) from exc
+        if not freq:
+            freq = TimeSeries.find_most_common_frequency(portfolio_df.index)
 
         result_index = pd.date_range(
             start=start_forecast_date,
@@ -285,14 +301,14 @@ class Contracts:
 
         predictions = []
 
-        for c in portfolio_df.columns:
+        for col in portfolio_df.columns:
             epoch_column = (
                 "seconds_since_epoch_"
-                if c != "seconds_since_epoch_"
+                if col != "seconds_since_epoch_"
                 else "seconds_since_epoch__"
             )
 
-            train_set = portfolio_df[[c]].copy(deep=True)
+            train_set = portfolio_df[[col]].copy(deep=True)
             train_set[epoch_column] = train_set.index.astype(np.int64) // 10**9
 
             test_set = pd.DataFrame(
@@ -301,8 +317,8 @@ class Contracts:
             )
 
             lr = EndaSklearnEstimator(LinearRegression())
-            lr.train(train_set, target_col=c)
-            predictions.append(lr.predict(test_set, target_col=c))
+            lr.train(train_set, target_col=col)
+            predictions.append(lr.predict(test_set, target_col=col))
 
         return pd.concat(predictions, axis=1, join="outer")
 
@@ -371,8 +387,8 @@ class Contracts:
         freq = portfolio_df.index.freq
         tzinfo = portfolio_df.index.tzinfo  # can be None
 
-        pf = portfolio_df
-        pf = pf[pf.index <= start_forecast_date]
+        p_df = portfolio_df
+        p_df = p_df[p_df.index <= start_forecast_date]
 
         end_forecast_date = TimezoneUtils.add_interval_to_day_dt(
             day_dt=start_forecast_date, interval=relativedelta(days=nb_days)
@@ -382,22 +398,22 @@ class Contracts:
         )
 
         # only keep recent data to determine the trends
-        pf = pf[pf.index >= date_past_days_ago]
+        p_df = p_df[p_df.index >= date_past_days_ago]
 
         future_index = pd.date_range(
             start_forecast_date,
             end_forecast_date,
             freq=freq,
-            name=pf.index.name,
+            name=p_df.index.name,
             inclusive="left"
         )
         if tzinfo is not None:
             future_index = future_index.tz_convert(tzinfo)
 
         # holt needs a basic integer index
-        pf = pf.reset_index(drop=True)
+        p_df = p_df.reset_index(drop=True)
         # forecast each column (all columns are measures)
-        result = pf.apply(
+        result = p_df.apply(
             lambda x: Holt(x, **holt_init_params)
             .fit(**holt_fit_params)
             .forecast(len(future_index))
