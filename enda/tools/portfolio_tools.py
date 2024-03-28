@@ -1,7 +1,6 @@
 """This module contains utility functions for transforming portfolio data"""
 
 import pandas as pd
-import numpy as np
 from enda.tools.decorators import handle_multiindex
 from enda.tools.timeseries import TimeSeries
 
