@@ -53,7 +53,7 @@ Check out the guides: <https://github.com/enercoop/enda/tree/main/guides>.
 
 ## Documentation and API
 
-A comprehensive documentation and API is available [here](https:enercoop.github.io/enda)
+A comprehensive documentation and API is available [here](https://enercoop.github.io/enda)
 
 ## Hard dependencies
 
