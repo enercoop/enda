@@ -39,6 +39,11 @@ class EndaH2OEstimator(EndaEstimator):
         self.training_performance = None
 
     def train(self, df: pandas.DataFrame, target_col: str):
+        """
+        Train a h2o-based model from an input dataframe with features and a target column
+        :param df: the input dataframe
+        :param target_col: the target column name
+        """
         x = [
             c for c in df.columns if c != target_col
         ]  # for H20, x is the list of features
@@ -50,6 +55,12 @@ class EndaH2OEstimator(EndaEstimator):
         self.training_performance = self.model.scoring_history()
 
     def predict(self, df: pandas.DataFrame, target_col: str):
+        """
+        Predict from a h2o-based trained model using an input dataframe with features
+        :param df: the input dataframe
+        :param target_col: the target column name
+        :return: a single-column dataframe with the predicted target
+        """
         test_data = h2o.H2OFrame(df)  # convert to H20 Frame
         forecast = self.model.predict(test_data)  # returns an H20Frame named 'predict'
         with h2o.utils.threading.local_context(polars_enabled=True, datatable_enabled=True):
@@ -60,6 +71,18 @@ class EndaH2OEstimator(EndaEstimator):
             df.index
         )  # put back the correct index (typically a pandas.DatetimeIndex)
         return forecast
+
+    def get_model_name(self) -> str:
+        """
+        Return the H2O model name
+        """
+        return self.model.__class__.__name__
+
+    def get_model_params(self) -> dict:
+        """
+        Return a dict with the model name and the model hyperparameters
+        """
+        return {self.get_model_name(): self.model.get_params()}
 
     # All below is just for model persistence : to comply with pickle and deepcopy.
 
@@ -77,11 +100,11 @@ class EndaH2OEstimator(EndaEstimator):
             model_path_from_h2o = h2o.save_model(
                 h2o_model, path=EndaH2OEstimator.__tmp_file_path_1, force=True
             )
-        except (h2o.exceptions.H2OResponseError, TypeError) as e:
+        except (h2o.exceptions.H2OResponseError, TypeError) as exception:
             raise ValueError(
                 "Problem getting the model from h2o server. Train the model first. "
                 "Cannot access model binary before training (for pickle or deepcopy or other uses)."
-            ) from e
+            ) from exception
 
         # model can be saved in __tmp_file_path_1, or in private/__tmp_file_path_1
         potential_startswith = [
