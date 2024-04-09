@@ -43,7 +43,7 @@ class EndaSklearnEstimator(EndaEstimator):
 
     def get_model_name(self) -> str:
         """
-        Return the scikit-learn model name
+        Return the scikit-learn model name instead of EndaSklearnEstimator
         """
         return self.model.__class__.__name__
 

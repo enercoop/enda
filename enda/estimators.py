@@ -369,6 +369,9 @@ class EndaStackingEstimator(EndaEstimator):
     def get_model_params(self) -> dict:
         """
         Get model parameters of estimators (each of base_estimator) and final_estimator
+        The principle is to return the model params as  a dict with two entries, base_estimators, and final_estimator
+        Each of these entries contains a dictionary as well, with the model name as a key, and model parameters
+        as values.
         :return: A dictionary with one entry per model and associated parameters
         """
 
@@ -388,6 +391,20 @@ class EndaStackingEstimator(EndaEstimator):
         model_params_dict["final_estimator"] = self.final_estimator.get_model_params()
 
         return {self.get_model_name(): model_params_dict}
+
+    def get_all_model_names(self) -> dict[str, list[str]]:
+        """
+        Get name of all base models, plus name of final model
+        in a dictionary with two entries, "base_estimator" and "final_estimator"
+        """
+
+        sub_model_names_dict = {"base_estimators": []}
+        for _, estimator in self.base_estimators.items():
+            sub_model_names_dict["base_estimators"].append(estimator.get_model_name())
+
+        sub_model_names_dict["final_estimator"] = [self.final_estimator.get_model_name()]
+
+        return sub_model_names_dict
 
 
 class EndaEstimatorWithFallback(EndaEstimator):
@@ -499,13 +516,25 @@ class EndaEstimatorWithFallback(EndaEstimator):
 
     def get_model_params(self) -> dict:
         """
-        Get model parameters of estimator_with and estimator_without
+        Get model parameters of estimator_with and estimator_without.
+        The principle is to store the model params as a dict with two entries, estimator_with, and estimator_without
+        Each of these entries contains a dictionary as well, with the model params as a key, and model parameters
+        as values.
         :return: A dictionary with one entry per model and associated parameters
         """
         return {self.get_model_name(): {"estimator_with": self.estimator_with.get_model_params(),
                                         "estimator_without": self.estimator_without.get_model_params()
                                         }
                 }
+
+    def get_all_model_names(self) -> dict[str, list[str]]:
+        """
+        Get names of sub-model in a dictionary.
+        in a dictionary with two entries, "base_estimator" and "final_estimator"
+        """
+
+        return {"estimator_with": [self.estimator_with.get_model_name()],
+                "estimator_without": [self.estimator_without.get_model_name()]}
 
 
 class EndaEstimatorRecopy(EndaEstimator):
