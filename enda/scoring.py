@@ -1,6 +1,21 @@
 """This module contains methods to evaluate the performance of predictions"""
 
+import numpy as np
 import pandas as pd
+from typing import Union
+from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, r2_score
+
+
+def _root_mean_squared_error(x1, x2):
+    return np.sqrt(mean_squared_error(x1, x2))
+
+
+METRICS_FUNCTION_DICT = {
+    "rmse": _root_mean_squared_error,
+    "mae": mean_absolute_error,
+    "mape": mean_absolute_percentage_error,
+    "r2": r2_score
+}
 
 
 class Scoring:
@@ -133,3 +148,33 @@ class Scoring:
         return self.error_df.abs().div(
             self.predictions_df[self.normalizing_col], axis=0
         )
+
+    @staticmethod
+    def compute_loss(predicted_df: pd.DataFrame,
+                     actual_df: Union[pd.DataFrame, pd.Series],
+                     score_list: list[str] = None) -> pd.Series:
+        """
+        Compute the loss (i.e. the score) between a model prediction and the actual data
+        :param predicted_df: the result of the prediction
+        :param actual_df: the actual target data
+        :param score_list: the statistics to consider. Either 'mae', 'rmse', 'r2', 'mape'. Defaults to 'rmse'.
+        :return: a series that contains the for each statistics the score of the model on the training set
+        """
+
+        # default is rmse
+        if score_list is None:
+            score_list = ['rmse']
+
+        # check that scores are allowed
+        for score in score_list:
+            if score not in METRICS_FUNCTION_DICT:
+                raise ValueError(f"Score must be one of {METRICS_FUNCTION_DICT.keys()} but got {score}")
+
+        # we have to compute on the training set the score for each of the method chosen
+        scoring_result_list = []
+        for score in score_list:
+            method = METRICS_FUNCTION_DICT[score]
+            result_score = method(actual_df, predicted_df)
+            scoring_result_list.append(result_score)
+
+        return pd.Series(data=scoring_result_list, index=score_list)

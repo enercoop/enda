@@ -1,11 +1,13 @@
-import logging
-import unittest
-import pandas as pd
-import time
-import pickle
-import os
-import shutil
 import copy
+import logging
+import os
+import pickle
+import shutil
+import time
+import unittest
+
+
+import pandas as pd
 
 try:
     import h2o
@@ -32,16 +34,25 @@ from enda.ml_backends.h2o_estimator import EndaH2OEstimator
 
 
 class TestH2OEstimator(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
+
+    def setUp(self):
         """initialize a local h2o server to tests h2o backend"""
         logging.captureWarnings(True)
         logging.disable(logging.ERROR)
+
         h2o.init(nthreads=-1)  # starts an h2o local server
         h2o.no_progress()  # don't print out progress bars
 
-    @classmethod
-    def tearDownClass(cls):
+        # set up a simple dataset; it comes from the Palmer penguins dataset
+        self.training_df = pd.DataFrame.from_records(
+            [(180, 3700), (182, 3200), (191, 3800), (198, 4400),
+             (185, 3700), (195, 3450), (197, 4500), (184, 3325),
+             (194, 4200)],
+            columns=['flipper_length', 'body_mass']
+        )
+        self.target_col = 'body_mass'
+
+    def tearDown(self):
         """shutdown the local h2o server"""
         logging.captureWarnings(False)
         logging.disable(logging.NOTSET)
@@ -179,3 +190,33 @@ class TestH2OEstimator(unittest.TestCase):
 
         # this is just cleaning this test
         os.remove(file_path_2)
+
+    def test_get_loss_training(self):
+        """
+        Test get_loss_training
+        """
+
+        # define an h2o linear estimator (with no regularization)
+        h2o_lin = EndaH2OEstimator(H2OGeneralizedLinearEstimator(lambda_=0))
+
+        with self.assertRaises(TypeError):
+            # not yet trained estimator
+            h2o_lin.get_loss_training(score_list=['rmse', 'mae', 'r2'])
+
+        # train the estimator
+        h2o_lin.train(self.training_df, target_col=self.target_col)
+
+        # get the loss training
+        loss_training = h2o_lin.get_loss_training(score_list = ['rmse', 'mae', 'r2'])
+
+        # expected output
+        expected_output = pd.Series(
+            [299.933078, 255.588197, 0.534021],
+            index=['rmse', 'mae', 'r2']
+        )
+
+        pd.testing.assert_series_equal(loss_training, expected_output)
+
+        with self.assertRaises(KeyError):
+            # h2o does not know mape
+            h2o_lin.get_loss_training(score_list=['mape'])

@@ -15,7 +15,7 @@ class EndaSklearnEstimator(EndaEstimator):
         """
         Like in scikit-learn we use duck typing here, so we don't check the type of argument 'sklearn_estimator'
         """
-
+        super().__init__()
         self.model = sklearn_estimator
 
     def train(self, df: pd.DataFrame, target_col: str):
@@ -27,6 +27,10 @@ class EndaSklearnEstimator(EndaEstimator):
         x = df.drop(columns=[target_col])
         y = df[target_col]
         self.model.fit(x, y)
+
+        # store the training
+        self._training_df = df
+        self._target = target_col
 
     def predict(self, df: pd.DataFrame, target_col: str) -> pd.DataFrame:
         """
