@@ -68,7 +68,7 @@ class EndaEstimator(metaclass=abc.ABCMeta):
         :return: a series that contains for each statistics the score of the model on the training set
         """
 
-        # if _x or _y is None, that means the model has not been trained
+        # if _training_df or _target is None, that means the model has not been trained
         if self._training_df is None or self._target is None:
             raise ValueError("The model must be trained before calling this method.")
 
@@ -80,6 +80,15 @@ class EndaEstimator(metaclass=abc.ABCMeta):
                                             score_list=score_list)
 
         return score_series
+
+    def get_feature_importance(self) ->pd.Series:
+        """
+        Return the feature's importance once a model has been trained.
+        Such a feature is usually not implemented, except for some algorithm in
+        particular (let's say, sklearn and H2O, and not all of them)
+        :return: a series that contain the percentage of importance for each variable
+        """
+        raise NotImplementedError()
 
 
 class EndaNormalizedEstimator(EndaEstimator):

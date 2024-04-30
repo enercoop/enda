@@ -1,8 +1,12 @@
 """This script contains a wrapper for scikit-learn estimators"""
 
+import numpy as np
 import pandas as pd
 
 from enda.estimators import EndaEstimator
+from sklearn.linear_model import __all__ as linear_model_sklearn_list
+from sklearn.ensemble import __all__ as ensemble_model_sklearn_list
+from sklearn.tree import __all__ as tree_model_sklearn_list
 
 
 class EndaSklearnEstimator(EndaEstimator):
@@ -56,3 +60,47 @@ class EndaSklearnEstimator(EndaEstimator):
         Return a dict with the model name and the model hyperparameters
         """
         return {self.get_model_name(): self.model.get_params()}
+
+    def get_feature_importance(self) -> pd.Series:
+        """
+        Return the feature's importance once a model has been trained.
+        This function only work if the wrapped scikit model is a linear model or a tree model.
+        In the case it's a linear model,
+        :return: a series that contain the percentage of importance for each variable
+        """
+
+        # if _training_df or _target is None, that means the model has not been trained
+        if self._training_df is None or self._target is None:
+            raise ValueError("The model must be trained before calling this method.")
+
+        if self.get_model_name() in linear_model_sklearn_list:
+            # first case, we're faced to a linear model.
+            # in that case, the variable importance can be assimilated to the coefficients of the regression
+            # once they have been standardized (that's what H2O does)
+            feature_importance_series = np.abs(self.model.coef_) * \
+                                        (
+                                            self._training_df
+                                            .drop(columns=[self._target])
+                                            .std()
+                                        )
+
+            # it must be turned to percentages
+            feature_importance_series /= feature_importance_series.sum()
+
+        elif self.get_model_name() in ensemble_model_sklearn_list + tree_model_sklearn_list:
+            # in that case, the tree itself is able to compute the variable importance
+            feature_importance_series = pd.Series(
+                data=self.model.feature_importances_,
+                index=self._training_df.drop(columns=[self._target]).columns,
+                dtype=float
+            )
+
+        else:
+            # neural networks for instance
+            raise NotImplementedError()
+
+        # set name
+        feature_importance_series.name = 'variable_importance_pct'
+
+        # return sorted values to fit h2o behaviour
+        return feature_importance_series.sort_values(ascending=False)

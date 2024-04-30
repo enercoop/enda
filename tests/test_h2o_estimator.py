@@ -50,6 +50,18 @@ class TestH2OEstimator(unittest.TestCase):
              (194, 4200)],
             columns=['flipper_length', 'body_mass']
         )
+
+        # same dataset with three features
+        self.several_features_training_df = pd.DataFrame.from_records(
+            [(180, 3700, 37.8, 17.3), (182, 3200, 41.1, 17.6),
+             (191, 3800, 38.6, 21.2), (198, 4400, 34.6, 21.1),
+             (185, 3700, 36.6, 17.8), (195, 3450, 38.7, 19.),
+             (197, 4500, 42.5, 20.7), (184, 3325, 34.4, 18.4),
+             (194, 4200, 46., 21.5)],
+            columns=['flipper_length', 'body_mass', 'culmen_length', 'culmen_depth']
+        )
+
+        # target col is body mass
         self.target_col = 'body_mass'
 
     def tearDown(self):
@@ -220,3 +232,75 @@ class TestH2OEstimator(unittest.TestCase):
         with self.assertRaises(KeyError):
             # h2o does not know mape
             h2o_lin.get_loss_training(score_list=['mape'])
+
+    def test_get_loss_training(self):
+        """
+        Test get_loss_training
+        """
+
+        # define an h2o linear estimator (with no regularization)
+        h2o_lin = EndaH2OEstimator(H2OGeneralizedLinearEstimator(lambda_=0))
+
+        with self.assertRaises(TypeError):
+            # not yet trained estimator
+            h2o_lin.get_loss_training(score_list=['rmse', 'mae', 'r2'])
+
+        # train the estimator
+        h2o_lin.train(self.training_df, target_col=self.target_col)
+
+        # get the loss training
+        loss_training = h2o_lin.get_loss_training(score_list = ['rmse', 'mae', 'r2'])
+
+        # expected output
+        expected_output = pd.Series(
+            [299.933078, 255.588197, 0.534021],
+            index=['rmse', 'mae', 'r2']
+        )
+
+        pd.testing.assert_series_equal(loss_training, expected_output)
+
+        with self.assertRaises(KeyError):
+            # h2o does not know mape
+            h2o_lin.get_loss_training(score_list=['mape'])
+
+
+    def test_get_feature_importance(self):
+        """
+        Test get_feature_importance
+        """
+
+        # define and train an enda linear estimator
+        enda_h2o_lin = EndaH2OEstimator(H2OGeneralizedLinearEstimator(lambda_=0))
+        enda_h2o_lin.train(self.several_features_training_df, target_col=self.target_col)
+
+        # expected output -> same as for scikit-learn estimator
+        expected_output = pd.Series(
+            [0.55191, 0.39653, 0.05156],
+            index=['culmen_depth', 'flipper_length', 'culmen_length'],
+            name='variable_importance_pct'
+        )
+
+        # output and check it
+        feature_importance_series = enda_h2o_lin.get_feature_importance()
+        pd.testing.assert_series_equal(feature_importance_series, expected_output)
+
+        # define and train an enda H2O tree estimator
+        enda_h2o_gb = EndaH2OEstimator(H2OGradientBoostingEstimator(ntrees=20, max_depth=5, min_rows=4, seed=1234))
+        enda_h2o_gb.train(self.several_features_training_df, target_col=self.target_col)
+
+        # expected output
+        expected_output = pd.Series(
+            [0.829228, 0.151105, 0.019667],
+            index=['culmen_depth', 'flipper_length', 'culmen_length'],
+            name='variable_importance_pct'
+        )
+
+        # output and check it
+        feature_importance_series = enda_h2o_gb.get_feature_importance()
+        pd.testing.assert_series_equal(feature_importance_series, expected_output, atol=1.e-5)
+
+        # check errors
+        enda_h2o_lin = EndaH2OEstimator(H2OGeneralizedLinearEstimator(lambda_=0))
+        with self.assertRaises(TypeError):
+            # untrained estimator
+            enda_h2o_lin.get_feature_importance()

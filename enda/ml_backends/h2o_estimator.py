@@ -6,6 +6,7 @@ import tempfile
 import warnings
 
 import pandas
+import pandas as pd
 
 from enda.estimators import EndaEstimator
 
@@ -116,7 +117,27 @@ class EndaH2OEstimator(EndaEstimator):
 
         return loss_training_series
 
-    # All below is just for model persistence : to comply with pickle and deepcopy.
+    def get_feature_importance(self) -> pd.Series:
+        """
+        Return the feature's importance once a model has been trained.
+        This makes use of built-in method 'varimp' of an H2OEstimator,
+        and only returns the percentage column
+        :return: a series that contain the percentage of importance for each variable
+        """
+
+        feature_importance_series = (
+            self.model.varimp(use_pandas=True)
+            .loc[:, ['variable', 'percentage']]
+            .rename(columns={'percentage': 'variable_importance_pct'})
+            .set_index('variable')
+            .rename_axis(None, axis=0)
+            .astype(float)
+            .squeeze()
+        )
+
+        return feature_importance_series
+
+        # All below is just for model persistence : to comply with pickle and deepcopy.
 
     __tmp_file_path_1 = os.path.join(
         tempfile.gettempdir(), "__h2o_estimator_tmp_file_1_136987"
