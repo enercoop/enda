@@ -167,7 +167,7 @@ class Scoring:
         :param actual_df: the actual target data
         :param score_list: the statistics to consider. Either 'max_error', 'mae', 'rmse', 'r2', 'mape', 'mse'.
             Defaults to 'rmse'.
-        :return: a series that contains the for each statistics the score of the model on the training set
+        :return: a series that contains for each statistics the score of the model on the training set
         """
 
         # default is rmse

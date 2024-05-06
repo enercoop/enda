@@ -294,3 +294,10 @@ class TestScoring(unittest.TestCase):
         pd.testing.assert_frame_equal(
             scoring_norm.normalized_absolute_error(), expected_norm_err_df
         )
+
+    def test_compute_score(self):
+        """
+        Test compute score
+        """
+        pass
+

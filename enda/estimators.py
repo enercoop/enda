@@ -1,11 +1,14 @@
 """This module contains several basic machine learning estimators"""
 
 import abc
+import collections
 import typing
 from collections import OrderedDict
 from typing import Iterable, Optional
 
 import pandas as pd
+
+from enda.scoring import Scoring
 
 
 class EndaEstimator(metaclass=abc.ABCMeta):
@@ -14,6 +17,7 @@ class EndaEstimator(metaclass=abc.ABCMeta):
     We require these functions :
         train : train the estimator
         predict : predict using the estimator
+        get_model_params : return the hyperparameters of the model
 
     To save and load instances of a class, use tools like pickle or joblib
     (see information for instance here: https://scikit-learn.org/stable/modules/model_persistence.html).
@@ -26,25 +30,65 @@ class EndaEstimator(metaclass=abc.ABCMeta):
 
     See tutorials about Python interfaces for instance here https://realpython.com/python-interface/ .
     """
-
-    @classmethod
-    def __subclasshook__(cls, subclass):
-        return (
-            hasattr(subclass, "train")
-            and callable(subclass.train)
-            and hasattr(subclass, "predict")
-            and callable(subclass.predict)
-        )
+    def __init__(self):
+        # if set, _training_df stores the training dataframe (features + target)
+        # if set, _target_name stores the target name
+        self._training_df = None
+        self._target = None
 
     @abc.abstractmethod
     def train(self, df: pd.DataFrame, target_col: str):
         """Trains the estimator using the given data."""
         raise NotImplementedError
 
+    def fit(self, X: pd.DataFrame, y:pd.Series):
+        """Trains the estimator using the given data."""
+        return self.train(df=pd.concat([X, y], axis=1), target_col=y.name)
+
     @abc.abstractmethod
     def predict(self, df: pd.DataFrame, target_col: str) -> pd.DataFrame:
         """Predicts and returns a dataframe with just 1 column: target_col_name"""
         raise NotImplementedError
+
+    def get_model_name(self) -> str:
+        """Return the estimator name"""
+        return self.__class__.__name__
+
+    @abc.abstractmethod
+    def get_model_params(self) -> dict:
+        """Return a dict with the model name and hyperparameters"""
+        raise NotImplementedError
+
+    def get_loss_training(self, score_list: list[str] = None) -> pd.Series:
+        """
+         Compute the training loss, i.e. the error of the trained model on the training dataset.
+         If not overridden (eg. in H2OEstimator), this function computes the loss on the training
+         dataset, using scikit-learn built-in methods.
+        :param score_list: the statistics to consider. Either 'mae', 'rmse', 'r2', 'mape'. Defaults to 'rmse'.
+        :return: a series that contains for each statistics the score of the model on the training set
+        """
+
+        # if _training_df or _target is None, that means the model has not been trained
+        if self._training_df is None or self._target is None:
+            raise ValueError("The model must be trained before calling this method.")
+
+        # compute the prediction over the training dataset
+        predict_on_train_set_df = self.predict(df=self._training_df.drop(columns=self._target), target_col=self._target)
+
+        score_series = Scoring.compute_loss(predicted_df=predict_on_train_set_df,
+                                            actual_df=self._training_df[self._target],
+                                            score_list=score_list)
+
+        return score_series
+
+    def get_feature_importance(self) -> pd.Series:
+        """
+        Return the feature's importance once a model has been trained.
+        Such a feature is usually not implemented, except for some algorithm in
+        particular (let's say, sklearn and H2O, and not all of them)
+        :return: a series that contain the percentage of importance for each variable
+        """
+        raise NotImplementedError()
 
 
 class EndaNormalizedEstimator(EndaEstimator):
@@ -57,11 +101,11 @@ class EndaNormalizedEstimator(EndaEstimator):
     """
 
     def __init__(
-        self,
-        inner_estimator: EndaEstimator,
-        target_col: str,
-        normalization_col: str,
-        columns_to_normalize: Optional[Iterable[str]] = None,
+            self,
+            inner_estimator: EndaEstimator,
+            target_col: str,
+            normalization_col: str,
+            columns_to_normalize: Optional[Iterable[str]] = None,
     ):
         """
         Initialize the normalized estimator
@@ -81,10 +125,15 @@ class EndaNormalizedEstimator(EndaEstimator):
                 f"normalisation_col '{normalization_col}'should not be in columns_to_normalize {columns_to_normalize}"
             )
 
+        super().__init__()
         self.inner_estimator = inner_estimator
         self.target_col = target_col
         self.normalisation_col = normalization_col
         self.columns_to_normalize = columns_to_normalize
+
+    def get_model_params(self) -> dict:
+        """Return a dict with the model name and hyperparameters"""
+        return {self.get_model_name(): self.inner_estimator.get_model_params()}
 
     def check_normalization_col(self, df: pd.DataFrame):
         """
@@ -116,24 +165,24 @@ class EndaNormalizedEstimator(EndaEstimator):
         df_norm = df.copy(deep=True)
 
         if self.columns_to_normalize:
-            for c in df.columns:
-                if c in self.columns_to_normalize:
-                    df_norm[c] = df_norm[c] / df[self.normalisation_col]
+            for col in df.columns:
+                if col in self.columns_to_normalize:
+                    df_norm[col] = df_norm[col] / df[self.normalisation_col]
 
         # always normalize the target if it is in the df (present in train mode, not in predict mode)
         if self.target_col in df.columns:
             df_norm[self.target_col] = (
-                df_norm[self.target_col] / df[self.normalisation_col]
+                    df_norm[self.target_col] / df[self.normalisation_col]
             )
 
         df_norm.drop(columns=self.normalisation_col, inplace=True)
         return df_norm
 
     def train(
-        self,
-        df: pd.DataFrame,
-        target_col: str = None,
-        drop_where_normalization_under_zero: bool = False,
+            self,
+            df: pd.DataFrame,
+            target_col: str = None,
+            drop_where_normalization_under_zero: bool = False,
     ):
         """
         Normalizes the DataFrame and trains the inner estimator
@@ -152,6 +201,10 @@ class EndaNormalizedEstimator(EndaEstimator):
             df = df.loc[df[self.normalisation_col] > 0, :]
         df_norm = self.normalize(df)
         self.inner_estimator.train(df_norm, self.target_col)
+
+        # store the training
+        self._training_df = df
+        self._target = target_col
 
     def predict(self, df: pd.DataFrame, target_col: str = None) -> pd.DataFrame:
         """
@@ -198,10 +251,10 @@ class EndaStackingEstimator(EndaEstimator):
     """
 
     def __init__(
-        self,
-        base_estimators: typing.Mapping[str, EndaEstimator],
-        final_estimator: EndaEstimator,
-        base_stack_split_pct: float = 0.20,
+            self,
+            base_estimators: typing.Mapping[str, EndaEstimator],
+            final_estimator: EndaEstimator,
+            base_stack_split_pct: float = 0.20,
     ):
         """
         Initialize the stacking estimator
@@ -222,14 +275,15 @@ class EndaStackingEstimator(EndaEstimator):
         for estimator_id in sorted(base_estimators.keys()):
             self.base_estimators[estimator_id] = base_estimators[estimator_id]
 
+        super().__init__()
         self.final_estimator = final_estimator
         self.base_stack_split_pct = base_stack_split_pct
 
     def train(
-        self,
-        df: pd.DataFrame,
-        target_col: str,
-        base_stack_split_pct: [float, None] = None,
+            self,
+            df: pd.DataFrame,
+            target_col: str,
+            base_stack_split_pct: [float, None] = None,
     ):
         """
         Train base and final estimators.
@@ -248,8 +302,12 @@ class EndaStackingEstimator(EndaEstimator):
         # re-train base estimators with the full dataset
         self.train_base_estimators(df, target_col)
 
+        # store the training
+        self._training_df = df
+        self._target = target_col
+
     def train_final_estimator(
-        self, df: pd.DataFrame, target_col: str, split_pct: float
+            self, df: pd.DataFrame, target_col: str, split_pct: float
     ):
         """
         Trains the final estimator used for stacking.
@@ -267,10 +325,10 @@ class EndaStackingEstimator(EndaEstimator):
 
         df_base_estimators = df[
             df.index < split_idx
-        ]  # one part to train the base estimators
+            ]  # one part to train the base estimators
         df_stacking = df[
             df.index >= split_idx
-        ]  # the other to train the stacking estimator
+            ]  # the other to train the stacking estimator
 
         if df_base_estimators.shape[0] == 0 or df_stacking.shape[0] == 0:
             raise ValueError(
@@ -291,7 +349,7 @@ class EndaStackingEstimator(EndaEstimator):
         self.final_estimator.train(base_predictions, target_col)
 
     def predict_base_estimators(
-        self, df: pd.DataFrame, target_col: str
+            self, df: pd.DataFrame, target_col: str
     ) -> pd.DataFrame:
         """
         Make a prediction using base estimators
@@ -350,6 +408,50 @@ class EndaStackingEstimator(EndaEstimator):
 
         return prediction
 
+    def get_model_params(self) -> dict:
+        """
+        Get model parameters of estimators (each of base_estimator) and final_estimator
+        The principle is to return the model params as  a dict with two entries, base_estimators, and final_estimator
+        Each of these entries contains a dictionary as well, with the model name as a key, and model parameters
+        as values.
+        :return: A dictionary with one entry per model and associated parameters
+        """
+
+        model_params_dict = {"base_estimators": collections.defaultdict(dict)}
+
+        # define base estimator
+        for _, estimator in self.base_estimators.items():
+            model_params = estimator.get_model_params()
+            for estimator_name, estimator_params in model_params.items():
+
+                # we need to modify the estimator name in the dict keys, if the same estimator
+                # is defined several times. For instance, if several LinearRegression are defined,
+                # we call them LinearRegression, LinearRegression_1, LinearRegression_2...
+                original_estimator_name = estimator_name
+                count = 1
+                while estimator_name in model_params_dict["base_estimators"]:
+                    estimator_name = f"{original_estimator_name}_{count}"
+                    count += 1
+                model_params_dict["base_estimators"][estimator_name] = estimator_params
+        model_params_dict["base_estimators"] = dict(model_params_dict["base_estimators"])
+        model_params_dict["final_estimator"] = self.final_estimator.get_model_params()
+
+        return {self.get_model_name(): model_params_dict}
+
+    def get_all_model_names(self) -> dict[str, list[str]]:
+        """
+        Get name of all base models, plus name of final model
+        in a dictionary with two entries, "base_estimator" and "final_estimator"
+        """
+
+        sub_model_names_dict = {"base_estimators": []}
+        for _, estimator in self.base_estimators.items():
+            sub_model_names_dict["base_estimators"].append(estimator.get_model_name())
+
+        sub_model_names_dict["final_estimator"] = [self.final_estimator.get_model_name()]
+
+        return sub_model_names_dict
+
 
 class EndaEstimatorWithFallback(EndaEstimator):
     """
@@ -366,10 +468,10 @@ class EndaEstimatorWithFallback(EndaEstimator):
     """
 
     def __init__(
-        self,
-        resilient_column: str,
-        estimator_with: EndaEstimator,
-        estimator_without: EndaEstimator,
+            self,
+            resilient_column: str,
+            estimator_with: EndaEstimator,
+            estimator_without: EndaEstimator,
     ):
         """
         Initialize the estimator
@@ -386,6 +488,7 @@ class EndaEstimatorWithFallback(EndaEstimator):
                 " (like copy.deepcopy()) to duplicate the raw estimator."
             )
 
+        super().__init__()
         self.resilient_column = resilient_column
         self.estimator_with = estimator_with
         self.estimator_without = estimator_without
@@ -404,8 +507,12 @@ class EndaEstimatorWithFallback(EndaEstimator):
             df.drop(columns=[self.resilient_column]), target_col
         )
 
+        # store the training
+        self._training_df = df
+        self._target = target_col
+
     def predict_both(
-        self, df: pd.DataFrame, target_col: str
+            self, df: pd.DataFrame, target_col: str
     ) -> (pd.DataFrame, pd.DataFrame):
         """
         Makes predictions with both estimators: estimator_with and estimator_without the resilient_column
@@ -458,39 +565,27 @@ class EndaEstimatorWithFallback(EndaEstimator):
         result = result.to_frame(target_col)
         return result
 
-    @staticmethod
-    def _get_model_name_and_params(model):
-        name = model.model.__class__.__name__
-        params = model.model.get_params()
-        return name, params
-
-    def get_model_params(self):
+    def get_model_params(self) -> dict:
         """
-        Get model parameters of estimator_with and estimator_without
+        Get model parameters of estimator_with and estimator_without.
+        The principle is to store the model params as a dict with two entries, estimator_with, and estimator_without
+        Each of these entries contains a dictionary as well, with the model params as a key, and model parameters
+        as values.
         :return: A dictionary with one entry per model and associated parameters
         """
+        return {self.get_model_name(): {"estimator_with": self.estimator_with.get_model_params(),
+                                        "estimator_without": self.estimator_without.get_model_params()
+                                        }
+                }
 
-        # TODO : ne fonctionne que pour des estimateurs stackés ?
-        d = {
-            "estimator_with": {"base_estimators": {}, "final_estimators": {}},
-            "estimator_without": {"base_estimators": {}, "final_estimators": {}},
-        }
+    def get_all_model_names(self) -> dict[str, list[str]]:
+        """
+        Get names of sub-model in a dictionary.
+        in a dictionary with two entries, "estimator_with" and "estimator_without"
+        """
 
-        for _, v in self.estimator_with.base_estimators.items():
-            n, p = self._get_model_name_and_params(v)
-            d["estimator_with"]["base_estimators"][n] = p
-
-        for _, v in self.estimator_without.base_estimators.items():
-            n, p = self._get_model_name_and_params(v)
-            d["estimator_without"]["base_estimators"][n] = p
-
-        n, p = self._get_model_name_and_params(self.estimator_with.final_estimator)
-        d["estimator_with"]["final_estimators"][n] = p
-
-        n, p = self._get_model_name_and_params(self.estimator_without.final_estimator)
-        d["estimator_without"]["final_estimators"][n] = p
-
-        return d
+        return {"estimator_with": [self.estimator_with.get_model_name()],
+                "estimator_without": [self.estimator_without.get_model_name()]}
 
 
 class EndaEstimatorRecopy(EndaEstimator):
@@ -508,6 +603,7 @@ class EndaEstimatorRecopy(EndaEstimator):
                        It must be convertible to a pd.Timedelta object, eg '1D', '2H', etc...
                        If nothing is provided, the last past value is used in the future
         """
+        super().__init__()
         self.period = pd.to_timedelta(period) if period is not None else None
         self.training_data = None
 
@@ -542,6 +638,10 @@ class EndaEstimatorRecopy(EndaEstimator):
                 df.columns.get_indexer([target_col]),
             ].mean()
 
+        # store the training
+        self._training_df = df
+        self._target = target_col
+
     def predict(self, df: pd.DataFrame, target_col: str) -> pd.DataFrame:
         """
         Make a prediction just copying the retained information.
@@ -564,3 +664,10 @@ class EndaEstimatorRecopy(EndaEstimator):
         df_predict[target_col] = self.training_data[target_col]
 
         return df_predict.loc[:, [target_col]]
+
+    def get_model_params(self) -> dict:
+        """
+        Get model parameters of estimator_with and estimator_without
+        :return: A dictionary with one entry per model and associated parameters
+        """
+        return {self.__class__.__name__: {'period': self.period}}
