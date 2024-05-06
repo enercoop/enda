@@ -299,4 +299,5 @@ class TestScoring(unittest.TestCase):
         """
         Test compute score
         """
+        pass
 

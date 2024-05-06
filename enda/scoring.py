@@ -158,7 +158,7 @@ class Scoring:
         :param predicted_df: the result of the prediction
         :param actual_df: the actual target data
         :param score_list: the statistics to consider. Either 'mae', 'rmse', 'r2', 'mape'. Defaults to 'rmse'.
-        :return: a series that contains the for each statistics the score of the model on the training set
+        :return: a series that contains for each statistics the score of the model on the training set
         """
 
         # default is rmse

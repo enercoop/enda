@@ -65,7 +65,9 @@ class EndaSklearnEstimator(EndaEstimator):
         """
         Return the feature's importance once a model has been trained.
         This function only work if the wrapped scikit model is a linear model or a tree model.
-        In the case it's a linear model,
+        In the case it's a linear model, it returns the coefficients of the fit, standardized using the standard
+        deviation of the input features (it's coherent with H2O).
+        If it's a tree, the feature importance is directly calculated by the algorithm.
         :return: a series that contain the percentage of importance for each variable
         """
 

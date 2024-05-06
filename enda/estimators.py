@@ -81,7 +81,7 @@ class EndaEstimator(metaclass=abc.ABCMeta):
 
         return score_series
 
-    def get_feature_importance(self) ->pd.Series:
+    def get_feature_importance(self) -> pd.Series:
         """
         Return the feature's importance once a model has been trained.
         Such a feature is usually not implemented, except for some algorithm in
@@ -312,7 +312,7 @@ class EndaStackingEstimator(EndaEstimator):
         """
         Trains the final estimator used for stacking.
         (Temporarily) train the single estimators with a subset of the data,
-        then apply them on the rest of jthe data. Use this to train the stacking estimator.
+        then apply them on the rest of the data. Use this to train the stacking estimator.
         :param df: The DataFrame with training data
         :param target_col: The column to predict
         :param split_pct: The percentage of training data to use to train the base estimators. The rest of the data
@@ -423,6 +423,10 @@ class EndaStackingEstimator(EndaEstimator):
         for _, estimator in self.base_estimators.items():
             model_params = estimator.get_model_params()
             for estimator_name, estimator_params in model_params.items():
+
+                # we need to modify the estimator name in the dict keys, if the same estimator
+                # is defined several times. For instance, if several LinearRegression are defined,
+                # we call them LinearRegression, LinearRegression_1, LinearRegression_2...
                 original_estimator_name = estimator_name
                 count = 1
                 while estimator_name in model_params_dict["base_estimators"]:
@@ -577,7 +581,7 @@ class EndaEstimatorWithFallback(EndaEstimator):
     def get_all_model_names(self) -> dict[str, list[str]]:
         """
         Get names of sub-model in a dictionary.
-        in a dictionary with two entries, "base_estimator" and "final_estimator"
+        in a dictionary with two entries, "estimator_with" and "estimator_without"
         """
 
         return {"estimator_with": [self.estimator_with.get_model_name()],
