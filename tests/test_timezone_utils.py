@@ -1,5 +1,6 @@
 """A module for testing the TimezoneUtils class in enda/timezone_utils.py"""
 
+import datetime
 from dateutil import parser as date_parser
 from dateutil.relativedelta import relativedelta
 import os
@@ -122,6 +123,62 @@ class TestTimezoneUtils(unittest.TestCase):
             ct = TimezoneUtils.add_interval_to_day_dt(day_dt=at, interval=interval)
 
             self.assertEqual(bt, ct)
+
+    def test_add_interval_to_date_object(self):
+        """
+        Test add_interval_to_date_object
+        """
+
+        # select a DST change and date_obj as a date (pure day, no hour/minute/..)
+        date_obj = datetime.date(2018, 3, 25)
+        datetime_obj = datetime.datetime(2018, 3, 25, 0, 0, 0, 0)
+        timestamp_obj = pd.to_datetime('2018-03-25')
+        # remember we cannot build a tz-aware timestamp that easily
+        # eg. https://stackoverflow.com/questions/52116495/python-astimezone-unexpected-result
+        datetime_tz_obj = TestTimezoneUtils.TZ_PARIS.localize(datetime.datetime(2018, 3, 25, 0, 0, 0, 0))
+        timestamp_tz_obj = pd.to_datetime('2018-03-25T00:00:00+01:00').tz_convert(TestTimezoneUtils.TZ_PARIS)
+
+        # add one day
+        result = TimezoneUtils.add_interval_to_date_object(date_obj, relativedelta(days=2))
+        self.assertEqual(result, datetime.date(2018, 3, 27))
+
+        result = TimezoneUtils.add_interval_to_date_object(datetime_obj, relativedelta(days=2))
+        self.assertEqual(result, datetime.datetime(2018, 3, 27, 0, 0, 0, 0))
+
+        result = TimezoneUtils.add_interval_to_date_object(timestamp_obj, relativedelta(days=2))
+        self.assertEqual(result, pd.to_datetime('2018-03-27 00:00:00'))
+
+        result = TimezoneUtils.add_interval_to_date_object(datetime_tz_obj, relativedelta(days=2))
+        expected_result = TestTimezoneUtils.TZ_PARIS.localize(datetime.datetime(2018, 3, 27, 0, 0, 0, 0))
+        self.assertEqual(result, expected_result)
+
+        result = TimezoneUtils.add_interval_to_date_object(timestamp_tz_obj, relativedelta(days=2))
+        expected_result = pd.to_datetime('2018-03-27T00:00:00+02:00').tz_convert(TestTimezoneUtils.TZ_PARIS)
+        self.assertEqual(result, expected_result)
+
+        # test with a non-pure day (ie. a datetime or a timestamp)
+        # note that in that case, the answer is ambiguous, necessarily.
+        # it is assumed that '2018-03-25 01:00:00+01:00' + 1 day = '2018-03-26 01:00:00+02:00',
+        #  and that '1 day' does not mean '24 hour' in that context.
+        datetime_obj = datetime.datetime(2018, 3, 25, 1, 0, 0, 0)
+        timestamp_obj = pd.to_datetime('2018-03-25 01:00:00')
+        datetime_tz_obj = TestTimezoneUtils.TZ_PARIS.localize(datetime.datetime(2018, 3, 25, 1, 0, 0, 0))
+        timestamp_tz_obj = pd.to_datetime('2018-03-25 01:00:00+01:00').tz_convert(TestTimezoneUtils.TZ_PARIS)
+
+        # add one month (for testing purposes)
+        result = TimezoneUtils.add_interval_to_date_object(datetime_obj, relativedelta(months=1))
+        self.assertEqual(result, datetime.datetime(2018, 4, 25, 1, 0, 0, 0))
+
+        result = TimezoneUtils.add_interval_to_date_object(timestamp_obj, relativedelta(months=1))
+        self.assertEqual(result, pd.to_datetime('2018-04-25 01:00:00'))
+
+        result = TimezoneUtils.add_interval_to_date_object(datetime_tz_obj, relativedelta(months=1))
+        expected_result = TestTimezoneUtils.TZ_PARIS.localize(datetime.datetime(2018, 4, 25, 1, 0, 0, 0))
+        self.assertEqual(result, expected_result)
+
+        result = TimezoneUtils.add_interval_to_date_object(timestamp_tz_obj, relativedelta(months=1))
+        expected_result = pd.to_datetime('2018-04-25 01:00:00+02:00').tz_convert(TestTimezoneUtils.TZ_PARIS)
+        self.assertEqual(result, expected_result)
 
     def test_convert_dtype_from_object_to_tz_aware(self):
         """
