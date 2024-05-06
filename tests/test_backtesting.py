@@ -7,6 +7,8 @@ import unittest
 import pandas as pd
 import numpy as np
 
+from enda.ml_backends.sklearn_estimator import EndaSklearnEstimator
+from sklearn.linear_model import LinearRegression
 from enda.backtesting import BackTesting
 
 
@@ -32,7 +34,7 @@ class TestBackTesting(unittest.TestCase):
     def setUp(self):
         logging.disable(logging.INFO)
 
-        # a timeseries obtained from financial information of some companies
+        # a timeseries_data obtained from financial information of some companies
         # cf: https://github.com/INRIA/scikit-learn-mooc/tree/main/datasets
         self.input_df = pd.DataFrame([
             (pd.Timestamp('2007-06-01'), 81, 78, 75),
@@ -367,8 +369,8 @@ class TestBackTesting(unittest.TestCase):
 
         i_split = 0
         for train, test in BackTesting.yield_train_test_regular_split(
-            df=self.input_df,
-            n_splits=3
+                df=self.input_df,
+                n_splits=3
         ):
             _compare_frames_helper(train, test, self.input_df, indices, i_split)
             i_split += 1
@@ -376,12 +378,12 @@ class TestBackTesting(unittest.TestCase):
         # with a multiindex now: note it should not have an impact on the splitting
         i_split = 0
         for train, test in BackTesting.yield_train_test_regular_split(
-            df=self.input_multi_df,
-            n_splits=3
+                df=self.input_multi_df,
+                n_splits=3
         ):
             _compare_frames_helper(train, test,
                                    self.input_multi_df.sort_index(level=-1),  # we built self.multi_df to be sorted on
-                                                                              # the first index
+                                   # the first index
                                    indices, i_split)
             i_split += 1
 
@@ -394,9 +396,9 @@ class TestBackTesting(unittest.TestCase):
 
         i_split = 0
         for train, test in BackTesting.yield_train_test_regular_split(
-            df=self.input_df.sort_index(ascending=False),  # for testing purposes
-            n_splits=2,
-            gap_size='3D'
+                df=self.input_df.sort_index(ascending=False),  # for testing purposes
+                n_splits=2,
+                gap_size='3D'
         ):
             _compare_frames_helper(train, test, self.input_df, indices, i_split)
             i_split += 1
@@ -404,13 +406,13 @@ class TestBackTesting(unittest.TestCase):
         # with a multiindex now: note it should not have an impact on the splitting
         i_split = 0
         for train, test in BackTesting.yield_train_test_regular_split(
-            df=self.input_multi_df,
-            n_splits=2,
-            gap_size='3D'
+                df=self.input_multi_df,
+                n_splits=2,
+                gap_size='3D'
         ):
             _compare_frames_helper(train, test,
                                    self.input_multi_df.sort_index(level=-1),  # we built self.multi_df to be sorted on
-                                                                              # the first index
+                                   # the first index
                                    indices, i_split)
             i_split += 1
 
@@ -461,7 +463,7 @@ class TestBackTesting(unittest.TestCase):
             {'train': [0, 5], 'test': [5, 10]},
             {'train': [0, 10], 'test': [10, 15]},
             {'train': [0, 15], 'test': [15, 20]}
-         ]
+        ]
 
         i_split = 0
         for train, test in BackTesting.yield_train_test_periodic_split(
@@ -479,14 +481,14 @@ class TestBackTesting(unittest.TestCase):
         ):
             _compare_frames_helper(train, test,
                                    self.input_multi_df.sort_index(level=-1),  # we built self.multi_df to be sorted on
-                                                                              # the first index
+                                   # the first index
                                    indices, i_split)
             i_split += 1
 
         # split on a 1W scale, with train_size initial of 2W, and gap of 2D
         indices = [
             {'train': [0, 10], 'test': [11, 16]},
-         ]
+        ]
 
         i_split = 0
         for train, test in BackTesting.yield_train_test_periodic_split(
@@ -508,6 +510,122 @@ class TestBackTesting(unittest.TestCase):
         ):
             _compare_frames_helper(train, test,
                                    self.input_multi_df.sort_index(level=-1),  # we built self.multi_df to be sorted on
-                                                                              # the first index
+                                   # the first index
                                    indices, i_split)
             i_split += 1
+
+    def test_backtest(self):
+        """
+        We will test backtest using the real timeseries_data from the INRIA dataset instead of the simplified model
+        used until now.
+        """
+
+        # working dataframe
+        symbols = {"TOT": "Total", "XOM": "Exxon", "CVX": "Chevron",
+                   "COP": "ConocoPhillips", "VLO": "Valero Energy"}
+        template_name = ("timeseries_data/{}.csv")
+        quotes = {}
+        for symbol in symbols:
+            data = pd.read_csv(
+                template_name.format(symbol), index_col=0, parse_dates=True
+            )
+            quotes[symbols[symbol]] = data["open"]
+        df = pd.DataFrame(quotes)
+        target_col = 'Chevron'
+
+        # working multiindex dataframe
+        multi_df = (
+            df
+            .copy()
+            .assign(rand_class=[randint(0, 1) for _ in range(len(df))])
+            .reset_index()
+            .set_index(['rand_class', 'date'])
+            .sort_index()
+        )
+
+        score_list = ["rmse", "mape", "r2", "max_error"]
+
+        # test the backtesting
+        estimator = EndaSklearnEstimator(LinearRegression())
+
+        # default testing
+        result_backtesting = BackTesting.backtest(
+            estimator=estimator,
+            df=df,
+            target_col=target_col,
+            score_list=score_list,
+        )
+
+        expected_output = pd.DataFrame(
+            data=[
+                [1.15720606, 0.01399608, 0.91744179, 2.91517062, 3.77332323, 0.03647801, 0.62810329, 8.82897026],
+                [1.22062137, 0.01287377, 0.98723791, 3.46643535, 52.95126112, 0.95276092, -59.56571253, 63.1466695],
+                [8.24960648, 0.08378842, 0.67934394, 38.47040522, 21.79879097, 0.29710267, -85.8451338, 45.9405591],
+                [9.42273962, 0.1157566, 0.5260241, 27.50317796, 102.1765989, 1.44211716, -447.46275825, 138.38196339],
+                [10.63660877, 0.12647602, 0.27043878, 29.98877238, 25.97474301, 0.27556018, -13.35245056, 39.23644086]
+            ],
+            columns=[
+                'train_rmse', 'train_mape', 'train_r2', 'train_max_error', 'test_rmse',
+                'test_mape', 'test_r2', 'test_max_error'
+            ]
+        )
+
+        pd.testing.assert_frame_equal(expected_output, result_backtesting)
+
+        # with a multiindex
+        result_backtesting = BackTesting.backtest(
+            estimator=estimator,
+            df=multi_df,
+            target_col=target_col,
+            score_list=score_list,
+        )
+
+        pd.testing.assert_frame_equal(expected_output, result_backtesting)
+
+        # test with a periodic backtesting
+        result_backtesting = BackTesting.backtest(
+            estimator=estimator,
+            df=df,
+            target_col=target_col,
+            score_list=score_list,
+            split_method='periodic',
+            test_size='6M',
+            gap_size="2W",
+            min_train_size='1Y'
+        )
+
+        expected_output = pd.DataFrame(
+            data=[
+                [1.12012364, 0.01332617, 0.95065545, 3.09069785, 2.28543189, 0.02230775, 2.51794177e-01, 4.2457436],
+                [1.1841627, 0.01298499, 0.98597073, 3.43051932, 41.28602525, 0.68603887, -4.04831108e+00, 50.27638263],
+                [8.05150815, 0.07166389, 0.67602101, 38.96858415, 35.04755021, 0.49138734, -1.38033359e+02,
+                 65.23085436],
+                [8.36463791, 0.08945556, 0.66621418, 38.11260757, 21.1937248, 0.33574104, -7.14489867e+01, 37.70560422],
+                [9.47256271, 0.11635829, 0.53276259, 28.3130849, 67.30921728, 0.87344249, -3.56201896e+02,
+                 106.47245912],
+                [10.46944221, 0.12904449, 0.36455738, 28.81858682, 20.3831313, 0.27749184, -3.80801694e+01,
+                 30.89423186],
+                [10.57079036, 0.12537403, 0.26956561, 29.98111663, 24.53436882, 0.27150052, -2.13332510e+01,
+                 37.73568196]
+            ],
+            columns=[
+                'train_rmse', 'train_mape', 'train_r2', 'train_max_error', 'test_rmse',
+                'test_mape', 'test_r2', 'test_max_error'
+
+            ]
+        )
+
+        pd.testing.assert_frame_equal(expected_output, result_backtesting)
+
+        result_backtesting = BackTesting.backtest(
+            estimator=estimator,
+            df=multi_df,
+            target_col=target_col,
+            score_list=score_list,
+            split_method='periodic',
+            test_size='6M',
+            gap_size="2W",
+            min_train_size='1Y'
+        )
+
+        pd.testing.assert_frame_equal(expected_output, result_backtesting)
