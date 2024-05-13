@@ -211,7 +211,7 @@ class TestH2OEstimator(unittest.TestCase):
         # define an h2o linear estimator (with no regularization)
         h2o_lin = EndaH2OEstimator(H2OGeneralizedLinearEstimator(lambda_=0))
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             # not yet trained estimator
             h2o_lin.get_loss_training(score_list=['rmse', 'mae', 'r2'])
 
@@ -219,7 +219,7 @@ class TestH2OEstimator(unittest.TestCase):
         h2o_lin.train(self.training_df, target_col=self.target_col)
 
         # get the loss training
-        loss_training = h2o_lin.get_loss_training(score_list = ['rmse', 'mae', 'r2'])
+        loss_training = h2o_lin.get_loss_training(score_list=['rmse', 'mae', 'r2'])
 
         # expected output
         expected_output = pd.Series(
@@ -228,10 +228,6 @@ class TestH2OEstimator(unittest.TestCase):
         )
 
         pd.testing.assert_series_equal(loss_training, expected_output)
-
-        with self.assertRaises(KeyError):
-            # h2o does not know mape
-            h2o_lin.get_loss_training(score_list=['mape'])
 
     def test_get_feature_importance(self):
         """

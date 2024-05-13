@@ -1,6 +1,6 @@
 """A module containing functions used for the backtesting of models"""
 from collections.abc import Generator
-from typing import Union, Optional
+from typing import Union, Optional, Callable, Tuple
 
 import pandas as pd
 from sklearn.model_selection import TimeSeriesSplit
@@ -187,6 +187,7 @@ class BackTesting:
             target_col: str,
             score_list: list[str] = None,
             split_method: str = 'regular',
+            process_predict_specs: Optional[Tuple[Callable, dict]] = None,
             **kwargs
     ) -> pd.DataFrame:
         """
@@ -197,6 +198,8 @@ class BackTesting:
         :param score_list: the list of loss functions to estimate.
         :param split_method: the split method to use. Either regular or periodic. If periodic is selected,
             the argument 'test_size_freq' must be given to the method in kwargs.
+        :param process_predict_specs: Optional. If given, it defines a function to apply to the result of
+            the predict step.
         :param kwargs: extra argument to pass to the chosen split method yield_train_test_split(),
             such as n_splits, test_size_freq, gap_size_freq, start_eval_time.
         :return: a dataframe with the train and test results for each statistics and each split.
@@ -218,10 +221,16 @@ class BackTesting:
             estimator.train(df=train_set, target_col=target_col)
 
             # get training score
-            training_score = estimator.get_loss_training(score_list=score_list)
+            training_score = estimator.get_loss_training(score_list=score_list,
+                                                         process_predict_specs=process_predict_specs
+                                                         )
 
             # get test score
             predict_df = estimator.predict(df=test_set.drop(columns=target_col), target_col=target_col)
+            if process_predict_specs is not None:
+                process_predict_function, process_predict_kwargs = process_predict_specs
+                predict_df = process_predict_function(predict_df, **process_predict_kwargs)
+
             test_score = Scoring.compute_loss(predicted_df=predict_df,
                                               actual_df=test_set[target_col],
                                               score_list=score_list

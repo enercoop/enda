@@ -4,11 +4,11 @@ import logging
 from random import randint
 import unittest
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+from sklearn.linear_model import LinearRegression
 
 from enda.ml_backends.sklearn_estimator import EndaSklearnEstimator
-from sklearn.linear_model import LinearRegression
 from enda.backtesting import BackTesting
 
 

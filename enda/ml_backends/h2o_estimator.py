@@ -53,6 +53,10 @@ class EndaH2OEstimator(EndaEstimator):
         )  # H20 training frame containing both features and target
         self.model.train(feature_list, target_col, training_frame, **kwargs)
 
+        # store the training
+        self._training_df = df
+        self._target = target_col
+
     def predict(self, df: pandas.DataFrame, target_col: str, **kwargs):
         """
         Predict from a h2o-based trained model using an input dataframe with features
@@ -82,40 +86,6 @@ class EndaH2OEstimator(EndaEstimator):
         Return a dict with the model name and the model hyperparameters
         """
         return {self.get_model_name(): self.model.get_params()}
-
-    def get_loss_training(self, score_list: list[str] = None) -> pandas.Series:
-        """
-        Compute the training loss, i.e. the error of the trained model on the training dataset
-        :param score_list: the statistics to consider. Either 'mae' or 'rmse'. Defaults to 'rmse'
-        :return: a series that contains all the scores
-        """
-        # default is rmse
-        if score_list is None:
-            score_list = ['rmse']
-
-        # training error is 'training_rmse' or 'training_mae' for instance
-        column_name_list = ['training_' + score for score in score_list]
-
-        # if the model has not been trained, this returns an error
-        scoring_history_df = self.model.scoring_history()
-
-        # scoring_history stores the successive scores for each iteration of the model training
-        # so that the final one contains the training loss.
-        loss_training_series = scoring_history_df.iloc[
-            -1, [scoring_history_df.columns.get_loc(_) for _ in column_name_list]]
-
-        # rename as input
-        loss_training_series = loss_training_series.rename(
-            dict(zip(column_name_list, score_list))
-        )
-
-        # set dtypes
-        loss_training_series = loss_training_series.astype(float)
-
-        # delete name
-        loss_training_series.name = None
-
-        return loss_training_series
 
     def get_feature_importance(self) -> pd.Series:
         """
