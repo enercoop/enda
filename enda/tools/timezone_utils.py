@@ -84,10 +84,10 @@ class TimezoneUtils:
 
         """
         If day is a date or not timezone aware, we simply add a correct relativedelta object.
-        Else, we have to call  to handle the DST change time
+        Else, we have to call add_interval_to_day_dt() to handle the DST change time
         :param date_obj: a date, a datetime, or a pd.Timestamp
         :param interval: an interval of type relativedelta not more precise than a day.
-            Note tha the more general Timeseries.add_timedelta() wraps this function and should be preferred.
+            Note that the more general Timeseries.add_timedelta() wraps this function and should be preferred.
         """
 
         # we do not enforce interval to really be a day if we do not need to handle timezones.

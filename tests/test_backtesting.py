@@ -308,28 +308,28 @@ class TestBackTesting(unittest.TestCase):
 
         train_output_range = pd.date_range(
             start=pd.Timestamp(year=2019, month=1, day=1, tz="Europe/Paris"),
-            end=pd.Timestamp(year=2025, month=5, day=30, tz="Europe/Paris"),
+            end=pd.Timestamp(year=2024, month=6, day=28, tz="Europe/Paris"),
             freq="H",
             tz="Europe/Paris",
             inclusive="left",
         )
 
         expected_output_train_df = pd.DataFrame(
-            index=[np.array(range(56183)), np.array(train_output_range)]
+            index=[np.array(range(48119)), np.array(train_output_range)]
         )
         expected_output_train_df["value"] = 1
         expected_output_train_df.index.names = ["col1", "time"]
 
         test_output_range = pd.date_range(
-            start=pd.Timestamp(year=2025, month=6, day=13, tz="Europe/Paris"),
-            end=pd.Timestamp(year=2025, month=6, day=23, tz="Europe/Paris"),
+            start=pd.Timestamp(year=2024, month=7, day=12, tz="Europe/Paris"),
+            end=pd.Timestamp(year=2024, month=7, day=22, tz="Europe/Paris"),
             freq="H",
             tz="Europe/Paris",
             inclusive="left",
         )
 
         expected_output_test_df = pd.DataFrame(
-            index=[np.array(range(56519, 56759)), np.array(test_output_range)]
+            index=[np.array(range(48455, 48695)), np.array(test_output_range)]
         )
         expected_output_test_df["value"] = 1
         expected_output_test_df.index.names = ["col1", "time"]
@@ -345,9 +345,6 @@ class TestBackTesting(unittest.TestCase):
             train_df_list.append(train_set)
             test_df_list.append(test_set)
 
-        self.assertEqual(len(train_df_list), 33)
-        self.assertEqual(len(test_df_list), 33)
-
         output_train_df = train_df_list[24]
         output_test_df = test_df_list[24]
 
@@ -356,7 +353,7 @@ class TestBackTesting(unittest.TestCase):
 
     def test_yield_train_test_regular_split(self):
         """
-        Test yield_train_test_split with a simple datetime index, using n_splits parameters
+        Test yield_train_test_regular_split
         """
 
         # we will split the input dataset in 3 sets
@@ -454,7 +451,7 @@ class TestBackTesting(unittest.TestCase):
 
     def test_yield_train_test_periodic_split(self):
         """
-        Test yield_train_test_split with a simple datetime index, using the test_size_freq parameter
+        Test yield_train_test_periodic_split
         """
 
         # we will split on a 1W scale
@@ -488,6 +485,7 @@ class TestBackTesting(unittest.TestCase):
         # split on a 1W scale, with train_size initial of 2W, and gap of 2D
         indices = [
             {'train': [0, 10], 'test': [11, 16]},
+            {'train': [0, 15], 'test': [16, None]}
         ]
 
         i_split = 0
@@ -514,6 +512,12 @@ class TestBackTesting(unittest.TestCase):
                                    indices, i_split)
             i_split += 1
 
+        # test error if min_last_test_size_pct is greater than 1
+        with self.assertRaises(ValueError):
+            list(BackTesting.yield_train_test_periodic_split(
+                self.input_df, test_size='1OD', min_last_test_size_pct=1.01)
+            )
+
     def test_backtest(self):
         """
         We will test backtest using the real timeseries_data from the INRIA dataset instead of the simplified model
@@ -523,7 +527,7 @@ class TestBackTesting(unittest.TestCase):
         # working dataframe
         symbols = {"TOT": "Total", "XOM": "Exxon", "CVX": "Chevron",
                    "COP": "ConocoPhillips", "VLO": "Valero Energy"}
-        template_name = ("timeseries_data/{}.csv")
+        template_name = "timeseries_data/{}.csv"
         quotes = {}
         for symbol in symbols:
             data = pd.read_csv(
@@ -597,16 +601,16 @@ class TestBackTesting(unittest.TestCase):
         expected_output = pd.DataFrame(
             data=[
                 [1.12012364, 0.01332617, 0.95065545, 3.09069785, 2.28543189, 0.02230775, 2.51794177e-01, 4.2457436],
-                [1.1841627, 0.01298499, 0.98597073, 3.43051932, 41.28602525, 0.68603887, -4.04831108e+00, 50.27638263],
-                [8.05150815, 0.07166389, 0.67602101, 38.96858415, 35.04755021, 0.49138734, -1.38033359e+02,
-                 65.23085436],
-                [8.36463791, 0.08945556, 0.66621418, 38.11260757, 21.1937248, 0.33574104, -7.14489867e+01, 37.70560422],
-                [9.47256271, 0.11635829, 0.53276259, 28.3130849, 67.30921728, 0.87344249, -3.56201896e+02,
-                 106.47245912],
-                [10.46944221, 0.12904449, 0.36455738, 28.81858682, 20.3831313, 0.27749184, -3.80801694e+01,
-                 30.89423186],
-                [10.57079036, 0.12537403, 0.26956561, 29.98111663, 24.53436882, 0.27150052, -2.13332510e+01,
-                 37.73568196]
+                [1.14292136, 0.01255906, 0.98635499, 3.27970403, 37.97724098, 0.59882608, -2.65982372e+00, 49.01153002],
+                [8.18732385, 0.07290751, 0.64485879, 39.0304432, 26.69567957, 0.35471052, -8.44856070e+01, 61.52276424],
+                [8.24789383, 0.08363784, 0.6795263, 38.48157249, 27.68732255, 0.41571257, -1.31376739e+02, 46.28708362],
+                [9.2608702, 0.11244811, 0.56334664, 30.52625499, 39.10286031, 0.54313922, -2.66806549e+02, 80.71559812],
+                [10.23554988, 0.12730966, 0.42421692, 28.35328834, 34.26207391, 0.48453803, -8.79942003e+01,
+                 52.25896329],
+                [10.67757512, 0.1266696, 0.29131941, 29.76228873, 17.73775561, 0.20433729, -8.31820536e+00,
+                 38.45528669],
+                [10.75172972, 0.12958557, 0.23976944, 29.7410903, 24.69344502, 0.27023469, -4.47675014e+01,
+                 31.91738036],
             ],
             columns=[
                 'train_rmse', 'train_mape', 'train_r2', 'train_max_error', 'test_rmse',

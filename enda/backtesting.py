@@ -1,5 +1,4 @@
 """A module containing functions used for the backtesting of models"""
-import datetime
 from collections.abc import Generator
 from typing import Union, Optional
 
@@ -16,122 +15,6 @@ class BackTesting:
     """
     A class to help with back-testing on algorithms.
     """
-
-    # @staticmethod
-    # def yield_train_test(
-    #     df: pd.DataFrame,
-    #     start_eval_datetime: pd.Timestamp,
-    #     days_between_trains: int,
-    #     gap_days_between_train_and_eval: int = 0,
-    # ) -> Generator[(pd.DataFrame, pd.DataFrame)]:
-    #     """
-    #     Returns pairs of (train set, test set) to perform back-testing on the data
-    #
-    #     :param df: the dataset, a pandas.DataFrame with a pandas.DatetimeIndex
-    #     :param start_eval_datetime: the beginning of the first eval, with same timezone as the dataset DataFrame index
-    #     :param days_between_trains: number of days between two train sets, it is also the duration of each test set
-    #     :param gap_days_between_train_and_eval: optional, represents the time gap between the moment when
-    #                                             things occurred and when we have the data available for training.
-    #                                             (typically a few days or weeks)
-    #     :return: a generator of (train set, test set) pairs
-    #     """
-    #
-    #     if not (
-    #         start_eval_datetime.hour
-    #         == start_eval_datetime.minute
-    #         == start_eval_datetime.second
-    #         == start_eval_datetime.microsecond
-    #         == 0
-    #     ):
-    #         raise ValueError(
-    #             "start_eval_datetime must be datetime with only years, months or days (not more precise),"
-    #             f" but given: {type(start_eval_datetime)}, {start_eval_datetime}"
-    #         )
-    #
-    #     # initialize date-times: end_train, start_test and end_test
-    #     if gap_days_between_train_and_eval > 0:
-    #         end_train = TimezoneUtils.add_interval_to_day_dt(
-    #             start_eval_datetime,
-    #             relativedelta(days=-gap_days_between_train_and_eval),
-    #         )
-    #     else:
-    #         end_train = start_eval_datetime
-    #     train_interval = relativedelta(days=days_between_trains)
-    #     start_test = start_eval_datetime
-    #     end_test = TimezoneUtils.add_interval_to_day_dt(start_test, train_interval)
-    #
-    #     if isinstance(df.index, pd.DatetimeIndex):
-    #         if str(df.index.tz) != str(start_eval_datetime.tzinfo):
-    #             raise ValueError(
-    #                 f"df.index (tzinfo={df.index.tz}) and start_eval_datetime "
-    #                 f"(tzinfo={start_eval_datetime.tzinfo}) must have the same tzinfo."
-    #             )
-    #
-    #         if start_eval_datetime <= df.index.min():
-    #             raise ValueError(
-    #                 f"start_eval_datetime ({start_eval_datetime,}) must be after the beginning of df "
-    #                 f"({df.index.min()})"
-    #             )
-    #
-    #         # go through the dataset and yield pairs of (train set, test set)
-    #         while start_test < df.index.max():
-    #             yield df[df.index < end_train], df[
-    #                 (df.index >= start_test) & (df.index < end_test)
-    #             ]
-    #
-    #             end_train = TimezoneUtils.add_interval_to_day_dt(
-    #                 end_train, train_interval
-    #             )
-    #             start_test = TimezoneUtils.add_interval_to_day_dt(
-    #                 start_test, train_interval
-    #             )
-    #             end_test = TimezoneUtils.add_interval_to_day_dt(
-    #                 end_test, train_interval
-    #             )
-    #
-    #     elif isinstance(df.index, pd.MultiIndex):
-    #
-    #         if not isinstance(df.index.levels[-1], pd.DatetimeIndex):
-    #             raise TypeError(
-    #                 f"The last index of the dataframe should be a pd.DatetimeIndex, but given"
-    #                 f" {df.index.levels[-1].dtype}"
-    #             )
-    #
-    #         if str(df.index.levels[-1].tz) != str(
-    #             start_eval_datetime.tzinfo
-    #         ):
-    #             raise ValueError(
-    #                 f"df.index (tzinfo={df.index.levels[-1].tz}) and start_eval_datetime "
-    #                 f"(tzinfo={start_eval_datetime.tzinfo}) must have the same tzinfo."
-    #             )
-    #
-    #         if start_eval_datetime <= df.index.levels[-1].min():
-    #             raise ValueError(
-    #                 f"start_eval_datetime ({start_eval_datetime}) must be after the beginning of df "
-    #                 f"({df.index.get_level_values(-1).min()})"
-    #             )
-    #
-    #         # go through the dataset and yield pairs of (train set, test set)
-    #         while start_test < df.index.levels[-1].max():
-    #             yield df[df.index.get_level_values(-1) < end_train], df[
-    #                 (df.index.get_level_values(-1) >= start_test)
-    #                 & (df.index.get_level_values(-1) < end_test)
-    #             ]
-    #
-    #             end_train = TimezoneUtils.add_interval_to_day_dt(
-    #                 end_train, train_interval
-    #             )
-    #             start_test = TimezoneUtils.add_interval_to_day_dt(
-    #                 start_test, train_interval
-    #             )
-    #             end_test = TimezoneUtils.add_interval_to_day_dt(
-    #                 end_test, train_interval
-    #             )
-    #
-    #     else:
-    #         raise ValueError(
-    #             "df must have a pandas.DatetimeIndex index, even if it's a MultiIndex"
-    #         )
 
     @staticmethod
     @warning_deprecated_name(namespace_name='Backtesting', new_function_name='yield_train_test_periodic_split')
@@ -187,7 +70,9 @@ class BackTesting:
             min_train_size : Optional[Union[str, pd.Timedelta]] = None,
     ) -> Generator[(pd.DataFrame, pd.DataFrame)]:
         """
-        Returns pairs of (train set, test set) to perform back-testing on the data
+        Returns pairs of (train set, test set) to perform back-testing on the data.
+        The splitting relies on the Scikit object 'TimeSeriesSplit'. The size of the test dataset is determined
+        by scikit, so that the dataset can be split into n_splits.
         :param df: the dataset, a pd.DataFrame with a pd.DatetimeIndex or MultiIndex with last index being
             the DatetimeIndex.
         :param n_splits: number of splits train-test sets. If none, defaults to 5
@@ -198,7 +83,7 @@ class BackTesting:
         :return: a generator of (train set, test set) pairs
         """
 
-        sorted_df = df.copy().sort_index(level=-1)
+        sorted_df = df.sort_index(level=-1)
 
         # we need to convert gap_freq to a number of samples to be used by the builtin functions
         # of scikit, according to the dataframe datetimeindex frequency.
@@ -218,16 +103,16 @@ class BackTesting:
 
         end_init_train_set_time = TimeSeries.add_timedelta(sorted_df.index.get_level_values(-1).min(),
                                                            freq_before_splitting)
-        shift_index = len(sorted_df.loc[sorted_df.index.get_level_values(-1) < end_init_train_set_time])
+        shift_index_int = len(sorted_df.loc[sorted_df.index.get_level_values(-1) < end_init_train_set_time])
 
         # define a time_series_split object from the shifted object
         time_series_split = TimeSeriesSplit(n_splits=n_splits, gap=gap)
 
         # yield the train-test split from the sorted_df that begins after
-        initial_train_index = [_ for _ in range(shift_index)]
-        for train_index, test_index in time_series_split.split(sorted_df.iloc[shift_index:]):
-            train_index = initial_train_index + [_ + shift_index for _ in train_index]
-            test_index = [_ + shift_index for _ in test_index]
+        initial_train_index = [_ for _ in range(shift_index_int)]
+        for train_index, test_index in time_series_split.split(sorted_df.iloc[shift_index_int:]):
+            train_index = initial_train_index + [_ + shift_index_int for _ in train_index]
+            test_index = [_ + shift_index_int for _ in test_index]
             yield sorted_df.iloc[train_index], sorted_df.iloc[test_index]
 
     @staticmethod
@@ -235,22 +120,33 @@ class BackTesting:
             df: pd.DataFrame,
             test_size: Union[str, pd.Timedelta],
             gap_size: Optional[Union[str, pd.Timedelta]] = '0D',
-            min_train_size: Optional[Union[str, pd.Timedelta]] = None
+            min_train_size: Optional[Union[str, pd.Timedelta]] = None,
+            min_last_test_size_pct: Optional[float] = 0.5
     ) -> Generator[(pd.DataFrame, pd.DataFrame)]:
         """
-        Returns pairs of (train set, test set) to perform back-testing on the data
+        Returns pairs of (train set, test set) to perform back-testing on the data.
+        There, we do not indicate the number of splits to perform, but the size of the test dataset, for instance
+            '1M', or '10D'. If min_train_size is None, test_size has the same size as the initial train set.
+            Then, for each iteration, the train set is increased, but the size of the test set remains constant.
+            If the last test sample is smaller than the desired test size, it might not be returned to avoid
+            side effects.
         :param df: the dataset, a pd.DataFrame with a pd.DatetimeIndex or MultiIndex with last index being
             the DatetimeIndex.
-        :param test_size: eg. '28D', '2M'... Size of the test sample, which is the same
-            as the initial train sample, and then, size of the increase of the train sample for each iteration.
+        :param test_size: eg. '28D', '2M'... Fixed size of the test sample.
         :param gap_size: eg '1D', '1W'... Size of the data between the train and test samples.
-        :param min_train_size: the size of the first initial train test. I None, it defaults to test_size.
+        :param min_train_size: the size of the first initial train test. If None, it defaults to test_size.
+        :param min_last_test_size_pct: The last test set can be smaller than the desired test_size. This parameter
+            is used to control the minimal size of the last test set, based on a percentage of the 'test_set' variable.
+            If the last test set is smaller than min_last_test_size_pct * test_size, it is not returned.
+            It defaults to 0.5 (i.e. the last test set must be greater than half of test_size).
         :return: a generator of (train set, test set) pairs
         """
-        sorted_df = df.copy().sort_index(level=-1)
+        sorted_df = df.sort_index(level=-1)
 
         # hardcode a minimal size of the test set to avoid side effects in the backtesting
-        min_test_set_size = str(TimeSeries.freq_as_approximate_nb_days(test_size) / 2) + 'D'
+        if min_last_test_size_pct > 1 or min_last_test_size_pct < 0:
+            raise ValueError(f"last_min_test_size_pct must be a float between 0 and 1, found {min_last_test_size_pct}.")
+        min_test_set_size = str(TimeSeries.freq_as_approximate_nb_days(test_size) * min_last_test_size_pct) + 'D'
         min_index = df.index.get_level_values(-1).min()
         max_index = df.index.get_level_values(-1).max()
 
@@ -280,7 +176,7 @@ class BackTesting:
             )
 
             # prepare next iteration
-            excl_end_train = excl_end_test
+            excl_end_train = TimeSeries.add_timedelta(excl_end_train, test_size)
             start_test = TimeSeries.add_timedelta(excl_end_train, gap_size)
             excl_end_test = TimeSeries.add_timedelta(start_test, test_size)
 
