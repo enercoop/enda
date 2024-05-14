@@ -28,6 +28,7 @@ class TestEndaSklearnEstimator(unittest.TestCase):
         logging.disable(logging.ERROR)
 
         # set up a simple dataset; it comes from the Palmer penguins dataset
+        # cf: https://github.com/INRIA/scikit-learn-mooc/tree/main/datasets
         self.training_df = pd.DataFrame.from_records(
             [(180, 3700), (182, 3200), (191, 3800), (198, 4400),
              (185, 3700), (195, 3450), (197, 4500), (184, 3325),

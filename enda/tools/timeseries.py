@@ -22,12 +22,18 @@ class TimeSeries:
     # ------------------------
 
     # mapping of common frequencies codes to approximate number of days
+    # checkout https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
+    # to get more information
+    # @todo : make case-sensitive + pass all in seconds to avoid side effects in divisions
     FREQ_UNIT_TO_DAYS = {
-        "S": 1 / (24 * 3600),  # second
-        "MIN": 1 / 1440,  # minute
+        "ms": 1 / (24 * 3600 * 1000),  # millisecond
+        "s": 1 / (24 * 3600),  # second
+        "min": 1 / 1440,  # minute
         "T": 1 / 1440,  # minute
         "H": 1 / 24,  # hour
+        "h": 1 / 24,  # hour
         "D": 1,  # day
+        "d": 1,  # day
         "B": 1,  # business day
         "W": 7,  # week
         "M": 30.4,  # average number of days in a month
@@ -70,24 +76,24 @@ class TimeSeries:
             numeric_part_int = sign * int(freq_string_parts[1])
 
             # freq part  - error if type is wrong
-            freq_unit_str = freq_string_parts[-1].upper()
+            freq_unit_str = freq_string_parts[-1]
 
         elif len(freq_string_parts) == 2:
             # in that case, first group must be a number, second group must be a unit e.g. '2MS'
             numeric_part_int = int(freq_string_parts[0])
-            freq_unit_str = freq_string_parts[-1].upper()
+            freq_unit_str = freq_string_parts[-1]
 
         elif len(freq_string_parts) == 1:
             # in that case, there is no number but first character might be a sign. e.g.  or 'MS' or '-D'
             if freq_string_parts[0][0] == "-":
                 numeric_part_int = -1
-                freq_unit_str = freq_string_parts[0][1:].upper()
+                freq_unit_str = freq_string_parts[0][1:]
             elif freq_string_parts[0][0] == "+":
                 numeric_part_int = 1
-                freq_unit_str = freq_string_parts[0][1:].upper()
+                freq_unit_str = freq_string_parts[0][1:]
             else:
                 numeric_part_int = 1
-                freq_unit_str = freq_string_parts[0].upper()
+                freq_unit_str = freq_string_parts[0]
 
         else:
             raise ValueError(f"freq {freq} is not valid")
@@ -145,32 +151,46 @@ class TimeSeries:
         :param date: a date, provided as a pd.Timestamp (naive or tz-aware), a date, a datetime
         :param timedelta:  a timedelta, given as a freq string (e.g. '2MS') or a pd.Timedelta object.
         """
+        if not isinstance(timedelta, (pd.Timedelta, str)):
+            raise TypeError("timedelta must be of type Timedelta or string ")
+
+        timedelta_str = timedelta
         if isinstance(timedelta, pd.Timedelta):
-            return date + timedelta
+            timedelta_str = pd.tseries.frequencies.to_offset(timedelta).freqstr
 
-        if isinstance(timedelta, str):
-            # if it's a string, it is not necessarily convertible to timedelta, as
-            # it might be an irregular length (month, year, quarter...)
-            # in that case, we handle these cases before defaulting to pd.to_timedelta()
-            (
-                numeric_part_int,
-                unit_freq_str,
-            ) = TimeSeries.split_amount_and_unit_from_freq(timedelta)
+        # if it's a string, it is not necessarily convertible to timedelta, as
+        # it might be an irregular length (month, year, quarter...)
+        # in that case, we handle these cases before defaulting to pd.to_timedelta()
+        (
+            numeric_part_int,
+            unit_freq_str,
+        ) = TimeSeries.split_amount_and_unit_from_freq(timedelta_str)
 
-            if unit_freq_str in ["M", "MS"]:
-                return date + relativedelta(months=numeric_part_int)
-            if unit_freq_str in ["Y", "A"]:
-                return date + relativedelta(years=numeric_part_int)
-            if unit_freq_str in ["Q"]:
-                raise ValueError(
-                    "Cannot simply add a quarter, it does not mean anything in general"
+        if unit_freq_str in ["D", 'd', "B", "b"]:
+            return enda.tools.timezone_utils.TimezoneUtils.add_interval_to_date_object(
+                    date, relativedelta(days=numeric_part_int)
                 )
+        if unit_freq_str in ["W", 'w']:
+            return enda.tools.timezone_utils.TimezoneUtils.add_interval_to_date_object(
+                date, relativedelta(weeks=numeric_part_int)
+            )
+        if unit_freq_str in ["M", "MS"]:
+            return enda.tools.timezone_utils.TimezoneUtils.add_interval_to_date_object(
+                date, relativedelta(months=numeric_part_int)
+            )
+        if unit_freq_str in ["Y", "A"]:
+            return enda.tools.timezone_utils.TimezoneUtils.add_interval_to_date_object(
+                date, relativedelta(years=numeric_part_int)
+            )
+        if unit_freq_str in ["Q"]:
+            raise ValueError(
+                "Cannot simply add a quarter, it does not mean anything in general"
+            )
 
-            # it should be convertible to pd.Timedelta
-            timedelta = str(numeric_part_int) + unit_freq_str
-            return date + pd.to_timedelta(timedelta)
-
-        raise TypeError("timedelta must be of type Timedelta or string ")
+        # there, it should be convertible to pd.Timedelta with no ambiguous interpretation
+        # because we're under the day scale (no DST issue)
+        timedelta = str(numeric_part_int) + unit_freq_str
+        return date + pd.to_timedelta(timedelta)
 
     @staticmethod
     def subtract_timedelta(
@@ -183,32 +203,46 @@ class TimeSeries:
         :param date: a date, provided as a pd.Timestamp (naive or tz-aware), a date, a datetime
         :param timedelta: a timedelta, given as a freq string (e.g. '2MS') or a pd.Timedelta object.
         """
+        if not isinstance(timedelta, (pd.Timedelta, str)):
+            raise TypeError("timedelta must be of type Timedelta or string ")
+
+        timedelta_str = timedelta
         if isinstance(timedelta, pd.Timedelta):
-            return date - timedelta
+            timedelta_str = pd.tseries.frequencies.to_offset(timedelta).freqstr
 
-        if isinstance(timedelta, str):
-            # if it's a string, it is not necessarily convertible to timedelta, as
-            # it might be an irregular length (month, year, quarter...)
-            # in that case, we handle these cases before defaulting to pd.to_timedelta()
-            (
-                numeric_part_int,
-                unit_freq_str,
-            ) = TimeSeries.split_amount_and_unit_from_freq(timedelta)
+        # if it's a string, it is not necessarily convertible to timedelta, as
+        # it might be an irregular length (month, year, quarter...)
+        # in that case, we handle these cases before defaulting to pd.to_timedelta()
+        (
+            numeric_part_int,
+            unit_freq_str,
+        ) = TimeSeries.split_amount_and_unit_from_freq(timedelta_str)
 
-            if unit_freq_str in ["M", "MS"]:
-                return date + relativedelta(months=-numeric_part_int)
-            if unit_freq_str in ["Y", "A"]:
-                return date + relativedelta(years=-numeric_part_int)
-            if unit_freq_str in ["Q"]:
-                raise ValueError(
-                    "Cannot simply subtract a quarter, it does not mean anything in general"
+        if unit_freq_str in ["D", 'd', "B", "b"]:
+            return enda.tools.timezone_utils.TimezoneUtils.add_interval_to_date_object(
+                    date, relativedelta(days=-numeric_part_int)
                 )
+        if unit_freq_str in ["W", 'w']:
+            return enda.tools.timezone_utils.TimezoneUtils.add_interval_to_date_object(
+                date, relativedelta(weeks=-numeric_part_int)
+            )
+        if unit_freq_str in ["M", "MS"]:
+            return enda.tools.timezone_utils.TimezoneUtils.add_interval_to_date_object(
+                date, relativedelta(months=-numeric_part_int)
+            )
+        if unit_freq_str in ["Y", "A"]:
+            return enda.tools.timezone_utils.TimezoneUtils.add_interval_to_date_object(
+                date, relativedelta(years=-numeric_part_int)
+            )
+        if unit_freq_str in ["Q"]:
+            raise ValueError(
+                "Cannot simply subtract a quarter, it does not mean anything in general"
+            )
 
-            # it should be convertible to pd.Timedelta
-            timedelta = str(numeric_part_int) + unit_freq_str
-            return date - pd.to_timedelta(timedelta)
-
-        raise TypeError("timedelta must be of type Timedelta or string ")
+        # there, it should be convertible to pd.Timedelta with no ambiguous interpretation
+        # because we're under the day scale (no DST issue)
+        timedelta = str(numeric_part_int) + unit_freq_str
+        return date - pd.to_timedelta(timedelta)
 
     # ------------
     # Time-series

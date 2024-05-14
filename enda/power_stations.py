@@ -2,7 +2,6 @@
 
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_string_dtype
 
 from enda.contracts import Contracts
 from enda.tools.portfolio_tools import PortfolioTools
@@ -541,3 +540,29 @@ class PowerStations:
             df = df.drop(columns=load_factor)
 
         return df
+
+    @staticmethod
+    def clip_column(
+            df: pd.DataFrame,
+            column_name: str,
+            lower_bound: float = None,
+            upper_bound: float = None
+    ) -> pd.DataFrame:
+        """Checks that values in the indicated colname are between the two specified bounds (bounds included).
+        If not, replaces the excessive values with the associated bounds
+        :param df: The DataFrame to use the function on
+        :param column_name: The column to check and clip
+        :param lower_bound: If not None, the lower bound that we can't go below of.
+        :param upper_bound: If not None, the upper bound that we can't go above of. Defaults to None.
+        :return: A dataframe where all the values in the specified columns are between the two bounds. If we find
+            excessive values, we set them equal to the closer bound"""
+
+        result_df = df.copy()
+
+        if lower_bound is not None:
+            result_df.loc[(result_df[column_name] < lower_bound), column_name] = lower_bound
+
+        if upper_bound is not None:
+            result_df.loc[(result_df[column_name] > upper_bound), column_name] = upper_bound
+
+        return result_df

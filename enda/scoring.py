@@ -3,7 +3,13 @@
 import numpy as np
 import pandas as pd
 from typing import Union
-from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, r2_score
+from sklearn.metrics import (
+    max_error,
+    mean_absolute_error,
+    mean_absolute_percentage_error,
+    mean_squared_error,
+    r2_score,
+)
 
 
 def _root_mean_squared_error(x1, x2):
@@ -11,9 +17,11 @@ def _root_mean_squared_error(x1, x2):
 
 
 METRICS_FUNCTION_DICT = {
-    "rmse": _root_mean_squared_error,
+    "max_error": max_error,
     "mae": mean_absolute_error,
     "mape": mean_absolute_percentage_error,
+    "mse": mean_squared_error,
+    "rmse": _root_mean_squared_error,
     "r2": r2_score
 }
 
@@ -157,7 +165,8 @@ class Scoring:
         Compute the loss (i.e. the score) between a model prediction and the actual data
         :param predicted_df: the result of the prediction
         :param actual_df: the actual target data
-        :param score_list: the statistics to consider. Either 'mae', 'rmse', 'r2', 'mape'. Defaults to 'rmse'.
+        :param score_list: the statistics to consider. Either 'max_error', 'mae', 'rmse', 'r2', 'mape', 'mse'.
+            Defaults to 'rmse'.
         :return: a series that contains for each statistics the score of the model on the training set
         """
 

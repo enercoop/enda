@@ -910,3 +910,62 @@ class TestPowerStations(unittest.TestCase):
         )
 
         pd.testing.assert_frame_equal(output_df, self.power_df)
+
+    def test_clip_column(self):
+        """
+        Test clip column
+        """
+
+        input_load_factor_df = pd.DataFrame(data=[0.1, 0, 0.7, 1, -0.2, 3], columns=['test_column'])
+
+        result_df = PowerStations.clip_column(
+            df=input_load_factor_df,
+            column_name='test_column',
+            upper_bound=4,
+            lower_bound=-1
+        )
+        pd.testing.assert_frame_equal(result_df, input_load_factor_df)
+
+        result_df = PowerStations.clip_column(
+            df=input_load_factor_df,
+            column_name='test_column',
+        )
+        pd.testing.assert_frame_equal(result_df, input_load_factor_df)
+
+        result_df = PowerStations.clip_column(
+            df=input_load_factor_df,
+            column_name='test_column',
+            upper_bound=1
+        )
+        expected_result = pd.DataFrame(data=[0.1, 0, 0.7, 1, -0.2, 1], columns = ['test_column'])
+        pd.testing.assert_frame_equal(result_df, expected_result)
+
+        result_df = PowerStations.clip_column(
+            df=input_load_factor_df,
+            column_name='test_column',
+            lower_bound=0
+        )
+        expected_result = pd.DataFrame(data=[0.1, 0, 0.7, 1, 0, 3], columns = ['test_column'])
+        pd.testing.assert_frame_equal(result_df, expected_result)
+
+        result_df = PowerStations.clip_column(
+            df=input_load_factor_df,
+            column_name='test_column',
+            lower_bound=0,
+            upper_bound=1
+        )
+        expected_result = pd.DataFrame(data=[0.1, 0, 0.7, 1, 0, 1], columns = ['test_column'])
+        pd.testing.assert_frame_equal(result_df, expected_result)
+
+        # with a multiindex
+        input_load_factor_multi_df = input_load_factor_df.set_index([["A"] * 6, ["B"] * 6])
+        result_df = PowerStations.clip_column(
+            df=input_load_factor_multi_df,
+            column_name='test_column',
+            lower_bound=0,
+            upper_bound=1
+        )
+        expected_result = pd.DataFrame(
+            data=[0.1, 0, 0.7, 1, 0, 1], columns = ['test_column']
+        ).set_index([["A"] * 6, ["B"] * 6])
+        pd.testing.assert_frame_equal(result_df, expected_result)

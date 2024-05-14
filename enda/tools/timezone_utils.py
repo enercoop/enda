@@ -15,6 +15,8 @@ class TimezoneUtils:
     This class contains various methods for helping deal with timezones
     """
 
+    # ---- Handle DST
+
     @staticmethod
     def is_timezone_aware(dt: Union[datetime.datetime, pd.Timestamp]) -> bool:
         """
@@ -23,8 +25,13 @@ class TimezoneUtils:
         return dt.tzinfo is not None and dt.tzinfo.utcoffset(dt) is not None
 
     @classmethod
-    def add_interval_to_day_dt(cls, day_dt, interval):
-        """Adds an interval (not more precise than a day) to a day,
+    def add_interval_to_day_dt(
+            cls,
+            day_dt:Union[datetime.datetime, pd.Timestamp],
+            interval: relativedelta
+    ) -> Union[datetime.datetime, pd.Timestamp]:
+        """
+        Adds an interval (not more precise than a day) to a day,
          correctly dealing with timezone-aware (and naive) day_dt;
          works around daylight savings time changes.
 
@@ -37,19 +44,19 @@ class TimezoneUtils:
         """
 
         if not (
-            day_dt.hour == day_dt.minute == day_dt.second == day_dt.microsecond == 0
+                day_dt.hour == day_dt.minute == day_dt.second == day_dt.microsecond == 0
         ):
             raise ValueError(
                 "day_dt must be datetime with only years, months or days (not more precise),"
                 f" but given: {type(day_dt)}, {day_dt}"
             )
         if not (
-            isinstance(interval, relativedelta)
-            and interval.hours
-            == interval.minutes
-            == interval.seconds
-            == interval.microseconds
-            == 0
+                isinstance(interval, relativedelta)
+                and interval.hours
+                == interval.minutes
+                == interval.seconds
+                == interval.microseconds
+                == 0
         ):
             raise (
                 ValueError(
@@ -68,14 +75,60 @@ class TimezoneUtils:
 
         return day_naive
 
+    @classmethod
+    def add_interval_to_date_object(
+            cls,
+            date_obj: Union[datetime.datetime, pd.Timestamp, datetime.date],
+            interval: relativedelta
+    ) -> Union[datetime.datetime, pd.Timestamp, datetime.date]:
+
+        """
+        If day is a date or not timezone aware, we simply add a correct relativedelta object.
+        Else, we have to call add_interval_to_day_dt() to handle the DST change time
+        :param date_obj: a date, a datetime, or a pd.Timestamp
+        :param interval: an interval of type relativedelta not more precise than a day.
+            Note that the more general Timeseries.add_timedelta() wraps this function and should be preferred.
+        """
+
+        # we do not enforce interval to really be a day if we do not need to handle timezones.
+        # in that case, that check is delegated to add_interval_to_day_dt()
+
+        if isinstance(date_obj, (datetime.datetime, pd.Timestamp)):
+
+            if TimezoneUtils.is_timezone_aware(date_obj):
+
+                # build a tz-aware datetime object from the timestamp or datetime object
+                day_obj = date_obj.tzinfo.localize(
+                    datetime.datetime(date_obj.year, date_obj.month, date_obj.day, 0, 0, 0, 0),
+                )
+
+                # this is required to manage DST changes
+                new_day_obj = TimezoneUtils.add_interval_to_day_dt(day_obj, interval)
+
+                # before resetting the intraday part of the date_object
+                new_day_obj = new_day_obj.replace(hour=date_obj.hour,
+                                                  minute=date_obj.minute,
+                                                  second=date_obj.second,
+                                                  microsecond=date_obj.microsecond
+                                                  )
+
+                if isinstance(date_obj, pd.Timestamp):
+                    return pd.Timestamp(new_day_obj)
+
+                return new_day_obj
+
+        return date_obj + interval
+
+    # --- Manage series
+
     @staticmethod
     @enda.tools.decorators.handle_series_as_datetimeindex(
         arg_name="time_series", return_input_type=True
     )
     def _set_timezone_dti(
-        time_series: Union[pd.DatetimeIndex, pd.Series],
-        tz_info: Union[str, datetime.tzinfo],
-        tz_base: Union[str, datetime.tzinfo] = None,
+            time_series: Union[pd.DatetimeIndex, pd.Series],
+            tz_info: Union[str, datetime.tzinfo],
+            tz_base: Union[str, datetime.tzinfo] = None,
     ) -> Union[pd.DatetimeIndex, pd.Series]:
         """
         Make a time series timezone-aware or convert it to a target timezone.
@@ -124,9 +177,9 @@ class TimezoneUtils:
     @staticmethod
     @enda.tools.decorators.handle_multiindex(arg_name="df")
     def _set_timezone_frame(
-        df: pd.DataFrame,
-        tz_info: Union[str, datetime.tzinfo],
-        tz_base: Union[str, datetime.tzinfo] = None,
+            df: pd.DataFrame,
+            tz_info: Union[str, datetime.tzinfo],
+            tz_base: Union[str, datetime.tzinfo] = None,
     ) -> pd.DataFrame:
         """
         Make a single-datetime-indexed dataframe's index timezone-aware or convert it to a target timezone.
@@ -141,9 +194,9 @@ class TimezoneUtils:
 
     @staticmethod
     def set_timezone(
-        time_series: Union[pd.DataFrame, pd.DatetimeIndex, pd.Series],
-        tz_info: Union[str, datetime.tzinfo],
-        tz_base: Union[str, datetime.tzinfo] = None,
+            time_series: Union[pd.DataFrame, pd.DatetimeIndex, pd.Series],
+            tz_info: Union[str, datetime.tzinfo],
+            tz_base: Union[str, datetime.tzinfo] = None,
     ) -> Union[pd.DataFrame, pd.DatetimeIndex, pd.Series]:
         """
         Make:
@@ -172,8 +225,8 @@ class TimezoneUtils:
 
     @staticmethod
     def convert_dtype_from_object_to_tz_aware(
-        time_series: [pd.Series, pd.DatetimeIndex],
-        tz_info: Union[str, pytz.timezone],
+            time_series: [pd.Series, pd.DatetimeIndex],
+            tz_info: Union[str, pytz.timezone],
     ) -> Union[pd.Series, pd.DatetimeIndex]:
         """
         Sometimes a time series is of pandas type "object" just because the time-zone information
@@ -207,10 +260,10 @@ class TimezoneUtils:
 
     @staticmethod
     def read_csv_and_set_tz_aware_columns(
-        file_path: str,
-        time_cols_list: list[str],
-        tz_info: Union[str, datetime.tzinfo],
-        **kwargs
+            file_path: str,
+            time_cols_list: list[str],
+            tz_info: Union[str, datetime.tzinfo],
+            **kwargs
     ) -> pd.DataFrame:
         """
         Given a file path, read it and set datetime columns to tz-aware columns
