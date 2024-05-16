@@ -185,36 +185,46 @@ class BackTesting:
             estimator: EndaEstimator,
             df: pd.DataFrame,
             target_col: str,
-            score_list: list[str] = None,
-            split_method: str = 'regular',
-            process_predict_specs: Optional[Tuple[Callable, dict]] = None,
+            score_list: Optional[list[str]] = None,
+            return_forecasts: Optional[bool] = False,
+            process_forecast_specs: Optional[Tuple[Callable, dict]] = None,
             **kwargs
-    ) -> pd.DataFrame:
+    ) -> dict[str, pd.DataFrame]:
         """
-        Backtest an estimator over a dataset.
-        :param estimator: the EndaEstimator to backtest
-        :param df: the data dataframe on which the estimator is back-tested.
-        :param target_col: the target column
-        :param score_list: the list of loss functions to estimate.
-        :param split_method: the split method to use. Either regular or periodic. If periodic is selected,
-            the argument 'test_size_freq' must be given to the method in kwargs.
-        :param process_predict_specs: Optional. If given, it defines a function to apply to the result of
-            the predict step.
-        :param kwargs: extra argument to pass to the chosen split method yield_train_test_split(),
-            such as n_splits, test_size_freq, gap_size_freq, start_eval_time.
+        Backtest an estimator over a dataset. That means performing successive training and prediction on growing
+            timeseries datasets, and compute on eah set some scores to estimate the quality of the estimator over the
+            dataset. The backtesting scheme (train/test splits) is defined using either the function
+            yield_train_test_periodic_split() if test_size is given in the arguments of this function, or
+            yield_train_test_regular_split() otherwise.
+            This function returns a dict, which contains
+        :param estimator: the EndaEstimator to backtest.
+        :param df: the input dataframe on which the estimator is back-tested.
+        :param target_col: the target column.
+        :param score_list: Optional. the list of loss functions to estimate, as defined in Scoring(). If nothing is
+            given, it defaults to RMSE.
+        :param return_forecasts: Optional. If given, also returns the forecasts on each test set.
+        :param process_forecast_specs: Optional. If given, it defines a function to apply to the result of
+            each prediction before calculating the scoring (it is also applied to the training loss). A typical example
+            is the PowerStation.clip_column() function, which is used to clamp the forecast load factor between
+            0 and 1.
+            process_forecast_specs must be a tuple, with the function to be applied, and a dict with all
+            the function keywords arguments names and values.
+        :param kwargs: extra argument to pass to the chosen split method yield_train_test_regular_split() or
+            yield_train_test_periodic_split(), such as n_splits, test_size, gap_size, min_train_size,
+            min_last_test_size_pct...
+            If nothing is given, yield_train_test_regular_split(n_splits=5) is called.
         :return: a dataframe with the train and test results for each statistics and each split.
         """
         if score_list is None:
             score_list = ['rmse']
 
-        if split_method == 'regular':
-            split_generator = BackTesting.yield_train_test_regular_split(df=df, **kwargs)
-        elif split_method == 'periodic':
+        if 'test_size' in kwargs:
             split_generator = BackTesting.yield_train_test_periodic_split(df=df, **kwargs)
         else:
-            raise ValueError(f"split_method must be regular or periodic. Found {split_method}")
+            split_generator = BackTesting.yield_train_test_regular_split(df=df, **kwargs)
 
         scoring_result_list = []
+        all_forecasts_list = []
         for train_set, test_set in split_generator:
 
             # train estimator
@@ -222,15 +232,18 @@ class BackTesting:
 
             # get training score
             training_score = estimator.get_loss_training(score_list=score_list,
-                                                         process_predict_specs=process_predict_specs
+                                                         process_forecast_specs=process_forecast_specs
                                                          )
 
             # get test score
             predict_df = estimator.predict(df=test_set.drop(columns=target_col), target_col=target_col)
-            if process_predict_specs is not None:
-                process_predict_function, process_predict_kwargs = process_predict_specs
-                predict_df = process_predict_function(predict_df, **process_predict_kwargs)
 
+            # process the result of the forecast in case a specification has been provided
+            if process_forecast_specs is not None:
+                process_forecast_function, process_forecast_kwargs = process_forecast_specs
+                predict_df = process_forecast_function(predict_df, **process_forecast_kwargs)
+
+            # compute the scoring
             test_score = Scoring.compute_loss(predicted_df=predict_df,
                                               actual_df=test_set[target_col],
                                               score_list=score_list
@@ -241,4 +254,13 @@ class BackTesting:
             test_score.index = ['test_' + _ for _ in test_score.index]
             scoring_result_list.append(pd.concat([training_score, test_score]).to_frame().T)
 
-        return pd.concat(scoring_result_list).reset_index(drop=True)
+            if return_forecasts:
+                all_forecasts_list.append(predict_df)
+
+        score_df = pd.concat(scoring_result_list).reset_index(drop=True)
+
+        if return_forecasts:
+            return {"score": score_df,
+                    "forecast": pd.concat(all_forecasts_list)}
+
+        return {"score": score_df}
