@@ -61,15 +61,15 @@ class EndaEstimator(metaclass=abc.ABCMeta):
 
     def get_loss_training(self,
                           score_list: list[str] = None,
-                          process_predict_specs: Optional[Tuple[Callable, dict]] = None) -> pd.Series:
+                          process_forecast_specs: Optional[Tuple[Callable, dict]] = None) -> pd.Series:
         """
          Compute the training loss, i.e. the error of the trained model on the training dataset.
          If not overridden (eg. in H2OEstimator), this function computes the loss on the training
          dataset, using scikit-learn built-in methods.
         :param score_list: the statistics to consider. Either 'mae', 'rmse', 'r2', 'max_error', 'mape'.
             Defaults to 'rmse'.
-        :param process_predict_specs: Optional. If given, it defines a function to apply to the result of
-            the predict step.
+        :param process_forecast_specs: Optional. If given, it defines a function to apply to the forecast before
+            calculating the loss.
         :return: a series that contains for each statistics the score of the model on the training set
         """
 
@@ -80,9 +80,9 @@ class EndaEstimator(metaclass=abc.ABCMeta):
         # compute the prediction over the training dataset
         predict_on_train_set_df = self.predict(df=self._training_df.drop(columns=self._target), target_col=self._target)
 
-        if process_predict_specs is not None:
-            process_predict_function, process_predict_kwargs = process_predict_specs
-            predict_on_train_set_df = process_predict_function(predict_on_train_set_df, **process_predict_kwargs)
+        if process_forecast_specs is not None:
+            process_forecast_function, process_forecast_kwargs = process_forecast_specs
+            predict_on_train_set_df = process_forecast_function(predict_on_train_set_df, **process_forecast_kwargs)
 
         score_series = Scoring.compute_loss(predicted_df=predict_on_train_set_df,
                                             actual_df=self._training_df[self._target],

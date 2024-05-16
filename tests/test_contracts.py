@@ -33,7 +33,7 @@ class TestContracts(unittest.TestCase):
         """
 
         test_contracts_dir = os.path.join(
-            pathlib.Path(__file__).parent.absolute(), "data/contracts"
+            pathlib.Path(__file__).parent.absolute(), "unittests_data/contracts"
         )
         no_date_contracts_path = os.path.join(
             test_contracts_dir, "contracts_no_date.csv"

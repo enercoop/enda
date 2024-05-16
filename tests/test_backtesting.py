@@ -1,6 +1,8 @@
 """A module for testing the Backtesting class in enda/backtesting.py"""
 
 import logging
+import os
+import pathlib
 from random import randint
 import unittest
 
@@ -527,7 +529,12 @@ class TestBackTesting(unittest.TestCase):
         # working dataframe
         symbols = {"TOT": "Total", "XOM": "Exxon", "CVX": "Chevron",
                    "COP": "ConocoPhillips", "VLO": "Valero Energy"}
-        template_name = "timeseries_data/{}.csv"
+
+        timeseries_path = os.path.join(
+            pathlib.Path(__file__).parent.absolute(), "unittests_data/timeseries"
+        )
+
+        template_name = os.path.join(timeseries_path, "{}.csv")
         quotes = {}
         for symbol in symbols:
             data = pd.read_csv(
@@ -560,7 +567,7 @@ class TestBackTesting(unittest.TestCase):
             score_list=score_list,
         )
 
-        expected_output = pd.DataFrame(
+        expected_output_score = pd.DataFrame(
             data=[
                 [1.15720606, 0.01399608, 0.91744179, 2.91517062, 3.77332323, 0.03647801, 0.62810329, 8.82897026],
                 [1.22062137, 0.01287377, 0.98723791, 3.46643535, 52.95126112, 0.95276092, -59.56571253, 63.1466695],
@@ -574,7 +581,11 @@ class TestBackTesting(unittest.TestCase):
             ]
         )
 
-        pd.testing.assert_frame_equal(expected_output, result_backtesting)
+        pd.testing.assert_frame_equal(expected_output_score, result_backtesting['score'])
+
+        # simply check the format for forecast
+        self.assertEqual(pd.Timestamp('2003-11-05'), result_backtesting['forecast'].index.min())
+        self.assertEqual(pd.Timestamp('2007-12-31'), result_backtesting['forecast'].index.max())
 
         # with a multiindex
         result_backtesting = BackTesting.backtest(
@@ -584,7 +595,7 @@ class TestBackTesting(unittest.TestCase):
             score_list=score_list,
         )
 
-        pd.testing.assert_frame_equal(expected_output, result_backtesting)
+        pd.testing.assert_frame_equal(expected_output_score, result_backtesting['score'])
 
         # test with a periodic backtesting
         result_backtesting = BackTesting.backtest(
@@ -592,13 +603,12 @@ class TestBackTesting(unittest.TestCase):
             df=df,
             target_col=target_col,
             score_list=score_list,
-            split_method='periodic',
             test_size='6M',
             gap_size="2W",
             min_train_size='1Y'
         )
 
-        expected_output = pd.DataFrame(
+        expected_output_score = pd.DataFrame(
             data=[
                 [1.12012364, 0.01332617, 0.95065545, 3.09069785, 2.28543189, 0.02230775, 2.51794177e-01, 4.2457436],
                 [1.14292136, 0.01255906, 0.98635499, 3.27970403, 37.97724098, 0.59882608, -2.65982372e+00, 49.01153002],
@@ -619,17 +629,19 @@ class TestBackTesting(unittest.TestCase):
             ]
         )
 
-        pd.testing.assert_frame_equal(expected_output, result_backtesting)
+        pd.testing.assert_frame_equal(expected_output_score, result_backtesting['score'])
+
+        self.assertEqual(pd.Timestamp('2004-01-16'), result_backtesting['forecast'].index.min())
+        self.assertEqual(pd.Timestamp('2007-12-31'), result_backtesting['forecast'].index.max())
 
         result_backtesting = BackTesting.backtest(
             estimator=estimator,
             df=multi_df,
             target_col=target_col,
             score_list=score_list,
-            split_method='periodic',
             test_size='6M',
             gap_size="2W",
             min_train_size='1Y'
         )
 
-        pd.testing.assert_frame_equal(expected_output, result_backtesting)
+        pd.testing.assert_frame_equal(expected_output_score, result_backtesting['score'])
