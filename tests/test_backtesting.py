@@ -531,7 +531,7 @@ class TestBackTesting(unittest.TestCase):
                    "COP": "ConocoPhillips", "VLO": "Valero Energy"}
 
         timeseries_path = os.path.join(
-            pathlib.Path(__file__).parent.absolute(), "data/timeseries"
+            pathlib.Path(__file__).parent.absolute(), "unittests_data/timeseries"
         )
 
         template_name = os.path.join(timeseries_path, "{}.csv")

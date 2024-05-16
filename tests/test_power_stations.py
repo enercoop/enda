@@ -20,7 +20,7 @@ class TestPowerStations(unittest.TestCase):
         logging.disable(logging.ERROR)
 
         self.outages_path = os.path.join(
-            pathlib.Path(__file__).parent.absolute(), "data/outages"
+            pathlib.Path(__file__).parent.absolute(), "unittests_data/outages"
         )
         self.correct_outages_filepath = os.path.join(self.outages_path, "outages.csv")
         self.correct_outages_timestamp_filepath = os.path.join(self.outages_path, "outages_timestamp.csv")

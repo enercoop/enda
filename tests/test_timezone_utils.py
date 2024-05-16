@@ -460,7 +460,7 @@ class TestTimezoneUtils(unittest.TestCase):
 
         # test with outages files
         folder_path = os.path.join(
-            pathlib.Path(__file__).parent.absolute(), "data/outages"
+            pathlib.Path(__file__).parent.absolute(), "unittests_data/outages"
         )
 
         # test with  a file that contains dates
