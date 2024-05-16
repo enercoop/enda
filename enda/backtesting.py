@@ -186,23 +186,23 @@ class BackTesting:
             df: pd.DataFrame,
             target_col: str,
             score_list: Optional[list[str]] = None,
-            return_forecasts: Optional[bool] = False,
             process_forecast_specs: Optional[Tuple[Callable, dict]] = None,
             **kwargs
     ) -> dict[str, pd.DataFrame]:
         """
         Backtest an estimator over a dataset. That means performing successive training and prediction on growing
-            timeseries datasets, and compute on eah set some scores to estimate the quality of the estimator over the
+            timeseries datasets, and compute on each set some scores to estimate the quality of the estimator over the
             dataset. The backtesting scheme (train/test splits) is defined using either the function
             yield_train_test_periodic_split() if test_size is given in the arguments of this function, or
             yield_train_test_regular_split() otherwise.
-            This function returns a dict, which contains
+            This function returns a dict with two keys, 'score' and 'forecast':
+            - 'score' contains a dataframe with the result of the scoring statistic on each train and test set.
+            - 'forecast' contains a dataframe with the forecast on each test set.
         :param estimator: the EndaEstimator to backtest.
         :param df: the input dataframe on which the estimator is back-tested.
         :param target_col: the target column.
         :param score_list: Optional. the list of loss functions to estimate, as defined in Scoring(). If nothing is
             given, it defaults to RMSE.
-        :param return_forecasts: Optional. If given, also returns the forecasts on each test set.
         :param process_forecast_specs: Optional. If given, it defines a function to apply to the result of
             each prediction before calculating the scoring (it is also applied to the training loss). A typical example
             is the PowerStation.clip_column() function, which is used to clamp the forecast load factor between
@@ -213,7 +213,9 @@ class BackTesting:
             yield_train_test_periodic_split(), such as n_splits, test_size, gap_size, min_train_size,
             min_last_test_size_pct...
             If nothing is given, yield_train_test_regular_split(n_splits=5) is called.
-        :return: a dataframe with the train and test results for each statistics and each split.
+        :return: a dict which contains:
+            - for the 'score' key: a dataframe with the train and test results for each statistics and each split.
+            - for the 'forecast' key: a dataframe with the successive forecasts on the test sets.
         """
         if score_list is None:
             score_list = ['rmse']
@@ -235,7 +237,7 @@ class BackTesting:
                                                          process_forecast_specs=process_forecast_specs
                                                          )
 
-            # get test score
+            # predict
             predict_df = estimator.predict(df=test_set.drop(columns=target_col), target_col=target_col)
 
             # process the result of the forecast in case a specification has been provided
@@ -243,24 +245,19 @@ class BackTesting:
                 process_forecast_function, process_forecast_kwargs = process_forecast_specs
                 predict_df = process_forecast_function(predict_df, **process_forecast_kwargs)
 
-            # compute the scoring
+            all_forecasts_list.append(predict_df)
+
+            # get test score, rename indexes for scoring and create a dataframe with scores for that iteration
             test_score = Scoring.compute_loss(predicted_df=predict_df,
                                               actual_df=test_set[target_col],
                                               score_list=score_list
                                               )
 
-            # rename indexes and create a dataframe with scores for that iteration
             training_score.index = ['train_' + _ for _ in training_score.index]
             test_score.index = ['test_' + _ for _ in test_score.index]
             scoring_result_list.append(pd.concat([training_score, test_score]).to_frame().T)
 
-            if return_forecasts:
-                all_forecasts_list.append(predict_df)
+        result_dict = {"score": pd.concat(scoring_result_list).reset_index(drop=True),
+                       "forecast": pd.concat(all_forecasts_list)}
 
-        score_df = pd.concat(scoring_result_list).reset_index(drop=True)
-
-        if return_forecasts:
-            return {"score": score_df,
-                    "forecast": pd.concat(all_forecasts_list)}
-
-        return {"score": score_df}
+        return result_dict

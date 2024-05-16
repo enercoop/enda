@@ -583,6 +583,10 @@ class TestBackTesting(unittest.TestCase):
 
         pd.testing.assert_frame_equal(expected_output_score, result_backtesting['score'])
 
+        # simply check the format for forecast
+        self.assertEqual(pd.Timestamp('2003-11-05'), result_backtesting['forecast'].index.min())
+        self.assertEqual(pd.Timestamp('2007-12-31'), result_backtesting['forecast'].index.max())
+
         # with a multiindex
         result_backtesting = BackTesting.backtest(
             estimator=estimator,
@@ -627,6 +631,9 @@ class TestBackTesting(unittest.TestCase):
 
         pd.testing.assert_frame_equal(expected_output_score, result_backtesting['score'])
 
+        self.assertEqual(pd.Timestamp('2004-01-16'), result_backtesting['forecast'].index.min())
+        self.assertEqual(pd.Timestamp('2007-12-31'), result_backtesting['forecast'].index.max())
+
         result_backtesting = BackTesting.backtest(
             estimator=estimator,
             df=multi_df,
@@ -638,19 +645,3 @@ class TestBackTesting(unittest.TestCase):
         )
 
         pd.testing.assert_frame_equal(expected_output_score, result_backtesting['score'])
-
-        # test with the predict_df
-        result_backtesting = BackTesting.backtest(
-            estimator=estimator,
-            df=df,
-            target_col=target_col,
-            score_list=score_list,
-            test_size='6M',
-            gap_size="2W",
-            min_train_size='1Y',
-            return_forecasts=True
-        )
-
-        # simply check the format
-        self.assertEqual(pd.Timestamp('2004-01-16'), result_backtesting['forecast'].index.min())
-        self.assertEqual(pd.Timestamp('2007-12-31'), result_backtesting['forecast'].index.max())
