@@ -1,88 +1,144 @@
-# Building this package
+# Building and publishing this package
 
-This small guide is for the authors of this package. 
+_This small guide is for the authors of this package._
 
-The package is built using a `setup.py` file following this tutorial :
-https://packaging.python.org/tutorials/packaging-projects/ .
+This package is built and published on PyPi using [poetry](https://python-poetry.org/).
 
-(The tutorial did not work using the `setup.cfg` file when tried. 
-`python -m build` gave errors reading the example `pyproject.toml` and `setup.cfg`. 
-Used other ressources for `setup.py` like https://www.freecodecamp.org/news/build-your-first-python-package/ )
+### 1. Check install and package validity 
+
+#### Create a virtual environment
 
 
-### 1. Run unittests 
-
-Make a python >=3.7.3 virtual environment (e.g. with `python3 -m venv {path-to-venv}`. Then :
-```shell
-source {path-to-venv}/bin/activate
-which python  # check python path
+```sh
+# for instance, with pyenv 
+pyenv virtualenv 3.9.10 publish_enda
+pyenv activate publish_enda
 ```
 
-Install some dependencies in your virtual environment in order for the tests to succeed : 
-```shell
-pip install --upgrade pip 
-pip install --upgrade pandas scikit-learn joblib h2o statsmodels
+#### Check the .pyproject.toml file
+
+It is possible to check the .pyproject file running 
+
+```sh
+poetry check 
 ```
 
-Run the unittests and check there is no error (they are in the folder `tests`):
+and the installation 
+
+```sh
+poetry lock  # create the poetry.lock file from the .toml file
+poetry install  # install dependencies from the .lock file
+poetry install --with dev  # install extra dependencies for dev (for example)
+```
+
+
+#### Run unittests
+
+Make sure all unit tests pass with (they are in the folder `tests`):
 ```shell
 python -m unittest discover tests/
 ```
 
 ### 2. Set the package version
 
-Put the correct version number in `setup.py`. We follow
-- https://packaging.python.org/guides/distributing-packages-using-setuptools/#standards-compliance-for-interoperability .
-- https://www.python.org/dev/peps/pep-0440/ .
+Put the correct version number in `pyproject.toml` file, in the `[tool.poetry]` section. The good practice is to upgrade: 
+- the third digit for minor fixes
+- the second digit when some enhancement have been performed, but no major has been made
+- the first digit for a major change of version, which might even break compatibility. 
 
-Use for instance : `version="0.0.5"` .
+Run ```poetry check``` to be sure tye `pyproject.toml` file is alright.
 
 ### 3. Build the package
 
-Still in the virtual environment, install packages required to build this package :
-```shell
-pip install --upgrade twine setuptools wheel
+In the virtual environment, run again (because version number changed)
+
+```sh
+poetry lock  # this create poetry.lock file from the pyproject.toml
+poetry build  # this creates the dist/ folder, which contains a 
+              # tar.gz file with the package content, and a .whl file.
 ```
 
-Then : 
-```shell
-rm -r build/ dist/ enda.egg-info/  # clean any previous build
-python setup.py sdist bdist_wheel  
-twine check dist/*
-```
-(Some files should have appeared in folders `build/ dist/ enda.egg-info/`).
+To make sure the package is fine, it is possible to inspect the dist/ folder, and to run next command:
 
-### 4. Test package using test.pypi.org
-
-To upload to `test.pypi.org` (this should ask you for login information):
-```shell
-twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+```sh
+pip install dist/enda-<version>-py3-none-any.whl
 ```
 
+all dependencies of the package must be installed out of this command.
+
+
+### 4. Test package upload using TestPyPI
+
+Before uploading to PyPI, it is relevant to publish the package on [TestPyPI](https://test.pypi.org/). 
+
+By default, poetry does not publish on TestPyPI, and it must be configured to do so. 
+
+```sh
+poetry config repositories.test-pypi https://test.pypi.org/legacy/  # add test.pypi in the known repositories  
+poetry config list  # display the config file to check it's been added
+```
+
+Uploading to TestPyPI requires to set up a single-use API token (password authentication has been dismissed). To do so: 
+- Go to TestPyPI and log in.
+- Navigate to your account settings and create a new API token.
+- Copy the generated token.
+
+Note that the 2-Factors-Authentication must also be set-up for your account. 
+
+Then, Poetry must be configured to use the API token by setting the `POETRY_PYPI_TOKEN_TEST_PYPI` environment variable:
+
+```sh
+export POETRY_PYPI_TOKEN_PYPI=pypi-<your-token>
+```
+
+Finally, to upload to `test.pypi.org`, simply run 
+```sh
+poetry publish -r test-pypi
+```
 
 Check that the package is there : https://test.pypi.org/project/enda/#history .
 
-Test to install and use this test package. Go to another directory, and create/activate a virtualenv.
-```shell
-cd {other-dir}
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
+Try to install and use this test package. Go to another directory, and create/activate a virtualenv.
+Testing the package requires some extra checks compared to the real situation,, because not all dependencies have a package installed on TestPypI.
+If we want dependencies installed, they have to be installed through pip. 
+
+#### Test with poetry 
+
+Create a new poetry project
+```sh 
+poetry new enda_test  # this creates a poetry project with a pyproject.toml file
+cd enda_test
 ```
 
-Enda requires `pandas` which is only available on the real pypi.org .
-```shell
-pip install pandas
+There, we might want to check the package has been correctly uploaded. To do so, it is relevant to modify the .pyproject.toml file: 
+
+```
+[[tool.poetry.source]]
+name = "test-pypi"
+url = "https://test.pypi.org/simple/"
+priority = "explicit"
+
+[tool.poetry.dependencies]
+python = "^3.9.0"
+enda = {version = <version>, source = "test-pypi"}  # this defines the source for the package enda
 ```
 
-Choose which version of enda you want to install (from test.pypi.org) : 
-```shell
-pip install --index-url https://test.pypi.org/simple/ enda  # latest stable release
-pip install --index-url https://test.pypi.org/simple/ --no-deps enda # latest stable release without the dependencies
-pip install --index-url https://test.pypi.org/simple/ enda==0.1.1.dev6 # specific development release
+This makes test.pypi the source for enda. Note that only enda is likely to be downloaded, as other packages might not have been put on TestPyPI.
+
+#### Test with pip
+
+Next command installs from pip. 
+
+```sh
+pip install --index-url https://test.pypi.org/simple/ enda 
 ```
 
-Then enter python shell, import enda, and test some enda functions :
+Note this must check for hard dependencies. 
+
+#### Test code
+
+Then enter python shell, import enda, and test some enda functions, eg.:
+
 ```
 python  # enter python shell 
 ```
@@ -94,20 +150,29 @@ enda.TimeSeries.align_timezone(dti, tzinfo='Europe/Paris')
 exit()  # exit python shell 
 ```
 
-### 5. pypi.org
+### 5. Upload to PyPI
 
-Before uploading to the real `pypi.org`, first double check that the enda version in `setup.py` is correct.
+Before uploading to the real `pypi.org`, first double check that the enda version in `pyproject.toml` is correct.
 
-The steps are the same as in the previous section except for :
-```shell
-twine upload dist/*
 ```
+poetry check 
+poetry lock 
+poetry build 
+pip ins
+```
+
+and check the content of `dist/`.
+
+The steps are the same as in the previous section except: 
+- the API token must be generated from PyPI directly.
+- poetry must be configured with the token with ```export POETRY_PYPI_TOKEN_PYPI=pypi-<token>```
+- simply run ```poetry publish``` without indicating the repository explicitly.
 
 The new version of the package is now officially released.
 
-Then to test the package just get `enda` using pip without specifying `--index-url`. 
-Also, the hard requirements (`pandas`) will be downloaded automatically :
+Then to test the package just get `enda` using pip without specifying `--index-url`, or poetry without changing the .toml file. 
+Hard requirements will be downloaded automatically.
+
 ```
 pip install enda
 ```
-
