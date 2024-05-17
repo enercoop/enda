@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "enda"
-version = "1.0.0"
+version = "1.0.1"
 description = "Tools to manipulate energy time-series and contracts, and to perform forecasts."
 authors = ["Enercoop <team-data@enercoop.org>"]
 license = "MIT"
