@@ -21,7 +21,7 @@ version = "1.0.0"
 
 [tool.poetry.dependencies]
 datatable = "^1.1.0"
-h2o = "^3.36.2.2"
+h2o = "^3.36.1.1"
 jours-feries-france = "^0.7.0"
 numpy = "^1.18"
 pandas = ">=1.4.0,<2.0.0"
