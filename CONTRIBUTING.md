@@ -1,4 +1,4 @@
-# Building and publishing this package
+# Contributing
 
 _This small guide is for the authors of this package._
 
