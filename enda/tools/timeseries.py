@@ -3,13 +3,14 @@
 import datetime
 import re
 from typing import Union
-from dateutil.relativedelta import relativedelta
+
 import pandas as pd
 import pytz
+from dateutil.relativedelta import relativedelta
 
 import enda.tools.decorators
-import enda.tools.timezone_utils
 import enda.tools.resample
+import enda.tools.timezone_utils
 
 
 class TimeSeries:

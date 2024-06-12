@@ -3,10 +3,11 @@
 import numpy as np
 import pandas as pd
 
-from enda.estimators import EndaEstimator
 from sklearn.linear_model import __all__ as linear_model_sklearn_list
 from sklearn.ensemble import __all__ as ensemble_model_sklearn_list
 from sklearn.tree import __all__ as tree_model_sklearn_list
+
+from enda.estimators import EndaEstimator
 
 
 class EndaSklearnEstimator(EndaEstimator):

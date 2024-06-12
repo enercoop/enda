@@ -5,19 +5,11 @@ import shutil
 import tempfile
 import warnings
 
-import pandas
+import h2o
+import h2o.exceptions
 import pandas as pd
 
 from enda.estimators import EndaEstimator
-
-try:
-    import h2o
-    import h2o.exceptions
-except ImportError as exc:
-    raise ImportError(
-        "h2o is required is you want to use this enda's H2OEstimator. "
-        "Try: pip install h2o>=3.32.0.3"
-    ) from exc
 
 
 class EndaH2OEstimator(EndaEstimator):
@@ -39,7 +31,7 @@ class EndaH2OEstimator(EndaEstimator):
         self.model = h2o_estimator
         self.__model_binary = None
 
-    def train(self, df: pandas.DataFrame, target_col: str, **kwargs):
+    def train(self, df: pd.DataFrame, target_col: str, **kwargs):
         """
         Train a h2o-based model from an input dataframe with features and a target column
         :param df: the input dataframe
@@ -57,7 +49,7 @@ class EndaH2OEstimator(EndaEstimator):
         self._training_df = df
         self._target = target_col
 
-    def predict(self, df: pandas.DataFrame, target_col: str, **kwargs):
+    def predict(self, df: pd.DataFrame, target_col: str, **kwargs):
         """
         Predict from a h2o-based trained model using an input dataframe with features
         :param df: the input dataframe
