@@ -284,6 +284,9 @@ class BaseCalendar:
                  1 if the day is a public holiday and 0 otherwise
         """
 
+        if years_list is None:
+            years_list = range(2000, 2051)
+
         # get public holidays
         public_holidays = Holidays.get_public_holidays(country=country, years_list=years_list)
 
@@ -356,6 +359,7 @@ class BaseCalendar:
         """
         raise NotImplementedError()
 
+
 class FrenchCalendar(BaseCalendar):
     """
     Child class for French calendar
@@ -416,12 +420,16 @@ class FrenchCalendar(BaseCalendar):
         return school_holidays[["nb_school_areas_off"]]
 
     @staticmethod
-    def feature_special_days(years_list: list[int] = None, freq: Union[str, pd.Timedelta] = "30min") -> pd.DataFrame:
+    def feature_special_days(years_list: list[int] = None,
+                             freq: Union[str, pd.Timedelta] = "30min",
+                             index_name: str = 'time'
+                             ) -> pd.DataFrame:
         """
         Return a DataFrame containing all special french days: public and school holidays, lockdowns, and extra long
             weekends
         :param years_list: the list of years
         :param freq: A string indicating the frequency at which to interpolate the DataFrame
+        :param index_name:A string indicating the name of the resulting index
         :return:
             A DataFrame with a DatetimeIndex at the specified frequency, and 4 float columns :
             - The 'lockdown' column contains 1 if the timestamp is within a lockdown period and 0 otherwise
@@ -440,16 +448,16 @@ class FrenchCalendar(BaseCalendar):
 
         # resample everything to the desired freq
         lockdown_df = Resample.upsample_and_interpolate(
-            lockdown_df, freq=freq, method="ffill", forward_fill=True, tz_info=TZ_PARIS
+            lockdown_df, freq=freq, method="ffill", forward_fill=True, index_name=index_name, tz_info=TZ_PARIS
         )
         public_holidays_df = Resample.upsample_and_interpolate(
-            public_holidays_df, freq=freq, method="ffill", forward_fill=True, tz_info=TZ_PARIS
+            public_holidays_df, freq=freq, method="ffill", forward_fill=True, index_name=index_name, tz_info=TZ_PARIS
         )
         school_areas_off_df = Resample.upsample_and_interpolate(
-            school_areas_off_df, freq=freq, method="ffill", forward_fill=True, tz_info=TZ_PARIS
+            school_areas_off_df, freq=freq, method="ffill", forward_fill=True, index_name=index_name, tz_info=TZ_PARIS
         )
         extra_long_weekend_df = Resample.upsample_and_interpolate(
-            extra_long_weekend_df, freq=freq, method="ffill", forward_fill=True, tz_info=TZ_PARIS
+            extra_long_weekend_df, freq=freq, method="ffill", forward_fill=True, index_name=index_name, tz_info=TZ_PARIS
         )
 
         result = pd.concat(
