@@ -1,62 +1,177 @@
-# Contributing
+# Building and publishing this package
 
-The project can be built using [Poetry](https://python-poetry.org/). You can install it following the instructions here: <https://python-poetry.org/docs/#installation>.
+_This small guide is for the authors of this package._
 
-To develop `enda`, you can clone the repository and install the dependencies with poetry:
+This package is built and published on PyPi using [poetry](https://python-poetry.org/).
 
-```sh
-git clone https://github.com/enercoop/enda.git
-cd enda
-poetry install --with dev
-```
+### 1. Check install and package validity 
 
-If you are not using `Poetry` you can install the dependencies with `pip`:
+#### Create a virtual environment
+
 
 ```sh
-pip install enda[dev]
+# for instance, with pyenv 
+pyenv virtualenv 3.9.10 publish_enda
+pyenv activate publish_enda
 ```
 
-To run the tests, you can use the following command:
+#### Check the .pyproject.toml file
+
+It is possible to check the .pyproject file running 
 
 ```sh
-poetry run pytest # or just pytest if you have activated the virtual environment
+poetry check 
 ```
 
-To run tests using tox, you can use the following command:
+and the installation 
 
 ```sh
-poetry run tox # or just tox if you have activated the virtual environment
+poetry lock  # create the poetry.lock file from the .toml file
+poetry install  # install dependencies from the .lock file
+poetry install --with dev  # install extra dependencies for dev (for example)
 ```
 
-## Building and publishing
 
-After you have built a new feature, upgraded a dependency or fixed a bug, you need to update the version number in `pyproject.toml` and `enda/__init__.py` and publish the new version to PyPI.
+#### Run unittests
 
-If you are using `Poetry`, you can add the poetry plugin `poetry-bumpversion` to help you with this:
+Make sure all unit tests pass with (they are in the folder `tests`):
+```shell
+python -m unittest discover tests/
+```
+
+### 2. Set the package version
+
+Put the correct version number in `pyproject.toml` file, in the `[tool.poetry]` section. The good practice is to upgrade: 
+- the third digit for minor fixes
+- the second digit when some enhancement have been performed, but no major has been made
+- the first digit for a major change of version, which might even break compatibility. 
+
+Run ```poetry check``` to be sure tye `pyproject.toml` file is alright.
+
+### 3. Build the package
+
+In the virtual environment, run again (because version number changed)
 
 ```sh
-poetry self add poetry-bumpversion
+poetry lock  # this create poetry.lock file from the pyproject.toml
+poetry build  # this creates the dist/ folder, which contains a 
+              # tar.gz file with the package content, and a .whl file.
 ```
 
-and then you can use the following commands to update the version number:
+To make sure the package is fine, it is possible to inspect the dist/ folder, and to run next command:
 
 ```sh
-poetry version patch # or minor or major
+pip install dist/enda-<version>-py3-none-any.whl
 ```
 
-See the [`poetry-bumpversion`](https://pypi.org/project/poetry-bumpversion/) documentation for more details:
+all dependencies of the package must be installed out of this command.
 
-After that you will need to build the package with:
+
+### 4. Test package upload using TestPyPI
+
+Before uploading to PyPI, it is relevant to publish the package on [TestPyPI](https://test.pypi.org/). 
+
+By default, poetry does not publish on TestPyPI, and it must be configured to do so. 
 
 ```sh
-poetry build
+poetry config repositories.test-pypi https://test.pypi.org/legacy/  # add test.pypi in the known repositories  
+poetry config list  # display the config file to check it's been added
 ```
 
-and then you can publish the new version to PyPI:
+Uploading to TestPyPI requires to set up a single-use API token (password authentication has been dismissed). To do so: 
+- Go to TestPyPI and log in.
+- Navigate to your account settings and create a new API token.
+- Copy the generated token.
+
+Note that the 2-Factors-Authentication must also be set-up for your account. 
+
+Then, Poetry must be configured to use the API token by setting the `POETRY_PYPI_TOKEN_TEST_PYPI` environment variable:
 
 ```sh
-poetry publish
+export POETRY_PYPI_TOKEN_PYPI=pypi-<your-token>
 ```
 
-You will need to setup your PyPI credentials for this to work. See the [Poetry documentation](https://python-poetry.org/docs/repositories/#configuring-credentials) for more details.
+Finally, to upload to `test.pypi.org`, simply run 
+```sh
+poetry publish -r test-pypi
+```
 
+Check that the package is there : https://test.pypi.org/project/enda/#history .
+
+Try to install and use this test package. Go to another directory, and create/activate a virtualenv.
+Testing the package requires some extra checks compared to the real situation,, because not all dependencies have a package installed on TestPypI.
+If we want dependencies installed, they have to be installed through pip. 
+
+#### Test with poetry 
+
+Create a new poetry project
+```sh 
+poetry new enda_test  # this creates a poetry project with a pyproject.toml file
+cd enda_test
+```
+
+There, we might want to check the package has been correctly uploaded. To do so, it is relevant to modify the .pyproject.toml file: 
+
+```
+[[tool.poetry.source]]
+name = "test-pypi"
+url = "https://test.pypi.org/simple/"
+priority = "explicit"
+
+[tool.poetry.dependencies]
+python = "^3.9.0"
+enda = {version = <version>, source = "test-pypi"}  # this defines the source for the package enda
+```
+
+This makes test.pypi the source for enda. Note that only enda is likely to be downloaded, as other packages might not have been put on TestPyPI.
+
+#### Test with pip
+
+Next command installs from pip. 
+
+```sh
+pip install --index-url https://test.pypi.org/simple/ enda 
+```
+
+Note this must check for hard dependencies. 
+
+#### Test code
+
+Then enter python shell, import enda, and test some enda functions, eg.:
+
+```
+python  # enter python shell 
+```
+```python
+import pandas as pd
+dti = pd.DatetimeIndex([pd.to_datetime('2019-01-01 00:00:00+01:00'), pd.to_datetime('2019-01-01 00:02:00+01:00')])
+import enda
+enda.TimeSeries.align_timezone(dti, tzinfo='Europe/Paris')
+exit()  # exit python shell 
+```
+
+### 5. Upload to PyPI
+
+Before uploading to the real `pypi.org`, first double check that the enda version in `pyproject.toml` is correct.
+
+```
+poetry check 
+poetry lock 
+poetry build 
+```
+
+and check the content of `dist/`.
+
+The steps are the same as in the previous section except: 
+- the API token must be generated from PyPI directly.
+- poetry must be configured with the token with ```export POETRY_PYPI_TOKEN_PYPI=pypi-<token>```
+- simply run ```poetry publish``` without indicating the repository explicitly.
+
+The new version of the package is now officially released.
+
+Then to test the package just get `enda` using pip without specifying `--index-url`, or poetry without changing the .toml file. 
+Hard requirements will be downloaded automatically.
+
+```
+pip install enda
+```
