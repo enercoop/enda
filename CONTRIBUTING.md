@@ -58,7 +58,7 @@ poetry build  # this creates the dist/ folder, which contains a
               # tar.gz file with the package content, and a .whl file.
 ```
 
-To make sure the package is fine, it is possible to inspect the dist/ folder, and to run next command:
+To make sure the package is fine, it is possible to inspect the dist/ folder, and to run next command in a new virtualenv:
 
 ```sh
 pip install dist/enda-<version>-py3-none-any.whl
@@ -75,7 +75,7 @@ By default, poetry does not publish on TestPyPI, and it must be configured to do
 
 ```sh
 poetry config repositories.test-pypi https://test.pypi.org/legacy/  # add test.pypi in the known repositories  
-poetry config list  # display the config file to check it's been added
+poetry config --list  # display the config file to check it's been added
 ```
 
 Uploading to TestPyPI requires to set up a single-use API token (password authentication has been dismissed). To do so: 
@@ -88,7 +88,7 @@ Note that the 2-Factors-Authentication must also be set-up for your account.
 Then, Poetry must be configured to use the API token by setting the `POETRY_PYPI_TOKEN_TEST_PYPI` environment variable:
 
 ```sh
-export POETRY_PYPI_TOKEN_PYPI=pypi-<your-token>
+export POETRY_PYPI_TOKEN_TEST_PYPI=pypi-<your-token>
 ```
 
 Finally, to upload to `test.pypi.org`, simply run 
@@ -99,8 +99,22 @@ poetry publish -r test-pypi
 Check that the package is there : https://test.pypi.org/project/enda/#history .
 
 Try to install and use this test package. Go to another directory, and create/activate a virtualenv.
-Testing the package requires some extra checks compared to the real situation,, because not all dependencies have a package installed on TestPypI.
+Testing the package requires some extra checks compared to the real situation, because not all dependencies have a package installed on TestPypI.
 If we want dependencies installed, they have to be installed through pip. 
+
+Next is a possible list of command to run before trying to install enda from TestPyPI: 
+
+```
+pip install vacances_scolaires_france==0.10.0
+pip install unidecode==1.3.4
+pip install statsmodels==0.13.5
+pip install polars==0.20.0 
+pip install pandas==1.4.1
+pip install jours-feries-france==0.7.0
+pip install h2o==3.36.1.1
+pip install datatable==1.1.0 
+pip install scikit-learn==1.5.0
+```
 
 #### Test with poetry 
 
@@ -124,6 +138,11 @@ enda = {version = <version>, source = "test-pypi"}  # this defines the source fo
 ```
 
 This makes test.pypi the source for enda. Note that only enda is likely to be downloaded, as other packages might not have been put on TestPyPI.
+
+```
+poetry lock
+poetry install
+```
 
 #### Test with pip
 
