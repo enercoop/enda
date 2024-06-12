@@ -1,11 +1,12 @@
 """This module contains various functions for dealing with timezones in temporal data in Python"""
 
 import datetime
-from pandas.api.types import is_string_dtype
+from typing import Union
+
 import pandas as pd
 import pytz
 from dateutil.relativedelta import relativedelta
-from typing import Union
+from pandas.api.types import is_string_dtype
 
 import enda.tools.decorators
 
