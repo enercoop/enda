@@ -4,7 +4,7 @@ import abc
 import collections
 import typing
 from collections import OrderedDict
-from typing import Iterable, Optional, Callable, Tuple
+from typing import Iterable, Optional, Callable, Tuple, Union
 
 import pandas as pd
 
@@ -60,14 +60,14 @@ class EndaEstimator(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def get_loss_training(self,
-                          score_list: list[str] = None,
+                          scores: Optional[Union[list[str], dict[str, str]]] = None,
                           process_forecast_specs: Optional[Tuple[Callable, dict]] = None) -> pd.Series:
         """
          Compute the training loss, i.e. the error of the trained model on the training dataset.
          If not overridden (eg. in H2OEstimator), this function computes the loss on the training
          dataset, using scikit-learn built-in methods.
-        :param score_list: the statistics to consider. Either 'mae', 'rmse', 'r2', 'max_error', 'mape'.
-            Defaults to 'rmse'.
+        :param scores: the statistics to consider. It can be a list of enda-known functions, a home-made function
+            (if given as a dict), or RMSE if nothing is provided.
         :param process_forecast_specs: Optional. If given, it defines a function to apply to the forecast before
             calculating the loss.
         :return: a series that contains for each statistics the score of the model on the training set
@@ -86,7 +86,7 @@ class EndaEstimator(metaclass=abc.ABCMeta):
 
         score_series = Scoring.compute_loss(predicted_df=predict_on_train_set_df,
                                             actual_df=self._training_df[self._target],
-                                            score_list=score_list)
+                                            scores=scores)
 
         return score_series
 
