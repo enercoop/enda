@@ -588,11 +588,8 @@ class Resample:
         end_row = timeseries_df.loc[[incl_end_time], :]
         if len(end_row) > 1:
             raise ValueError("Duplicate last record, cannot find a way to extrapolate")
-        extra_row = pd.DataFrame(
-            timeseries_df.loc[[incl_end_time], :].values,
-            index=[extra_excl_end_time],
-            columns=timeseries_df.columns,
-        )
+        extra_row = timeseries_df.loc[[incl_end_time], :].copy()
+        extra_row.index = [extra_excl_end_time]
         extra_row.index.name = timeseries_df.index.name
 
         # Add the extra row, and extrapolate using resample
