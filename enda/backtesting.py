@@ -187,6 +187,7 @@ class BackTesting:
             target_col: str,
             score_list: Optional[list[str]] = None,
             process_forecast_specs: Optional[Tuple[Callable, dict]] = None,
+            retrain_estimator: bool = True,
             **kwargs
     ) -> dict[str, pd.DataFrame]:
         """
@@ -209,6 +210,9 @@ class BackTesting:
             0 and 1.
             process_forecast_specs must be a tuple, with the function to be applied, and a dict with all
             the function keywords arguments names and values.
+        :param retrain_estimator: boolean, if True (default), perform a real backtesting during which an
+            estimator is retrained before being used to perform a forecast. If False, the estimator must be
+            already trained, and this function only serves to perform successive forecasts on test sets.
         :param kwargs: extra argument to pass to the chosen split method yield_train_test_regular_split() or
             yield_train_test_periodic_split(), such as n_splits, test_size, gap_size, min_train_size,
             min_last_test_size_pct...
@@ -230,7 +234,8 @@ class BackTesting:
         for train_set, test_set in split_generator:
 
             # train estimator
-            estimator.train(df=train_set, target_col=target_col)
+            if retrain_estimator:
+                estimator.train(df=train_set, target_col=target_col)
 
             # get training score
             training_score = estimator.get_loss_training(score_list=score_list,

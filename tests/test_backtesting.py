@@ -645,3 +645,31 @@ class TestBackTesting(unittest.TestCase):
         )
 
         pd.testing.assert_frame_equal(expected_output_score, result_backtesting['score'])
+
+        # check if we do not retrain the estimator
+        estimator = EndaSklearnEstimator(LinearRegression())
+        estimator.train(df, target_col)  # train over the whole dataset, dumb but not important
+
+        result_backtesting = BackTesting.backtest(
+            estimator=estimator,
+            df=df,
+            target_col=target_col,
+            score_list=score_list,
+            retrain_estimator=False
+        )
+
+        expected_output_score = pd.DataFrame(
+            data=[
+                [11.6333802, 0.13902552, 0.23106242, 29.9894976, 18.08189214, 0.19193931, -7.54008242, 28.33828377],
+                [11.6333802, 0.13902552, 0.23106242, 29.9894976, 13.34857455, 0.2278849, -2.84896532, 29.9894976],
+                [11.6333802, 0.13902552, 0.23106242, 29.9894976, 5.94383282, 0.08607951, -5.45674813, 12.50177153],
+                [11.6333802, 0.13902552, 0.23106242, 29.9894976, 11.47453515, 0.1529912, -4.65579553, 22.40540847],
+                [11.6333802, 0.13902552, 0.23106242, 29.9894976, 10.37559205, 0.10084627, -1.29007294, 18.31345085],
+            ],
+            columns=[
+                'train_rmse', 'train_mape', 'train_r2', 'train_max_error', 'test_rmse',
+                'test_mape', 'test_r2', 'test_max_error'
+            ]
+        )
+
+        pd.testing.assert_frame_equal(expected_output_score, result_backtesting['score'])
