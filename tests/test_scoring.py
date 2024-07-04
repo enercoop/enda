@@ -1,9 +1,11 @@
 """A module for testing the functions in enda/scoring.py"""
 
-import unittest
 import logging
+import numpy as np
 import pandas as pd
-from enda.scoring import Scoring
+import unittest
+
+from enda.scoring import Scoring, wape
 
 
 class TestScoring(unittest.TestCase):
@@ -295,9 +297,37 @@ class TestScoring(unittest.TestCase):
             scoring_norm.normalized_absolute_error(), expected_norm_err_df
         )
 
-    def test_compute_score(self):
+    def test_compute_loss(self):
         """
-        Test compute score
+        Test compute_loss
         """
-        pass
 
+        actual_df = pd.DataFrame({"actual": [1, 0, 1]})
+        predicted_df = pd.DataFrame({"predicted": [1, 1, 3]})
+
+        # with nos scores given: use the rmse
+        loss_df = Scoring.compute_loss(predicted_df, actual_df)
+        expected_loss_df = pd.Series(np.sqrt(5/3), index=["rmse"])
+
+        pd.testing.assert_series_equal(loss_df, expected_loss_df)
+
+        # with a list
+        loss_df = Scoring.compute_loss(predicted_df=predicted_df, actual_df=actual_df, scores=["rmse", "mse"])
+        expected_loss_df = pd.Series([np.sqrt(5/3), 5/3.], index=["rmse", "mse"])
+
+        pd.testing.assert_series_equal(loss_df, expected_loss_df)
+
+        # with a custom dict of functions + test wape
+        def custom_mse(y_true, y_pred):
+            return np.average(np.average(np.subtract(y_true, y_pred) ** 2, axis=0))
+
+        def custom_rmse(y_true, y_pred):
+            return np.sqrt(custom_mse(y_true, y_pred))
+
+        loss_df = Scoring.compute_loss(actual_df, predicted_df, scores={"rmse": custom_rmse,
+                                                                        "mse": custom_mse,
+                                                                        "wape": wape}
+                                       )
+
+        expected_loss_df = pd.Series([np.sqrt(5/3), 5/3., 0.6], index=["rmse", "mse", "wape"])
+        pd.testing.assert_series_equal(loss_df, expected_loss_df)

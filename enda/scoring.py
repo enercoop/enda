@@ -1,8 +1,9 @@
 """This module contains methods to evaluate the performance of predictions"""
 
+from typing import Callable, Union
+
 import numpy as np
 import pandas as pd
-from typing import Union
 from sklearn.metrics import (
     max_error,
     mean_absolute_error,
@@ -25,7 +26,7 @@ def wape(y_true, y_pred):
     Weighted average percentage error
     """
     check_consistent_length(y_true, y_pred)
-    return np.sum(np.abs(y_true - y_pred)) / np.sum(y_true) * 100
+    return np.average(np.sum(np.abs(np.subtract(y_true, y_pred))) / np.sum(y_true))
 
 
 METRICS_FUNCTION_DICT = {
@@ -173,7 +174,7 @@ class Scoring:
     @staticmethod
     def compute_loss(predicted_df: pd.DataFrame,
                      actual_df: Union[pd.DataFrame, pd.Series],
-                     scores: Union[list[str], dict[str, str]] = None) -> pd.Series:
+                     scores: Union[list[str], dict[str, Callable]] = None) -> pd.Series:
         """
         Compute the loss (i.e. the score) between a model prediction and the actual data
         :param predicted_df: the result of the prediction
@@ -185,7 +186,7 @@ class Scoring:
         :return: a series that contains for each statistics the score of the model on the training set
         """
 
-        scores_dict = dict()
+        scores_dict = {}
         if scores is None:
             # default is rmse
             scores_dict = {"rmse": METRICS_FUNCTION_DICT["rmse"]}
