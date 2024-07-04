@@ -4,7 +4,6 @@ from collections.abc import Generator
 from typing import Union, Optional, Callable, Tuple
 
 import pandas as pd
-import h2o
 from sklearn.model_selection import TimeSeriesSplit
 
 from enda.estimators import EndaEstimator
@@ -234,6 +233,7 @@ class BackTesting:
         else:
             split_generator = BackTesting.yield_train_test_regular_split(df=df, **kwargs)
 
+        logger = get_logger()
         scoring_result_list = []
         all_forecasts_list = []
         backtest_iter = 0
@@ -242,7 +242,6 @@ class BackTesting:
 
             backtest_iter += 1
             if verbose:
-                logger = get_logger()
                 logger.info(f"Train index: {(train_set.index.min(), train_set.index.max())}")
 
             # train estimator
@@ -250,7 +249,6 @@ class BackTesting:
                 estimator.train(df=train_set, target_col=target_col)
 
             if verbose:
-                logger = get_logger()
                 logger.info(f"Test index: {(test_set.index.min(), test_set.index.max())}")
 
             # predict
@@ -292,7 +290,6 @@ class BackTesting:
             scores_df = pd.concat([scores_df, start_end_times_df], axis=1)
 
             if verbose:
-                logger = get_logger()
                 logger.info(f"Partial scores: \n{scores_df.to_string()}")
 
             scoring_result_list.append(scores_df)

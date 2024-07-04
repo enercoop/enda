@@ -257,7 +257,7 @@ class Calendar:
         Interpolate daily data in a dataframe (with a DatetimeIndex) to sub-daily data using a given method.
         :param df: pd.DataFrame
         :param freq: a frequency < 'D' (e.g. 'H', '30min', '15min', etc.)
-        :param method: how are data interpolated between two consecutive dates (e.g. 'ffill', 'linear', etc.)
+        :param method: how data is interpolated between two consecutive dates (e.g. 'ffill', 'linear', etc.)
         :param tz: timezone (TZ_Paris)
         :return: pd.DataFrame
         """
