@@ -92,7 +92,7 @@ class TestTimeSeries(unittest.TestCase):
             )
             .to_frame()
             .set_index("date")
-            .assign(value=[0] * 2 + [1] * 2)
+            .assign(value=[0.] * 2 + [1] * 2)
         )
 
         # # define a multiindex_df
