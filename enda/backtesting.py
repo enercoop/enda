@@ -93,8 +93,8 @@ class BackTesting:
         initial_freq = TimeSeries.find_most_common_frequency(
             sorted_df.index.get_level_values(-1), skip_duplicate_timestamps=True
         )
-        gap = int(TimeSeries.freq_as_approximate_nb_days(gap_size) /
-                  TimeSeries.freq_as_approximate_nb_days(initial_freq)
+        gap = int(TimeSeries.freq_as_approximate_nb_seconds(gap_size) /
+                  TimeSeries.freq_as_approximate_nb_seconds(initial_freq)
                   )
 
         # if min_train_size is defined, we find the location of the index that begins after it
@@ -148,7 +148,7 @@ class BackTesting:
         # hardcode a minimal size of the test set to avoid side effects in the backtesting
         if min_last_test_size_pct > 1 or min_last_test_size_pct < 0:
             raise ValueError(f"last_min_test_size_pct must be a float between 0 and 1, found {min_last_test_size_pct}.")
-        min_test_set_size = str(TimeSeries.freq_as_approximate_nb_days(test_size) * min_last_test_size_pct) + 'D'
+        min_test_set_size = str(TimeSeries.freq_as_approximate_nb_seconds(test_size) * min_last_test_size_pct) + 'S'
         min_index = df.index.get_level_values(-1).min()
         max_index = df.index.get_level_values(-1).max()
 
