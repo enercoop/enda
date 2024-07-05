@@ -1,8 +1,9 @@
 """This module contains methods to evaluate the performance of predictions"""
 
+from typing import Callable, Union
+
 import numpy as np
 import pandas as pd
-from typing import Union
 from sklearn.metrics import (
     max_error,
     mean_absolute_error,
@@ -10,10 +11,22 @@ from sklearn.metrics import (
     mean_squared_error,
     r2_score,
 )
+from sklearn.utils.validation import check_consistent_length
 
 
-def _root_mean_squared_error(x1, x2):
-    return np.sqrt(mean_squared_error(x1, x2))
+def _root_mean_squared_error(y_true, y_pred):
+    """
+    Root mean squared error
+    """
+    return np.sqrt(mean_squared_error(y_true, y_pred))
+
+
+def wape(y_true, y_pred):
+    """
+    Weighted average percentage error
+    """
+    check_consistent_length(y_true, y_pred)
+    return np.average(np.sum(np.abs(np.subtract(y_true, y_pred))) / np.sum(y_true))
 
 
 METRICS_FUNCTION_DICT = {
@@ -22,7 +35,8 @@ METRICS_FUNCTION_DICT = {
     "mape": mean_absolute_percentage_error,
     "mse": mean_squared_error,
     "rmse": _root_mean_squared_error,
-    "r2": r2_score
+    "r2": r2_score,
+    "wape": wape
 }
 
 
@@ -160,30 +174,42 @@ class Scoring:
     @staticmethod
     def compute_loss(predicted_df: pd.DataFrame,
                      actual_df: Union[pd.DataFrame, pd.Series],
-                     score_list: list[str] = None) -> pd.Series:
+                     scores: Union[list[str], dict[str, Callable]] = None) -> pd.Series:
         """
         Compute the loss (i.e. the score) between a model prediction and the actual data
         :param predicted_df: the result of the prediction
         :param actual_df: the actual target data
-        :param score_list: the statistics to consider. Either 'max_error', 'mae', 'rmse', 'r2', 'mape', 'mse'.
+        :param scores: the statistics to consider. Either 'max_error', 'mae', 'rmse', 'r2', 'mape', 'mse', 'wape'.
             Defaults to 'rmse'.
+            If a list is given, the code detects the statistics to use itself.
+            The score to use can be customized by the user with a dict (name, method).
         :return: a series that contains for each statistics the score of the model on the training set
         """
 
-        # default is rmse
-        if score_list is None:
-            score_list = ['rmse']
+        scores_dict = {}
+        if scores is None:
+            # default is rmse
+            scores_dict = {"rmse": METRICS_FUNCTION_DICT["rmse"]}
 
-        # check that scores are allowed
-        for score in score_list:
-            if score not in METRICS_FUNCTION_DICT:
-                raise ValueError(f"Score must be one of {METRICS_FUNCTION_DICT.keys()} but got {score}")
+        elif isinstance(scores, dict):
+            # home-made scores
+            scores_dict = scores
+
+        elif isinstance(scores, list):
+            # use known functions of enda
+            for score in scores:
+                if score not in METRICS_FUNCTION_DICT:
+                    raise ValueError(f"Score must be one of {METRICS_FUNCTION_DICT.keys()} but got {score}")
+                scores_dict[score] = METRICS_FUNCTION_DICT[score]
+
+        else:
+            raise ValueError("scores must be None, a list of known statistics or a custom home-made "
+                             "dictionary of scores.")
 
         # we have to compute on the training set the score for each of the method chosen
         scoring_result_list = []
-        for score in score_list:
-            method = METRICS_FUNCTION_DICT[score]
+        for _, method in scores_dict.items():
             result_score = method(actual_df, predicted_df)
             scoring_result_list.append(result_score)
 
-        return pd.Series(data=scoring_result_list, index=score_list)
+        return pd.Series(data=scoring_result_list, index=scores_dict.keys())

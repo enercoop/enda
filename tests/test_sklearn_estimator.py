@@ -113,13 +113,13 @@ class TestEndaSklearnEstimator(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             # not yet trained estimator
-            enda_lin.get_loss_training(score_list=['rmse', 'mae', 'r2', 'mape'])
+            enda_lin.get_loss_training(scores=['rmse', 'mae', 'r2', 'mape'])
 
         # train the estimator
         enda_lin.train(self.training_df, target_col=self.target_col)
 
         # get the loss training
-        loss_training = enda_lin.get_loss_training(score_list = ['rmse', 'mae', 'r2', 'mape'])
+        loss_training = enda_lin.get_loss_training(scores = ['rmse', 'mae', 'r2', 'mape'])
 
         # expected output
         expected_output = pd.Series(

@@ -97,8 +97,8 @@ class Resample:
 
         # make sure we downsample
         if original_freq and (
-                enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_days(freq)
-                < enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_days(original_freq)
+                enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_seconds(freq)
+                < enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_seconds(original_freq)
         ):
             raise RuntimeError(
                 f"The required frequency {freq}"
@@ -294,12 +294,13 @@ class Resample:
     @enda.tools.decorators.handle_multiindex(arg_name="timeseries_df")
     def upsample_and_interpolate(
             timeseries_df: pd.DataFrame,
-            freq: [str, pd.Timedelta],
+            freq: Union[str, pd.Timedelta],
             method: str = "linear",
             forward_fill: bool = False,
             is_original_frequency_unique: bool = False,
             index_name: str = None,
             tz_info: Union[str, datetime.tzinfo] = None,
+            expected_initial_freq: Optional[Union[str, pd.Timedelta]] = None
     ):
         """
         Upsample a datetime-indexed dataframe, and interpolate the columns data according to an interpolating method
@@ -311,18 +312,13 @@ class Resample:
         :param index_name: a name to give to the new index. For instance going from 'date' to 'time'.
         :param tz_info: the target time zone in case the index is resampled in another timezone / or if we want to
                         go from a non-localized timestamp (e.g. dates) to a localized one (e.g. date-times)
+        :param expected_initial_freq: the expected initial frequency of the dataframe. This serves to check the
+            resampling, and for the particular case of one-row dataframe which must be forward-filled.
         :return: the upsampled timeseries dataframe
         """
 
         if not isinstance(timeseries_df.index, pd.DatetimeIndex):
             raise TypeError("The dataframe index must be a DatetimeIndex")
-
-        # check it's not a one-row dataframe, because it cannot be upsampled.
-        if enda.tools.timeseries.TimeSeries.find_nb_records(timeseries_df.index) <= 1:
-            raise ValueError(
-                "Cannot upsample an empty or single-record time series; because it's initial"
-                " frequency cannot be determined. Consider using 'forward_fill_last_record' prior."
-            )
 
         timeseries_df = timeseries_df.copy()
 
@@ -331,6 +327,25 @@ class Resample:
             timeseries_df = enda.tools.timezone_utils.TimezoneUtils.set_timezone(
                 timeseries_df, tz_info
             )
+
+        # special case of empty dataframe
+        if timeseries_df.empty:
+            timeseries_df.index.freq = freq
+            return timeseries_df
+
+        # special case of a one-row dataframe
+        if enda.tools.timeseries.TimeSeries.find_nb_records(timeseries_df.index) == 1:
+            # this is required to set the frequency
+            timeseries_df = timeseries_df.resample(freq).last()
+            if forward_fill:
+                if expected_initial_freq is not None:
+                    timeseries_df = Resample.forward_fill_final_record(
+                        timeseries_df, gap_timedelta=expected_initial_freq, freq=freq
+                    )
+                else:
+                    raise ValueError("One-row dataframe with no expected_initial_freq provided")
+
+            return timeseries_df
 
         # get frequency from the initial dataframe
         original_freq = enda.tools.timeseries.TimeSeries.find_most_common_frequency(
@@ -346,14 +361,17 @@ class Resample:
         ):
             raise ValueError("Frequency is not unique in the dataframe")
 
-        # make sure we downsample
-        if enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_days(
-                freq
-        ) >= enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_days(original_freq):
-            raise ValueError(
-                f"The required frequency {freq}"
-                f" is higher than the original one {original_freq}"
-            )
+        original_freq_seconds = enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_seconds(original_freq)
+        freq_seconds = enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_seconds(freq)
+        if ((expected_initial_freq is not None) and
+                (enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_seconds(expected_initial_freq) != original_freq_seconds)):
+            raise ValueError(f"The initial expected freq of the dataframe index {expected_initial_freq} is not the "
+                             f"same as the one actually found in the dataframe index {original_freq}")
+
+        # make sure we upsample
+        if freq_seconds >= original_freq_seconds:
+            raise ValueError(f"The required frequency {freq} is higher than the original one {original_freq}")
+
         # resample and interpolate
         timeseries_df = timeseries_df.resample(freq).interpolate(method=method)
 
@@ -485,9 +503,10 @@ class Resample:
     @enda.tools.decorators.handle_multiindex(arg_name="timeseries_df")
     def forward_fill_final_record(
             timeseries_df: pd.DataFrame,
-            gap_timedelta: [str, pd.Timedelta] = None,
-            cut_off: [str, pd.Timedelta] = None,
-            excl_end_time: [str, datetime.date, datetime.datetime, pd.Timestamp] = None,
+            gap_timedelta: Optional[Union[str, pd.Timedelta]] = None,
+            cut_off: Optional[Union[str, pd.Timedelta]] = None,
+            excl_end_time: Optional[Union[str, datetime.date, datetime.datetime, pd.Timestamp]] = None,
+            freq: Optional[Union[str, pd.Timedelta]] = None,
     ) -> pd.DataFrame:
         """
         Forward-fill the final record of a regular datetime-indexed dataframe, keeping the frequency of
@@ -553,13 +572,19 @@ class Resample:
         :param excl_end_time: The forward-filling is performed using this argument if provided.
                               Basically, the last index is extended until excl_end_time - timeseries_df.index.freq
                               This option is incompatible with the setting of the gap_timedelta argument
+        :param freq: The frequency to use to forward-fill. Usually, it's not given, and determined from the dataframe
+            index directly, except if the dataframe is a one-row dataframe.
         :return: datetime-indexed dataframe similar to the initial one, with the last record being forward filled
                  using the initial frequency of the dataframe index.
         """
 
-        freq = enda.tools.timeseries.TimeSeries.find_most_common_frequency(
-            timeseries_df.index
-        )
+        if timeseries_df.empty:
+            return timeseries_df
+
+        if freq is None:
+            freq = enda.tools.timeseries.TimeSeries.find_most_common_frequency(
+                timeseries_df.index
+            )
 
         # the last record is understood as the max time (not the last record of the index)
         incl_end_time = timeseries_df.index.max()
@@ -588,11 +613,8 @@ class Resample:
         end_row = timeseries_df.loc[[incl_end_time], :]
         if len(end_row) > 1:
             raise ValueError("Duplicate last record, cannot find a way to extrapolate")
-        extra_row = pd.DataFrame(
-            timeseries_df.loc[[incl_end_time], :].values,
-            index=[extra_excl_end_time],
-            columns=timeseries_df.columns,
-        )
+        extra_row = timeseries_df.loc[[incl_end_time], :].copy()
+        extra_row.index = [extra_excl_end_time]
         extra_row.index.name = timeseries_df.index.name
 
         # Add the extra row, and extrapolate using resample
@@ -607,5 +629,7 @@ class Resample:
             result = result[result.index < cut_off_end]
 
         result = pd.concat([timeseries_df, result], axis=0)
+        result = result.astype(timeseries_df.dtypes)
         result.index.freq = timeseries_df.index.freq
+
         return result

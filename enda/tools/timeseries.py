@@ -25,23 +25,53 @@ class TimeSeries:
     # mapping of common frequencies codes to approximate number of days
     # checkout https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
     # to get more information
-    # @todo : make case-sensitive + pass all in seconds to avoid side effects in divisions
     FREQ_UNIT_TO_DAYS = {
         "ms": 1 / (24 * 3600 * 1000),  # millisecond
         "s": 1 / (24 * 3600),  # second
+        "S": 1 / (24 * 3600),  # second
         "min": 1 / 1440,  # minute
+        "MIN": 1 / 1440,  # minute
         "T": 1 / 1440,  # minute
         "H": 1 / 24,  # hour
         "h": 1 / 24,  # hour
         "D": 1,  # day
         "d": 1,  # day
         "B": 1,  # business day
+        "b": 1,  # business day
         "W": 7,  # week
+        "w": 7,  # week
+        "W-SUN": 7,  # week
+        "W-MON": 7,  # week
         "M": 30.4,  # average number of days in a month
         "MS": 30.4,  # average number of days in a month
         "Q": 91,  # quarter (approximation)
         "A": 365,  # assuming 365 days in a year (approximation)
         "Y": 365,  # assuming 365 days in a year (approximation)
+    }
+
+    # mapping of common frequencies codes to approximate number of seconds
+    FREQ_UNIT_TO_SECONDS = {
+        "ms": 1 / 1000,  # millisecond
+        "s": 1,  # second
+        "S": 1,  # second
+        "min": 60,  # minute
+        "MIN": 60,  # minute
+        "T": 60,  # minute
+        "H": 3600,  # hour
+        "h": 3600,  # hour
+        "D": 86400,  # number of seconds in a day (out of DST)
+        "d": 86400,  # day (out of DST)
+        "B": 86400,  # business day (out of DST)
+        "b": 86400,  # business day (out of DST)
+        "W": 604800,  # week (out of DST)
+        "w": 604800,  # week (out of DST)
+        "W-SUN": 604800,  # week (out of DST)
+        "W-MON": 604800,  # week (out of DST)
+        "M": 2626560,  # average number of seconds in a month
+        "MS": 2626560,  # average number of seconds in a month
+        "Q": 7862400,  # quarter (approximation)
+        "A": 31536000,  # assuming 365 days in a year (approximation)
+        "Y": 31536000,  # assuming 365 days in a year (approximation)
     }
 
     @staticmethod
@@ -100,7 +130,7 @@ class TimeSeries:
             raise ValueError(f"freq {freq} is not valid")
 
         # simple check
-        if freq_unit_str not in TimeSeries.FREQ_UNIT_TO_DAYS:
+        if freq_unit_str not in TimeSeries.FREQ_UNIT_TO_SECONDS:
             raise ValueError(
                 f"Unknown frequency unit {freq_unit_str} obtained from frequency {freq}"
             )
@@ -138,8 +168,27 @@ class TimeSeries:
             freq
         )
 
-        # error if is not in freq_to_days
+        # error if is not in FREQ_UNIT_TO_DAYS
         return numeric_part_int * TimeSeries.FREQ_UNIT_TO_DAYS[freq_unit_str]
+
+    @staticmethod
+    def freq_as_approximate_nb_seconds(freq: Union[str, pd.Timedelta]) -> int:
+        """
+        Map pandas freq string to an approximate number of seconds.
+        This serves to compare freq strings, such as '1D', '3MS', and so on.
+        It replaces the calls to total_seconds() possibly used only with pd.Timedelta().
+        Note that the computation is exact if a pd.Timedelta is given.
+        :param freq: the frequency as a string, such as '10min', '3MS', or a pd.Timedelta.
+        :return: a sometimes approximate length of the provided frequency in days
+        """
+
+        # separate the freq string in numeric and alphabetic parts
+        numeric_part_int, freq_unit_str = TimeSeries.split_amount_and_unit_from_freq(
+            freq
+        )
+
+        # error if is not in FREQ_UNIT_TO_SECONDS
+        return numeric_part_int * TimeSeries.FREQ_UNIT_TO_SECONDS[freq_unit_str]
 
     @staticmethod
     def add_timedelta(

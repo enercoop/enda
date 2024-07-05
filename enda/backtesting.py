@@ -1,4 +1,5 @@
 """A module containing functions used for the backtesting of models"""
+
 from collections.abc import Generator
 from typing import Union, Optional, Callable, Tuple
 
@@ -9,6 +10,7 @@ from enda.estimators import EndaEstimator
 from enda.scoring import Scoring
 from enda.tools.decorators import warning_deprecated_name
 from enda.tools.timeseries import TimeSeries
+from enda.config import get_logger
 
 
 class BackTesting:
@@ -91,8 +93,8 @@ class BackTesting:
         initial_freq = TimeSeries.find_most_common_frequency(
             sorted_df.index.get_level_values(-1), skip_duplicate_timestamps=True
         )
-        gap = int(TimeSeries.freq_as_approximate_nb_days(gap_size) /
-                  TimeSeries.freq_as_approximate_nb_days(initial_freq)
+        gap = int(TimeSeries.freq_as_approximate_nb_seconds(gap_size) /
+                  TimeSeries.freq_as_approximate_nb_seconds(initial_freq)
                   )
 
         # if min_train_size is defined, we find the location of the index that begins after it
@@ -146,7 +148,7 @@ class BackTesting:
         # hardcode a minimal size of the test set to avoid side effects in the backtesting
         if min_last_test_size_pct > 1 or min_last_test_size_pct < 0:
             raise ValueError(f"last_min_test_size_pct must be a float between 0 and 1, found {min_last_test_size_pct}.")
-        min_test_set_size = str(TimeSeries.freq_as_approximate_nb_days(test_size) * min_last_test_size_pct) + 'D'
+        min_test_set_size = str(TimeSeries.freq_as_approximate_nb_seconds(test_size) * min_last_test_size_pct) + 'S'
         min_index = df.index.get_level_values(-1).min()
         max_index = df.index.get_level_values(-1).max()
 
@@ -185,8 +187,10 @@ class BackTesting:
             estimator: EndaEstimator,
             df: pd.DataFrame,
             target_col: str,
-            score_list: Optional[list[str]] = None,
+            scores: Optional[Union[list[str], dict[str, str]]] = None,
             process_forecast_specs: Optional[Tuple[Callable, dict]] = None,
+            retrain_estimator: bool = True,
+            verbose: bool = False,
             **kwargs
     ) -> dict[str, pd.DataFrame]:
         """
@@ -201,41 +205,51 @@ class BackTesting:
         :param estimator: the EndaEstimator to backtest.
         :param df: the input dataframe on which the estimator is back-tested.
         :param target_col: the target column.
-        :param score_list: Optional. the list of loss functions to estimate, as defined in Scoring(). If nothing is
-            given, it defaults to RMSE.
+        :param scores: Optional. Define the score function to use for the backtesting.
+            It can be a list of loss functions to estimate as defined in Scoring().
+            It can be a dict of name-methods, and the end-user can provide any function in that case.
+            If nothing is given, it defaults to RMSE.
         :param process_forecast_specs: Optional. If given, it defines a function to apply to the result of
             each prediction before calculating the scoring (it is also applied to the training loss). A typical example
             is the PowerStation.clip_column() function, which is used to clamp the forecast load factor between
             0 and 1.
             process_forecast_specs must be a tuple, with the function to be applied, and a dict with all
             the function keywords arguments names and values.
+        :param retrain_estimator: boolean, if True (default), perform a real backtesting during which an
+            estimator is retrained before being used to perform a forecast. If False, the estimator must be
+            already trained, and this function only serves to perform successive forecasts on test sets.
         :param kwargs: extra argument to pass to the chosen split method yield_train_test_regular_split() or
             yield_train_test_periodic_split(), such as n_splits, test_size, gap_size, min_train_size,
             min_last_test_size_pct...
             If nothing is given, yield_train_test_regular_split(n_splits=5) is called.
+        :param verbose: boolean, defaults False. Print or no information.
         :return: a dict which contains:
             - for the 'score' key: a dataframe with the train and test results for each statistics and each split.
             - for the 'forecast' key: a dataframe with the successive forecasts on the test sets.
         """
-        if score_list is None:
-            score_list = ['rmse']
 
         if 'test_size' in kwargs:
             split_generator = BackTesting.yield_train_test_periodic_split(df=df, **kwargs)
         else:
             split_generator = BackTesting.yield_train_test_regular_split(df=df, **kwargs)
 
+        logger = get_logger()
         scoring_result_list = []
         all_forecasts_list = []
+        backtest_iter = 0
+
         for train_set, test_set in split_generator:
 
-            # train estimator
-            estimator.train(df=train_set, target_col=target_col)
+            backtest_iter += 1
+            if verbose:
+                logger.info(f"Train index: {(train_set.index.min(), train_set.index.max())}")
 
-            # get training score
-            training_score = estimator.get_loss_training(score_list=score_list,
-                                                         process_forecast_specs=process_forecast_specs
-                                                         )
+            # train estimator
+            if retrain_estimator:
+                estimator.train(df=train_set, target_col=target_col)
+
+            if verbose:
+                logger.info(f"Test index: {(test_set.index.min(), test_set.index.max())}")
 
             # predict
             predict_df = estimator.predict(df=test_set.drop(columns=target_col), target_col=target_col)
@@ -245,17 +259,40 @@ class BackTesting:
                 process_forecast_function, process_forecast_kwargs = process_forecast_specs
                 predict_df = process_forecast_function(predict_df, **process_forecast_kwargs)
 
-            all_forecasts_list.append(predict_df)
+            # store predict
+            all_forecasts_list.append(predict_df.assign(backtest_iter=backtest_iter))
 
-            # get test score, rename indexes for scoring and create a dataframe with scores for that iteration
+            # -- compute scores
+
+            # get training score
+            training_score = estimator.get_loss_training(scores=scores,
+                                                         process_forecast_specs=process_forecast_specs
+                                                         )
+
+            # get test score,
             test_score = Scoring.compute_loss(predicted_df=predict_df,
                                               actual_df=test_set[target_col],
-                                              score_list=score_list
+                                              scores=scores
                                               )
 
+            # rename indexes for scoring and create a dataframe with scores for that iteration
             training_score.index = ['train_' + _ for _ in training_score.index]
             test_score.index = ['test_' + _ for _ in test_score.index]
-            scoring_result_list.append(pd.concat([training_score, test_score]).to_frame().T)
+            scores_df = pd.concat([training_score, test_score]).to_frame().T
+            start_end_times_df = pd.DataFrame(
+                {
+                    "train_start": [train_set.index.get_level_values(-1).min()],
+                    "train_end": [train_set.index.get_level_values(-1).max()],
+                    "test_start": [test_set.index.get_level_values(-1).min()],
+                    "test_end": [test_set.index.get_level_values(-1).max()],
+                }
+            )
+            scores_df = pd.concat([scores_df, start_end_times_df], axis=1)
+
+            if verbose:
+                logger.info(f"Partial scores: \n{scores_df.to_string()}")
+
+            scoring_result_list.append(scores_df)
 
         result_dict = {"score": pd.concat(scoring_result_list).reset_index(drop=True),
                        "forecast": pd.concat(all_forecasts_list)}

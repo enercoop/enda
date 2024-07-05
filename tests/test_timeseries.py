@@ -204,6 +204,34 @@ class TestTimeSeries(unittest.TestCase):
         for result, expected_result in zip(result_list, expected_result_list):
             self.assertAlmostEqual(result, expected_result)
 
+    def test_freq_as_approximate_nb_seconds(self):
+        """Test the freq_as_approximate_nb_seconds function"""
+
+        # test with correct frequencies
+        result_list = [
+            TimeSeries.freq_as_approximate_nb_seconds(_) for _ in self.ok_freq_list
+        ]
+
+        expected_result_list = [
+            2 * 86400,
+            2626560,
+            10800,
+            86400,
+            304 * 86400,
+            730 * 86400,
+            -3 * 86400,
+            120,
+            1,
+            2,
+            -86400,
+            600,
+            3 * 86400,
+            91 * 86400,
+        ]
+
+        for result, expected_result in zip(result_list, expected_result_list):
+            self.assertAlmostEqual(result, expected_result)
+
     def test_add_timedelta(self):
         """Test the add_timedelta_function"""
 
