@@ -500,7 +500,7 @@ class TestResample(unittest.TestCase):
 
         pd.testing.assert_frame_equal(result_df, expected_df)
 
-        # test with a linear interpolation: string values are not linearly interpolated
+        # test with a linear interpolation: string values are not linearly interpolated, it makes a np.nan
         result_df = enda.tools.resample.Resample.upsample_and_interpolate(self.thirty_seconds_df,
                                                                           freq="15s",
                                                                           tz_info="Europe/Paris",

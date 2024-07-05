@@ -379,7 +379,7 @@ class Resample:
         # resample and interpolate
         timeseries_df = timeseries_df.resample(freq).interpolate(method=method, **kwargs)
 
-        # if method is 'ffill' or 'pad' or "bfill"
+        # if method is 'ffill' or "bfill" or 'pad'
         if method in ["ffill", "bfill", "pad"]:
             timeseries_df = timeseries_df.astype(initial_dtypes)
 
