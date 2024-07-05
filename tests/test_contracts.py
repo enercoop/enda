@@ -274,7 +274,7 @@ class TestContracts(unittest.TestCase):
 
         expected_output_df = pd.DataFrame(
             data=[
-                {"contracts_count": 2.0, "subscribed_kva": 16.0},
+                {"contracts_count": 2, "subscribed_kva": 16},
                 {"contracts_count": 3, "subscribed_kva": 20},
                 {"contracts_count": 3, "subscribed_kva": 25},
                 {"contracts_count": 2, "subscribed_kva": 21},

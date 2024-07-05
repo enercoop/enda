@@ -202,7 +202,7 @@ class Contracts:
 
         # add days that have no increment (with NA values), else the result can have gaps
         # new "NA" increments = no contract start or end event that day = increment is 0
-        df_by_day = df_by_day.asfreq("D").fillna(0)
+        df_by_day = df_by_day.asfreq("D").fillna(0).astype(df_by_day.dtypes)
 
         # compute cumulative sums of daily increments to get daily totals
         portfolio = df_by_day.cumsum(axis=0)
