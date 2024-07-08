@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="generator" content="pdoc 14.4.0"/>
+    <meta name="generator" content="pdoc 14.5.1"/>
     <title>enda.ml_backends.h2o_estimator API documentation</title>
 
     <style>/*! * Bootstrap Reboot v5.0.0 (https://getbootstrap.com/) * Copyright 2011-2021 The Bootstrap Authors * Copyright 2011-2021 Twitter, Inc. * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE) * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md) */*,::after,::before{box-sizing:border-box}@media (prefers-reduced-motion:no-preference){:root{scroll-behavior:smooth}}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#fff;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}hr{margin:1rem 0;color:inherit;background-color:currentColor;border:0;opacity:.25}hr:not([size]){height:1px}h1,h2,h3,h4,h5,h6{margin-top:0;margin-bottom:.5rem;font-weight:500;line-height:1.2}h1{font-size:calc(1.375rem + 1.5vw)}@media (min-width:1200px){h1{font-size:2.5rem}}h2{font-size:calc(1.325rem + .9vw)}@media (min-width:1200px){h2{font-size:2rem}}h3{font-size:calc(1.3rem + .6vw)}@media (min-width:1200px){h3{font-size:1.75rem}}h4{font-size:calc(1.275rem + .3vw)}@media (min-width:1200px){h4{font-size:1.5rem}}h5{font-size:1.25rem}h6{font-size:1rem}p{margin-top:0;margin-bottom:1rem}abbr[data-bs-original-title],abbr[title]{-webkit-text-decoration:underline dotted;text-decoration:underline dotted;cursor:help;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}address{margin-bottom:1rem;font-style:normal;line-height:inherit}ol,ul{padding-left:2rem}dl,ol,ul{margin-top:0;margin-bottom:1rem}ol ol,ol ul,ul ol,ul ul{margin-bottom:0}dt{font-weight:700}dd{margin-bottom:.5rem;margin-left:0}blockquote{margin:0 0 1rem}b,strong{font-weight:bolder}small{font-size:.875em}mark{padding:.2em;background-color:#fcf8e3}sub,sup{position:relative;font-size:.75em;line-height:0;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}a{color:#0d6efd;text-decoration:underline}a:hover{color:#0a58ca}a:not([href]):not([class]),a:not([href]):not([class]):hover{color:inherit;text-decoration:none}code,kbd,pre,samp{font-family:SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:1em;direction:ltr;unicode-bidi:bidi-override}pre{display:block;margin-top:0;margin-bottom:1rem;overflow:auto;font-size:.875em}pre code{font-size:inherit;color:inherit;word-break:normal}code{font-size:.875em;color:#d63384;word-wrap:break-word}a>code{color:inherit}kbd{padding:.2rem .4rem;font-size:.875em;color:#fff;background-color:#212529;border-radius:.2rem}kbd kbd{padding:0;font-size:1em;font-weight:700}figure{margin:0 0 1rem}img,svg{vertical-align:middle}table{caption-side:bottom;border-collapse:collapse}caption{padding-top:.5rem;padding-bottom:.5rem;color:#6c757d;text-align:left}th{text-align:inherit;text-align:-webkit-match-parent}tbody,td,tfoot,th,thead,tr{border-color:inherit;border-style:solid;border-width:0}label{display:inline-block}button{border-radius:0}button:focus:not(:focus-visible){outline:0}button,input,optgroup,select,textarea{margin:0;font-family:inherit;font-size:inherit;line-height:inherit}button,select{text-transform:none}[role=button]{cursor:pointer}select{word-wrap:normal}select:disabled{opacity:1}[list]::-webkit-calendar-picker-indicator{display:none}[type=button],[type=reset],[type=submit],button{-webkit-appearance:button}[type=button]:not(:disabled),[type=reset]:not(:disabled),[type=submit]:not(:disabled),button:not(:disabled){cursor:pointer}::-moz-focus-inner{padding:0;border-style:none}textarea{resize:vertical}fieldset{min-width:0;padding:0;margin:0;border:0}legend{float:left;width:100%;padding:0;margin-bottom:.5rem;font-size:calc(1.275rem + .3vw);line-height:inherit}@media (min-width:1200px){legend{font-size:1.5rem}}legend+*{clear:left}::-webkit-datetime-edit-day-field,::-webkit-datetime-edit-fields-wrapper,::-webkit-datetime-edit-hour-field,::-webkit-datetime-edit-minute,::-webkit-datetime-edit-month-field,::-webkit-datetime-edit-text,::-webkit-datetime-edit-year-field{padding:0}::-webkit-inner-spin-button{height:auto}[type=search]{outline-offset:-2px;-webkit-appearance:textfield}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-color-swatch-wrapper{padding:0}::file-selector-button{font:inherit}::-webkit-file-upload-button{font:inherit;-webkit-appearance:button}output{display:inline-block}iframe{border:0}summary{display:list-item;cursor:pointer}progress{vertical-align:baseline}[hidden]{display:none!important}</style>
@@ -40,13 +40,19 @@
                                 <a class="variable" href="#EndaH2OEstimator.model">model</a>
                         </li>
                         <li>
-                                <a class="variable" href="#EndaH2OEstimator.training_performance">training_performance</a>
-                        </li>
-                        <li>
                                 <a class="function" href="#EndaH2OEstimator.train">train</a>
                         </li>
                         <li>
                                 <a class="function" href="#EndaH2OEstimator.predict">predict</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#EndaH2OEstimator.get_model_name">get_model_name</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#EndaH2OEstimator.get_model_params">get_model_params</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#EndaH2OEstimator.get_feature_importance">get_feature_importance</a>
                         </li>
                 </ul>
 
@@ -81,139 +87,177 @@
 </span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a><span class="kn">import</span> <span class="nn">tempfile</span>
 </span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a><span class="kn">import</span> <span class="nn">warnings</span>
 </span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a>
-</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a><span class="kn">import</span> <span class="nn">pandas</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a>
-</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a><span class="kn">from</span> <span class="nn">enda.estimators</span> <span class="kn">import</span> <span class="n">EndaEstimator</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a><span class="kn">import</span> <span class="nn">h2o</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a><span class="kn">import</span> <span class="nn">h2o.exceptions</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 </span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a>
-</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a><span class="k">try</span><span class="p">:</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a>    <span class="kn">import</span> <span class="nn">h2o</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a>    <span class="kn">import</span> <span class="nn">h2o.exceptions</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a><span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a>    <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a>        <span class="s2">&quot;h2o is required is you want to use this enda&#39;s H2OEstimator. &quot;</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a>        <span class="s2">&quot;Try: pip install h2o&gt;=3.32.0.3&quot;</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a>    <span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a>
-</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a>
-</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a><span class="k">class</span> <span class="nc">EndaH2OEstimator</span><span class="p">(</span><span class="n">EndaEstimator</span><span class="p">):</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a><span class="sd">    This is a wrapper around any H2O estimator (or anything with the same train/predict methods).</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a><span class="sd">    H2OEstimator implements enda&#39;s ModelInterface.</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a><span class="kn">from</span> <span class="nn">enda.estimators</span> <span class="kn">import</span> <span class="n">EndaEstimator</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a>
+</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a>
+</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a><span class="k">class</span> <span class="nc">EndaH2OEstimator</span><span class="p">(</span><span class="n">EndaEstimator</span><span class="p">):</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a><span class="sd">    This is a wrapper around any H2O estimator (or anything with the same train/predict methods).</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a><span class="sd">    H2OEstimator implements enda&#39;s ModelInterface.</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a>
+</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a><span class="sd">    If you have a large dataset and need it on the h2o cluster only,</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a><span class="sd">    using a H2OFrame exclusively and not in a pandas.Dataframe,</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a><span class="sd">    just use your H2O model directly to train and predict and copy some lines found here.</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a>
+</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a><span class="sd">    H2O saves model data on the h2o server, so we cannot simply use pickle/joblib out of the box for these</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a><span class="sd">    objects. So we have methods for that.</span>
 </span><span id="L-26"><a href="#L-26"><span class="linenos"> 26</span></a>
-</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a><span class="sd">    If you have a large dataset and need it on the h2o cluster only,</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a><span class="sd">    using a H2OFrame exclusively and not in a pandas.Dataframe,</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a><span class="sd">    just use your H2O model directly to train and predict and copy some lines found here.</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a>
-</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a><span class="sd">    H2O saves model data on the h2o server, so we cannot simply use pickle/joblib out of the box for these</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a><span class="sd">    objects. So we have methods for that.</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a>
+</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h2o_estimator</span><span class="p">):</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">h2o_estimator</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a>
-</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a>
-</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h2o_estimator</span><span class="p">):</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">h2o_estimator</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">training_performance</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a>
-</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a>        <span class="n">x</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a>            <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="n">target_col</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a>        <span class="p">]</span>  <span class="c1"># for H20, x is the list of features</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a>        <span class="n">y</span> <span class="o">=</span> <span class="n">target_col</span>  <span class="c1"># for H20, y is the name of the target</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a>        <span class="n">training_frame</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">H2OFrame</span><span class="p">(</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a>            <span class="n">df</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a>        <span class="p">)</span>  <span class="c1"># H20 training frame containing both features and target</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">training_frame</span><span class="p">)</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">training_performance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">scoring_history</span><span class="p">()</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a><span class="sd">        Train a h2o-based model from an input dataframe with features and a target column</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a><span class="sd">        :param df: the input dataframe</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a><span class="sd">        :param target_col: the target column name</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a>        <span class="n">feature_list</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a>            <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="n">target_col</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a>        <span class="p">]</span>  <span class="c1"># for H20, x is the list of features</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a>        <span class="n">training_frame</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">H2OFrame</span><span class="p">(</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a>            <span class="n">df</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a>        <span class="p">)</span>  <span class="c1"># H20 training frame containing both features and target</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">feature_list</span><span class="p">,</span> <span class="n">target_col</span><span class="p">,</span> <span class="n">training_frame</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a>
+</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a>        <span class="c1"># store the training</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_training_df</span> <span class="o">=</span> <span class="n">df</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_target</span> <span class="o">=</span> <span class="n">target_col</span>
 </span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a>
-</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a>        <span class="n">test_data</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">H2OFrame</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>  <span class="c1"># convert to H20 Frame</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a>        <span class="n">forecast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_data</span><span class="p">)</span>  <span class="c1"># returns an H20Frame named &#39;predict&#39;</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a>        <span class="k">with</span> <span class="n">h2o</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">threading</span><span class="o">.</span><span class="n">local_context</span><span class="p">(</span><span class="n">polars_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">datatable_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a>            <span class="n">forecast</span> <span class="o">=</span> <span class="n">forecast</span><span class="o">.</span><span class="n">as_data_frame</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a>                <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;predict&quot;</span><span class="p">:</span> <span class="n">target_col</span><span class="p">}</span>  <span class="c1"># convert to pandas and rename</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a>            <span class="p">)</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>        <span class="n">forecast</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="p">(</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a>            <span class="n">df</span><span class="o">.</span><span class="n">index</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a>        <span class="p">)</span>  <span class="c1"># put back the correct index (typically a pandas.DatetimeIndex)</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a>        <span class="k">return</span> <span class="n">forecast</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>
-</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a>    <span class="c1"># All below is just for model persistence : to comply with pickle and deepcopy.</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a>
-</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a>    <span class="n">__tmp_file_path_1</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a>        <span class="n">tempfile</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">(),</span> <span class="s2">&quot;__h2o_estimator_tmp_file_1_136987&quot;</span>
-</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a>    <span class="p">)</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a>    <span class="n">__tmp_file_path_2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>        <span class="n">tempfile</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">(),</span> <span class="s2">&quot;__h2o_estimator_tmp_file_2_136987&quot;</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a>    <span class="p">)</span>
-</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a>
-</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a>    <span class="k">def</span> <span class="nf">__h2o_model_to_binary</span><span class="p">(</span><span class="n">h2o_model</span><span class="p">):</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a>        <span class="c1"># save h2o model to tmp file</span>
-</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a>            <span class="n">model_path_from_h2o</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">save_model</span><span class="p">(</span>
-</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a>                <span class="n">h2o_model</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a>            <span class="p">)</span>
-</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a>        <span class="k">except</span> <span class="p">(</span><span class="n">h2o</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">H2OResponseError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>                <span class="s2">&quot;Problem getting the model from h2o server. Train the model first. &quot;</span>
-</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a>                <span class="s2">&quot;Cannot access model binary before training (for pickle or deepcopy or other uses).&quot;</span>
-</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>            <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
-</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a>
-</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>        <span class="c1"># model can be saved in __tmp_file_path_1, or in private/__tmp_file_path_1</span>
-</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a>        <span class="n">potential_startswith</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>            <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">,</span>
-</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a>            <span class="s2">&quot;/private&quot;</span> <span class="o">+</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">,</span>
-</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>        <span class="p">]</span>
-</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">model_path_from_h2o</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">potential_startswith</span><span class="p">)):</span>
-</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a>            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected model_path_from_h2o=</span><span class="si">{</span><span class="n">model_path_from_h2o</span><span class="si">}</span><span class="s2"> to start with </span><span class="si">{</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a>            <span class="p">)</span>
-</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a>
-</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>        <span class="c1"># last step actually made a folder and a file inside (at path &#39;model_path_from_h2o&#39;)</span>
-</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>        <span class="c1"># but we must keep the file inside to read it later,</span>
-</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>        <span class="c1"># else reading the model later based on the folder does not work despite what H2O docs say</span>
-</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>        <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">model_path_from_h2o</span><span class="p">,</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
-</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">)</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a><span class="sd">        Predict from a h2o-based trained model using an input dataframe with features</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a><span class="sd">        :param df: the input dataframe</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a><span class="sd">        :param target_col: the target column name</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a><span class="sd">        :return: a single-column dataframe with the predicted target</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>        <span class="n">test_data</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">H2OFrame</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>  <span class="c1"># convert to H20 Frame</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a>        <span class="n">forecast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># returns an H20Frame named &#39;predict&#39;</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a>        <span class="k">with</span> <span class="n">h2o</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">threading</span><span class="o">.</span><span class="n">local_context</span><span class="p">(</span><span class="n">polars_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">datatable_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a>            <span class="n">forecast</span> <span class="o">=</span> <span class="n">forecast</span><span class="o">.</span><span class="n">as_data_frame</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>                <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;predict&quot;</span><span class="p">:</span> <span class="n">target_col</span><span class="p">}</span>  <span class="c1"># convert to pandas and rename</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a>            <span class="p">)</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a>        <span class="n">forecast</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a>            <span class="n">df</span><span class="o">.</span><span class="n">index</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a>        <span class="p">)</span>  <span class="c1"># put back the correct index (typically a pandas.DatetimeIndex)</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a>        <span class="k">return</span> <span class="n">forecast</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a>
+</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>    <span class="k">def</span> <span class="nf">get_model_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a><span class="sd">        Return the H2O model name instead of EndaH2OEstimator</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a>
+</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>    <span class="k">def</span> <span class="nf">get_model_params</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a><span class="sd">        Return a dict with the model name and the model hyperparameters</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a>        <span class="k">return</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_model_name</span><span class="p">():</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_params</span><span class="p">()}</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a>
+</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>    <span class="k">def</span> <span class="nf">get_feature_importance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a><span class="sd">        Return the feature&#39;s importance once a model has been trained.</span>
+</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a><span class="sd">        This makes use of built-in method &#39;varimp&#39; of an H2OEstimator,</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a><span class="sd">        and only returns the percentage column</span>
+</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a><span class="sd">        :return: a series that contain the percentage of importance for each variable</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a>
+</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>        <span class="n">feature_importance_series</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">varimp</span><span class="p">(</span><span class="n">use_pandas</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a>            <span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s1">&#39;variable&#39;</span><span class="p">,</span> <span class="s1">&#39;percentage&#39;</span><span class="p">]]</span>
+</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>            <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;percentage&#39;</span><span class="p">:</span> <span class="s1">&#39;variable_importance_pct&#39;</span><span class="p">})</span>
+</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a>            <span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;variable&#39;</span><span class="p">)</span>
+</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a>            <span class="o">.</span><span class="n">rename_axis</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>            <span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>            <span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>        <span class="p">)</span>
+</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>
+</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>        <span class="k">return</span> <span class="n">feature_importance_series</span>
 </span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>
-</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>        <span class="c1"># read the tmp file as binary</span>
-</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a>        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>            <span class="n">binary</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>
-</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>        <span class="c1"># cleanup tmp file</span>
-</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
-</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>
-</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>        <span class="k">return</span> <span class="n">binary</span>
+</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>        <span class="c1"># All below is just for model persistence : to comply with pickle and deepcopy.</span>
+</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a>
+</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>    <span class="n">__tmp_file_path_1</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>        <span class="n">tempfile</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">(),</span> <span class="s2">&quot;__h2o_estimator_tmp_file_1_136987&quot;</span>
+</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>    <span class="p">)</span>
+</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>    <span class="n">__tmp_file_path_2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>        <span class="n">tempfile</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">(),</span> <span class="s2">&quot;__h2o_estimator_tmp_file_2_136987&quot;</span>
+</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>    <span class="p">)</span>
 </span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a>
 </span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a>    <span class="k">def</span> <span class="nf">__h2o_model_from_binary</span><span class="p">(</span><span class="n">binary</span><span class="p">):</span>
-</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a>        <span class="c1"># save binary to tmp file</span>
-</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>            <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">binary</span><span class="p">)</span>
-</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>
-</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>        <span class="c1"># load H2O model from the file</span>
-</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>        <span class="n">h2o_model</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">upload_model</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
-</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a>
-</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>        <span class="c1"># cleanup tmp file</span>
-</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a>        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
-</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a>
-</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a>        <span class="k">return</span> <span class="n">h2o_model</span>
-</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a>
-</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a>    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a>        <span class="c1"># for pickle, see https://docs.python.org/3/library/pickle.html#pickle-state</span>
-</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a>
-</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span> <span class="o">=</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__h2o_model_to_binary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
-</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a>        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a>        <span class="c1"># Remove the un-picklable entry : &#39;model&#39;, but keep the picklable entry: __model_binary</span>
-</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a>        <span class="k">del</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
-</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a>        <span class="k">return</span> <span class="n">state</span>
+</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a>    <span class="k">def</span> <span class="nf">__h2o_model_to_binary</span><span class="p">(</span><span class="n">h2o_model</span><span class="p">):</span>
+</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a>        <span class="c1"># save h2o model to tmp file</span>
+</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>            <span class="n">model_path_from_h2o</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">save_model</span><span class="p">(</span>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>                <span class="n">h2o_model</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span>
+</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>            <span class="p">)</span>
+</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>        <span class="k">except</span> <span class="p">(</span><span class="n">h2o</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">H2OResponseError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exception</span><span class="p">:</span>
+</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>                <span class="s2">&quot;Problem getting the model from h2o server. Train the model first. &quot;</span>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a>                <span class="s2">&quot;Cannot access model binary before training (for pickle or deepcopy or other uses).&quot;</span>
+</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a>            <span class="p">)</span> <span class="kn">from</span> <span class="nn">exception</span>
+</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a>
+</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a>        <span class="c1"># model can be saved in __tmp_file_path_1, or in private/__tmp_file_path_1</span>
+</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a>        <span class="n">potential_startswith</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a>            <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">,</span>
+</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a>            <span class="s2">&quot;/private&quot;</span> <span class="o">+</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">,</span>
+</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a>        <span class="p">]</span>
+</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">model_path_from_h2o</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">potential_startswith</span><span class="p">)):</span>
+</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a>            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected model_path_from_h2o=</span><span class="si">{</span><span class="n">model_path_from_h2o</span><span class="si">}</span><span class="s2"> to start with </span><span class="si">{</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a>            <span class="p">)</span>
 </span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a>
-</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a>    <span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
-</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a>        <span class="c1"># for pickle, see https://docs.python.org/3/library/pickle.html#pickle-state</span>
-</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a>
-</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a>        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>  <span class="c1"># loads only __model_binary</span>
-</span><span id="L-138"><a href="#L-138"><span class="linenos">138</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__h2o_model_from_binary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span><span class="p">)</span>
-</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a>        <span class="c1"># we don&#39;t need to keep the __model_binary</span>
-</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a>        <span class="c1"># last step actually made a folder and a file inside (at path &#39;model_path_from_h2o&#39;)</span>
+</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a>        <span class="c1"># but we must keep the file inside to read it later,</span>
+</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a>        <span class="c1"># else reading the model later based on the folder does not work despite what H2O docs say</span>
+</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a>        <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">model_path_from_h2o</span><span class="p">,</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
+</span><span id="L-138"><a href="#L-138"><span class="linenos">138</span></a>        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">)</span>
+</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a>
+</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a>        <span class="c1"># read the tmp file as binary</span>
+</span><span id="L-141"><a href="#L-141"><span class="linenos">141</span></a>        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+</span><span id="L-142"><a href="#L-142"><span class="linenos">142</span></a>            <span class="n">binary</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</span><span id="L-143"><a href="#L-143"><span class="linenos">143</span></a>
+</span><span id="L-144"><a href="#L-144"><span class="linenos">144</span></a>        <span class="c1"># cleanup tmp file</span>
+</span><span id="L-145"><a href="#L-145"><span class="linenos">145</span></a>        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
+</span><span id="L-146"><a href="#L-146"><span class="linenos">146</span></a>
+</span><span id="L-147"><a href="#L-147"><span class="linenos">147</span></a>        <span class="k">return</span> <span class="n">binary</span>
+</span><span id="L-148"><a href="#L-148"><span class="linenos">148</span></a>
+</span><span id="L-149"><a href="#L-149"><span class="linenos">149</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a>    <span class="k">def</span> <span class="nf">__h2o_model_from_binary</span><span class="p">(</span><span class="n">binary</span><span class="p">):</span>
+</span><span id="L-151"><a href="#L-151"><span class="linenos">151</span></a>        <span class="c1"># save binary to tmp file</span>
+</span><span id="L-152"><a href="#L-152"><span class="linenos">152</span></a>        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+</span><span id="L-153"><a href="#L-153"><span class="linenos">153</span></a>            <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">binary</span><span class="p">)</span>
+</span><span id="L-154"><a href="#L-154"><span class="linenos">154</span></a>
+</span><span id="L-155"><a href="#L-155"><span class="linenos">155</span></a>        <span class="c1"># load H2O model from the file</span>
+</span><span id="L-156"><a href="#L-156"><span class="linenos">156</span></a>        <span class="n">h2o_model</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">upload_model</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
+</span><span id="L-157"><a href="#L-157"><span class="linenos">157</span></a>
+</span><span id="L-158"><a href="#L-158"><span class="linenos">158</span></a>        <span class="c1"># cleanup tmp file</span>
+</span><span id="L-159"><a href="#L-159"><span class="linenos">159</span></a>        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
+</span><span id="L-160"><a href="#L-160"><span class="linenos">160</span></a>
+</span><span id="L-161"><a href="#L-161"><span class="linenos">161</span></a>        <span class="k">return</span> <span class="n">h2o_model</span>
+</span><span id="L-162"><a href="#L-162"><span class="linenos">162</span></a>
+</span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a>    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="L-164"><a href="#L-164"><span class="linenos">164</span></a>        <span class="c1"># for pickle, see https://docs.python.org/3/library/pickle.html#pickle-state</span>
+</span><span id="L-165"><a href="#L-165"><span class="linenos">165</span></a>
+</span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span> <span class="o">=</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__h2o_model_to_binary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+</span><span id="L-167"><a href="#L-167"><span class="linenos">167</span></a>        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+</span><span id="L-168"><a href="#L-168"><span class="linenos">168</span></a>        <span class="c1"># Remove the un-picklable entry : &#39;model&#39;, but keep the picklable entry: __model_binary</span>
+</span><span id="L-169"><a href="#L-169"><span class="linenos">169</span></a>        <span class="k">del</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
+</span><span id="L-170"><a href="#L-170"><span class="linenos">170</span></a>        <span class="k">return</span> <span class="n">state</span>
+</span><span id="L-171"><a href="#L-171"><span class="linenos">171</span></a>
+</span><span id="L-172"><a href="#L-172"><span class="linenos">172</span></a>    <span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+</span><span id="L-173"><a href="#L-173"><span class="linenos">173</span></a>        <span class="c1"># for pickle, see https://docs.python.org/3/library/pickle.html#pickle-state</span>
+</span><span id="L-174"><a href="#L-174"><span class="linenos">174</span></a>
+</span><span id="L-175"><a href="#L-175"><span class="linenos">175</span></a>        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>  <span class="c1"># loads only __model_binary</span>
+</span><span id="L-176"><a href="#L-176"><span class="linenos">176</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__h2o_model_from_binary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span><span class="p">)</span>
+</span><span id="L-177"><a href="#L-177"><span class="linenos">177</span></a>        <span class="c1"># we don&#39;t need to keep the __model_binary</span>
+</span><span id="L-178"><a href="#L-178"><span class="linenos">178</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span> <span class="o">=</span> <span class="kc">None</span>
 </span></pre></div>
 
 
@@ -229,125 +273,170 @@
 
     </div>
     <a class="headerlink" href="#EndaH2OEstimator"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="EndaH2OEstimator-23"><a href="#EndaH2OEstimator-23"><span class="linenos"> 23</span></a><span class="k">class</span> <span class="nc">EndaH2OEstimator</span><span class="p">(</span><span class="n">EndaEstimator</span><span class="p">):</span>
-</span><span id="EndaH2OEstimator-24"><a href="#EndaH2OEstimator-24"><span class="linenos"> 24</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="EndaH2OEstimator-25"><a href="#EndaH2OEstimator-25"><span class="linenos"> 25</span></a><span class="sd">    This is a wrapper around any H2O estimator (or anything with the same train/predict methods).</span>
-</span><span id="EndaH2OEstimator-26"><a href="#EndaH2OEstimator-26"><span class="linenos"> 26</span></a><span class="sd">    H2OEstimator implements enda&#39;s ModelInterface.</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="EndaH2OEstimator-16"><a href="#EndaH2OEstimator-16"><span class="linenos"> 16</span></a><span class="k">class</span> <span class="nc">EndaH2OEstimator</span><span class="p">(</span><span class="n">EndaEstimator</span><span class="p">):</span>
+</span><span id="EndaH2OEstimator-17"><a href="#EndaH2OEstimator-17"><span class="linenos"> 17</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator-18"><a href="#EndaH2OEstimator-18"><span class="linenos"> 18</span></a><span class="sd">    This is a wrapper around any H2O estimator (or anything with the same train/predict methods).</span>
+</span><span id="EndaH2OEstimator-19"><a href="#EndaH2OEstimator-19"><span class="linenos"> 19</span></a><span class="sd">    H2OEstimator implements enda&#39;s ModelInterface.</span>
+</span><span id="EndaH2OEstimator-20"><a href="#EndaH2OEstimator-20"><span class="linenos"> 20</span></a>
+</span><span id="EndaH2OEstimator-21"><a href="#EndaH2OEstimator-21"><span class="linenos"> 21</span></a><span class="sd">    If you have a large dataset and need it on the h2o cluster only,</span>
+</span><span id="EndaH2OEstimator-22"><a href="#EndaH2OEstimator-22"><span class="linenos"> 22</span></a><span class="sd">    using a H2OFrame exclusively and not in a pandas.Dataframe,</span>
+</span><span id="EndaH2OEstimator-23"><a href="#EndaH2OEstimator-23"><span class="linenos"> 23</span></a><span class="sd">    just use your H2O model directly to train and predict and copy some lines found here.</span>
+</span><span id="EndaH2OEstimator-24"><a href="#EndaH2OEstimator-24"><span class="linenos"> 24</span></a>
+</span><span id="EndaH2OEstimator-25"><a href="#EndaH2OEstimator-25"><span class="linenos"> 25</span></a><span class="sd">    H2O saves model data on the h2o server, so we cannot simply use pickle/joblib out of the box for these</span>
+</span><span id="EndaH2OEstimator-26"><a href="#EndaH2OEstimator-26"><span class="linenos"> 26</span></a><span class="sd">    objects. So we have methods for that.</span>
 </span><span id="EndaH2OEstimator-27"><a href="#EndaH2OEstimator-27"><span class="linenos"> 27</span></a>
-</span><span id="EndaH2OEstimator-28"><a href="#EndaH2OEstimator-28"><span class="linenos"> 28</span></a><span class="sd">    If you have a large dataset and need it on the h2o cluster only,</span>
-</span><span id="EndaH2OEstimator-29"><a href="#EndaH2OEstimator-29"><span class="linenos"> 29</span></a><span class="sd">    using a H2OFrame exclusively and not in a pandas.Dataframe,</span>
-</span><span id="EndaH2OEstimator-30"><a href="#EndaH2OEstimator-30"><span class="linenos"> 30</span></a><span class="sd">    just use your H2O model directly to train and predict and copy some lines found here.</span>
-</span><span id="EndaH2OEstimator-31"><a href="#EndaH2OEstimator-31"><span class="linenos"> 31</span></a>
-</span><span id="EndaH2OEstimator-32"><a href="#EndaH2OEstimator-32"><span class="linenos"> 32</span></a><span class="sd">    H2O saves model data on the h2o server, so we cannot simply use pickle/joblib out of the box for these</span>
-</span><span id="EndaH2OEstimator-33"><a href="#EndaH2OEstimator-33"><span class="linenos"> 33</span></a><span class="sd">    objects. So we have methods for that.</span>
+</span><span id="EndaH2OEstimator-28"><a href="#EndaH2OEstimator-28"><span class="linenos"> 28</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator-29"><a href="#EndaH2OEstimator-29"><span class="linenos"> 29</span></a>
+</span><span id="EndaH2OEstimator-30"><a href="#EndaH2OEstimator-30"><span class="linenos"> 30</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h2o_estimator</span><span class="p">):</span>
+</span><span id="EndaH2OEstimator-31"><a href="#EndaH2OEstimator-31"><span class="linenos"> 31</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</span><span id="EndaH2OEstimator-32"><a href="#EndaH2OEstimator-32"><span class="linenos"> 32</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">h2o_estimator</span>
+</span><span id="EndaH2OEstimator-33"><a href="#EndaH2OEstimator-33"><span class="linenos"> 33</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="EndaH2OEstimator-34"><a href="#EndaH2OEstimator-34"><span class="linenos"> 34</span></a>
-</span><span id="EndaH2OEstimator-35"><a href="#EndaH2OEstimator-35"><span class="linenos"> 35</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="EndaH2OEstimator-36"><a href="#EndaH2OEstimator-36"><span class="linenos"> 36</span></a>
-</span><span id="EndaH2OEstimator-37"><a href="#EndaH2OEstimator-37"><span class="linenos"> 37</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h2o_estimator</span><span class="p">):</span>
-</span><span id="EndaH2OEstimator-38"><a href="#EndaH2OEstimator-38"><span class="linenos"> 38</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">h2o_estimator</span>
-</span><span id="EndaH2OEstimator-39"><a href="#EndaH2OEstimator-39"><span class="linenos"> 39</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="EndaH2OEstimator-40"><a href="#EndaH2OEstimator-40"><span class="linenos"> 40</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">training_performance</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="EndaH2OEstimator-41"><a href="#EndaH2OEstimator-41"><span class="linenos"> 41</span></a>
-</span><span id="EndaH2OEstimator-42"><a href="#EndaH2OEstimator-42"><span class="linenos"> 42</span></a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="EndaH2OEstimator-43"><a href="#EndaH2OEstimator-43"><span class="linenos"> 43</span></a>        <span class="n">x</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="EndaH2OEstimator-44"><a href="#EndaH2OEstimator-44"><span class="linenos"> 44</span></a>            <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="n">target_col</span>
-</span><span id="EndaH2OEstimator-45"><a href="#EndaH2OEstimator-45"><span class="linenos"> 45</span></a>        <span class="p">]</span>  <span class="c1"># for H20, x is the list of features</span>
-</span><span id="EndaH2OEstimator-46"><a href="#EndaH2OEstimator-46"><span class="linenos"> 46</span></a>        <span class="n">y</span> <span class="o">=</span> <span class="n">target_col</span>  <span class="c1"># for H20, y is the name of the target</span>
-</span><span id="EndaH2OEstimator-47"><a href="#EndaH2OEstimator-47"><span class="linenos"> 47</span></a>        <span class="n">training_frame</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">H2OFrame</span><span class="p">(</span>
-</span><span id="EndaH2OEstimator-48"><a href="#EndaH2OEstimator-48"><span class="linenos"> 48</span></a>            <span class="n">df</span>
-</span><span id="EndaH2OEstimator-49"><a href="#EndaH2OEstimator-49"><span class="linenos"> 49</span></a>        <span class="p">)</span>  <span class="c1"># H20 training frame containing both features and target</span>
-</span><span id="EndaH2OEstimator-50"><a href="#EndaH2OEstimator-50"><span class="linenos"> 50</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">training_frame</span><span class="p">)</span>
-</span><span id="EndaH2OEstimator-51"><a href="#EndaH2OEstimator-51"><span class="linenos"> 51</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">training_performance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">scoring_history</span><span class="p">()</span>
+</span><span id="EndaH2OEstimator-35"><a href="#EndaH2OEstimator-35"><span class="linenos"> 35</span></a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="EndaH2OEstimator-36"><a href="#EndaH2OEstimator-36"><span class="linenos"> 36</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator-37"><a href="#EndaH2OEstimator-37"><span class="linenos"> 37</span></a><span class="sd">        Train a h2o-based model from an input dataframe with features and a target column</span>
+</span><span id="EndaH2OEstimator-38"><a href="#EndaH2OEstimator-38"><span class="linenos"> 38</span></a><span class="sd">        :param df: the input dataframe</span>
+</span><span id="EndaH2OEstimator-39"><a href="#EndaH2OEstimator-39"><span class="linenos"> 39</span></a><span class="sd">        :param target_col: the target column name</span>
+</span><span id="EndaH2OEstimator-40"><a href="#EndaH2OEstimator-40"><span class="linenos"> 40</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator-41"><a href="#EndaH2OEstimator-41"><span class="linenos"> 41</span></a>        <span class="n">feature_list</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="EndaH2OEstimator-42"><a href="#EndaH2OEstimator-42"><span class="linenos"> 42</span></a>            <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="n">target_col</span>
+</span><span id="EndaH2OEstimator-43"><a href="#EndaH2OEstimator-43"><span class="linenos"> 43</span></a>        <span class="p">]</span>  <span class="c1"># for H20, x is the list of features</span>
+</span><span id="EndaH2OEstimator-44"><a href="#EndaH2OEstimator-44"><span class="linenos"> 44</span></a>        <span class="n">training_frame</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">H2OFrame</span><span class="p">(</span>
+</span><span id="EndaH2OEstimator-45"><a href="#EndaH2OEstimator-45"><span class="linenos"> 45</span></a>            <span class="n">df</span>
+</span><span id="EndaH2OEstimator-46"><a href="#EndaH2OEstimator-46"><span class="linenos"> 46</span></a>        <span class="p">)</span>  <span class="c1"># H20 training frame containing both features and target</span>
+</span><span id="EndaH2OEstimator-47"><a href="#EndaH2OEstimator-47"><span class="linenos"> 47</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">feature_list</span><span class="p">,</span> <span class="n">target_col</span><span class="p">,</span> <span class="n">training_frame</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator-48"><a href="#EndaH2OEstimator-48"><span class="linenos"> 48</span></a>
+</span><span id="EndaH2OEstimator-49"><a href="#EndaH2OEstimator-49"><span class="linenos"> 49</span></a>        <span class="c1"># store the training</span>
+</span><span id="EndaH2OEstimator-50"><a href="#EndaH2OEstimator-50"><span class="linenos"> 50</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_training_df</span> <span class="o">=</span> <span class="n">df</span>
+</span><span id="EndaH2OEstimator-51"><a href="#EndaH2OEstimator-51"><span class="linenos"> 51</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_target</span> <span class="o">=</span> <span class="n">target_col</span>
 </span><span id="EndaH2OEstimator-52"><a href="#EndaH2OEstimator-52"><span class="linenos"> 52</span></a>
-</span><span id="EndaH2OEstimator-53"><a href="#EndaH2OEstimator-53"><span class="linenos"> 53</span></a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="EndaH2OEstimator-54"><a href="#EndaH2OEstimator-54"><span class="linenos"> 54</span></a>        <span class="n">test_data</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">H2OFrame</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>  <span class="c1"># convert to H20 Frame</span>
-</span><span id="EndaH2OEstimator-55"><a href="#EndaH2OEstimator-55"><span class="linenos"> 55</span></a>        <span class="n">forecast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_data</span><span class="p">)</span>  <span class="c1"># returns an H20Frame named &#39;predict&#39;</span>
-</span><span id="EndaH2OEstimator-56"><a href="#EndaH2OEstimator-56"><span class="linenos"> 56</span></a>        <span class="k">with</span> <span class="n">h2o</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">threading</span><span class="o">.</span><span class="n">local_context</span><span class="p">(</span><span class="n">polars_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">datatable_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-</span><span id="EndaH2OEstimator-57"><a href="#EndaH2OEstimator-57"><span class="linenos"> 57</span></a>            <span class="n">forecast</span> <span class="o">=</span> <span class="n">forecast</span><span class="o">.</span><span class="n">as_data_frame</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
-</span><span id="EndaH2OEstimator-58"><a href="#EndaH2OEstimator-58"><span class="linenos"> 58</span></a>                <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;predict&quot;</span><span class="p">:</span> <span class="n">target_col</span><span class="p">}</span>  <span class="c1"># convert to pandas and rename</span>
-</span><span id="EndaH2OEstimator-59"><a href="#EndaH2OEstimator-59"><span class="linenos"> 59</span></a>            <span class="p">)</span>
-</span><span id="EndaH2OEstimator-60"><a href="#EndaH2OEstimator-60"><span class="linenos"> 60</span></a>        <span class="n">forecast</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="p">(</span>
-</span><span id="EndaH2OEstimator-61"><a href="#EndaH2OEstimator-61"><span class="linenos"> 61</span></a>            <span class="n">df</span><span class="o">.</span><span class="n">index</span>
-</span><span id="EndaH2OEstimator-62"><a href="#EndaH2OEstimator-62"><span class="linenos"> 62</span></a>        <span class="p">)</span>  <span class="c1"># put back the correct index (typically a pandas.DatetimeIndex)</span>
-</span><span id="EndaH2OEstimator-63"><a href="#EndaH2OEstimator-63"><span class="linenos"> 63</span></a>        <span class="k">return</span> <span class="n">forecast</span>
-</span><span id="EndaH2OEstimator-64"><a href="#EndaH2OEstimator-64"><span class="linenos"> 64</span></a>
-</span><span id="EndaH2OEstimator-65"><a href="#EndaH2OEstimator-65"><span class="linenos"> 65</span></a>    <span class="c1"># All below is just for model persistence : to comply with pickle and deepcopy.</span>
-</span><span id="EndaH2OEstimator-66"><a href="#EndaH2OEstimator-66"><span class="linenos"> 66</span></a>
-</span><span id="EndaH2OEstimator-67"><a href="#EndaH2OEstimator-67"><span class="linenos"> 67</span></a>    <span class="n">__tmp_file_path_1</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-</span><span id="EndaH2OEstimator-68"><a href="#EndaH2OEstimator-68"><span class="linenos"> 68</span></a>        <span class="n">tempfile</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">(),</span> <span class="s2">&quot;__h2o_estimator_tmp_file_1_136987&quot;</span>
-</span><span id="EndaH2OEstimator-69"><a href="#EndaH2OEstimator-69"><span class="linenos"> 69</span></a>    <span class="p">)</span>
-</span><span id="EndaH2OEstimator-70"><a href="#EndaH2OEstimator-70"><span class="linenos"> 70</span></a>    <span class="n">__tmp_file_path_2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-</span><span id="EndaH2OEstimator-71"><a href="#EndaH2OEstimator-71"><span class="linenos"> 71</span></a>        <span class="n">tempfile</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">(),</span> <span class="s2">&quot;__h2o_estimator_tmp_file_2_136987&quot;</span>
-</span><span id="EndaH2OEstimator-72"><a href="#EndaH2OEstimator-72"><span class="linenos"> 72</span></a>    <span class="p">)</span>
-</span><span id="EndaH2OEstimator-73"><a href="#EndaH2OEstimator-73"><span class="linenos"> 73</span></a>
-</span><span id="EndaH2OEstimator-74"><a href="#EndaH2OEstimator-74"><span class="linenos"> 74</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="EndaH2OEstimator-75"><a href="#EndaH2OEstimator-75"><span class="linenos"> 75</span></a>    <span class="k">def</span> <span class="nf">__h2o_model_to_binary</span><span class="p">(</span><span class="n">h2o_model</span><span class="p">):</span>
-</span><span id="EndaH2OEstimator-76"><a href="#EndaH2OEstimator-76"><span class="linenos"> 76</span></a>        <span class="c1"># save h2o model to tmp file</span>
-</span><span id="EndaH2OEstimator-77"><a href="#EndaH2OEstimator-77"><span class="linenos"> 77</span></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="EndaH2OEstimator-78"><a href="#EndaH2OEstimator-78"><span class="linenos"> 78</span></a>            <span class="n">model_path_from_h2o</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">save_model</span><span class="p">(</span>
-</span><span id="EndaH2OEstimator-79"><a href="#EndaH2OEstimator-79"><span class="linenos"> 79</span></a>                <span class="n">h2o_model</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span>
-</span><span id="EndaH2OEstimator-80"><a href="#EndaH2OEstimator-80"><span class="linenos"> 80</span></a>            <span class="p">)</span>
-</span><span id="EndaH2OEstimator-81"><a href="#EndaH2OEstimator-81"><span class="linenos"> 81</span></a>        <span class="k">except</span> <span class="p">(</span><span class="n">h2o</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">H2OResponseError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="EndaH2OEstimator-82"><a href="#EndaH2OEstimator-82"><span class="linenos"> 82</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span id="EndaH2OEstimator-83"><a href="#EndaH2OEstimator-83"><span class="linenos"> 83</span></a>                <span class="s2">&quot;Problem getting the model from h2o server. Train the model first. &quot;</span>
-</span><span id="EndaH2OEstimator-84"><a href="#EndaH2OEstimator-84"><span class="linenos"> 84</span></a>                <span class="s2">&quot;Cannot access model binary before training (for pickle or deepcopy or other uses).&quot;</span>
-</span><span id="EndaH2OEstimator-85"><a href="#EndaH2OEstimator-85"><span class="linenos"> 85</span></a>            <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
-</span><span id="EndaH2OEstimator-86"><a href="#EndaH2OEstimator-86"><span class="linenos"> 86</span></a>
-</span><span id="EndaH2OEstimator-87"><a href="#EndaH2OEstimator-87"><span class="linenos"> 87</span></a>        <span class="c1"># model can be saved in __tmp_file_path_1, or in private/__tmp_file_path_1</span>
-</span><span id="EndaH2OEstimator-88"><a href="#EndaH2OEstimator-88"><span class="linenos"> 88</span></a>        <span class="n">potential_startswith</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="EndaH2OEstimator-89"><a href="#EndaH2OEstimator-89"><span class="linenos"> 89</span></a>            <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">,</span>
-</span><span id="EndaH2OEstimator-90"><a href="#EndaH2OEstimator-90"><span class="linenos"> 90</span></a>            <span class="s2">&quot;/private&quot;</span> <span class="o">+</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">,</span>
-</span><span id="EndaH2OEstimator-91"><a href="#EndaH2OEstimator-91"><span class="linenos"> 91</span></a>        <span class="p">]</span>
-</span><span id="EndaH2OEstimator-92"><a href="#EndaH2OEstimator-92"><span class="linenos"> 92</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">model_path_from_h2o</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">potential_startswith</span><span class="p">)):</span>
-</span><span id="EndaH2OEstimator-93"><a href="#EndaH2OEstimator-93"><span class="linenos"> 93</span></a>            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-</span><span id="EndaH2OEstimator-94"><a href="#EndaH2OEstimator-94"><span class="linenos"> 94</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected model_path_from_h2o=</span><span class="si">{</span><span class="n">model_path_from_h2o</span><span class="si">}</span><span class="s2"> to start with </span><span class="si">{</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="EndaH2OEstimator-95"><a href="#EndaH2OEstimator-95"><span class="linenos"> 95</span></a>            <span class="p">)</span>
-</span><span id="EndaH2OEstimator-96"><a href="#EndaH2OEstimator-96"><span class="linenos"> 96</span></a>
-</span><span id="EndaH2OEstimator-97"><a href="#EndaH2OEstimator-97"><span class="linenos"> 97</span></a>        <span class="c1"># last step actually made a folder and a file inside (at path &#39;model_path_from_h2o&#39;)</span>
-</span><span id="EndaH2OEstimator-98"><a href="#EndaH2OEstimator-98"><span class="linenos"> 98</span></a>        <span class="c1"># but we must keep the file inside to read it later,</span>
-</span><span id="EndaH2OEstimator-99"><a href="#EndaH2OEstimator-99"><span class="linenos"> 99</span></a>        <span class="c1"># else reading the model later based on the folder does not work despite what H2O docs say</span>
-</span><span id="EndaH2OEstimator-100"><a href="#EndaH2OEstimator-100"><span class="linenos">100</span></a>        <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">model_path_from_h2o</span><span class="p">,</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
-</span><span id="EndaH2OEstimator-101"><a href="#EndaH2OEstimator-101"><span class="linenos">101</span></a>        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator-53"><a href="#EndaH2OEstimator-53"><span class="linenos"> 53</span></a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="EndaH2OEstimator-54"><a href="#EndaH2OEstimator-54"><span class="linenos"> 54</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator-55"><a href="#EndaH2OEstimator-55"><span class="linenos"> 55</span></a><span class="sd">        Predict from a h2o-based trained model using an input dataframe with features</span>
+</span><span id="EndaH2OEstimator-56"><a href="#EndaH2OEstimator-56"><span class="linenos"> 56</span></a><span class="sd">        :param df: the input dataframe</span>
+</span><span id="EndaH2OEstimator-57"><a href="#EndaH2OEstimator-57"><span class="linenos"> 57</span></a><span class="sd">        :param target_col: the target column name</span>
+</span><span id="EndaH2OEstimator-58"><a href="#EndaH2OEstimator-58"><span class="linenos"> 58</span></a><span class="sd">        :return: a single-column dataframe with the predicted target</span>
+</span><span id="EndaH2OEstimator-59"><a href="#EndaH2OEstimator-59"><span class="linenos"> 59</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator-60"><a href="#EndaH2OEstimator-60"><span class="linenos"> 60</span></a>        <span class="n">test_data</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">H2OFrame</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>  <span class="c1"># convert to H20 Frame</span>
+</span><span id="EndaH2OEstimator-61"><a href="#EndaH2OEstimator-61"><span class="linenos"> 61</span></a>        <span class="n">forecast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># returns an H20Frame named &#39;predict&#39;</span>
+</span><span id="EndaH2OEstimator-62"><a href="#EndaH2OEstimator-62"><span class="linenos"> 62</span></a>        <span class="k">with</span> <span class="n">h2o</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">threading</span><span class="o">.</span><span class="n">local_context</span><span class="p">(</span><span class="n">polars_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">datatable_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+</span><span id="EndaH2OEstimator-63"><a href="#EndaH2OEstimator-63"><span class="linenos"> 63</span></a>            <span class="n">forecast</span> <span class="o">=</span> <span class="n">forecast</span><span class="o">.</span><span class="n">as_data_frame</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+</span><span id="EndaH2OEstimator-64"><a href="#EndaH2OEstimator-64"><span class="linenos"> 64</span></a>                <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;predict&quot;</span><span class="p">:</span> <span class="n">target_col</span><span class="p">}</span>  <span class="c1"># convert to pandas and rename</span>
+</span><span id="EndaH2OEstimator-65"><a href="#EndaH2OEstimator-65"><span class="linenos"> 65</span></a>            <span class="p">)</span>
+</span><span id="EndaH2OEstimator-66"><a href="#EndaH2OEstimator-66"><span class="linenos"> 66</span></a>        <span class="n">forecast</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="EndaH2OEstimator-67"><a href="#EndaH2OEstimator-67"><span class="linenos"> 67</span></a>            <span class="n">df</span><span class="o">.</span><span class="n">index</span>
+</span><span id="EndaH2OEstimator-68"><a href="#EndaH2OEstimator-68"><span class="linenos"> 68</span></a>        <span class="p">)</span>  <span class="c1"># put back the correct index (typically a pandas.DatetimeIndex)</span>
+</span><span id="EndaH2OEstimator-69"><a href="#EndaH2OEstimator-69"><span class="linenos"> 69</span></a>        <span class="k">return</span> <span class="n">forecast</span>
+</span><span id="EndaH2OEstimator-70"><a href="#EndaH2OEstimator-70"><span class="linenos"> 70</span></a>
+</span><span id="EndaH2OEstimator-71"><a href="#EndaH2OEstimator-71"><span class="linenos"> 71</span></a>    <span class="k">def</span> <span class="nf">get_model_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="EndaH2OEstimator-72"><a href="#EndaH2OEstimator-72"><span class="linenos"> 72</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator-73"><a href="#EndaH2OEstimator-73"><span class="linenos"> 73</span></a><span class="sd">        Return the H2O model name instead of EndaH2OEstimator</span>
+</span><span id="EndaH2OEstimator-74"><a href="#EndaH2OEstimator-74"><span class="linenos"> 74</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator-75"><a href="#EndaH2OEstimator-75"><span class="linenos"> 75</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+</span><span id="EndaH2OEstimator-76"><a href="#EndaH2OEstimator-76"><span class="linenos"> 76</span></a>
+</span><span id="EndaH2OEstimator-77"><a href="#EndaH2OEstimator-77"><span class="linenos"> 77</span></a>    <span class="k">def</span> <span class="nf">get_model_params</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span id="EndaH2OEstimator-78"><a href="#EndaH2OEstimator-78"><span class="linenos"> 78</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator-79"><a href="#EndaH2OEstimator-79"><span class="linenos"> 79</span></a><span class="sd">        Return a dict with the model name and the model hyperparameters</span>
+</span><span id="EndaH2OEstimator-80"><a href="#EndaH2OEstimator-80"><span class="linenos"> 80</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator-81"><a href="#EndaH2OEstimator-81"><span class="linenos"> 81</span></a>        <span class="k">return</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_model_name</span><span class="p">():</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_params</span><span class="p">()}</span>
+</span><span id="EndaH2OEstimator-82"><a href="#EndaH2OEstimator-82"><span class="linenos"> 82</span></a>
+</span><span id="EndaH2OEstimator-83"><a href="#EndaH2OEstimator-83"><span class="linenos"> 83</span></a>    <span class="k">def</span> <span class="nf">get_feature_importance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+</span><span id="EndaH2OEstimator-84"><a href="#EndaH2OEstimator-84"><span class="linenos"> 84</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator-85"><a href="#EndaH2OEstimator-85"><span class="linenos"> 85</span></a><span class="sd">        Return the feature&#39;s importance once a model has been trained.</span>
+</span><span id="EndaH2OEstimator-86"><a href="#EndaH2OEstimator-86"><span class="linenos"> 86</span></a><span class="sd">        This makes use of built-in method &#39;varimp&#39; of an H2OEstimator,</span>
+</span><span id="EndaH2OEstimator-87"><a href="#EndaH2OEstimator-87"><span class="linenos"> 87</span></a><span class="sd">        and only returns the percentage column</span>
+</span><span id="EndaH2OEstimator-88"><a href="#EndaH2OEstimator-88"><span class="linenos"> 88</span></a><span class="sd">        :return: a series that contain the percentage of importance for each variable</span>
+</span><span id="EndaH2OEstimator-89"><a href="#EndaH2OEstimator-89"><span class="linenos"> 89</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator-90"><a href="#EndaH2OEstimator-90"><span class="linenos"> 90</span></a>
+</span><span id="EndaH2OEstimator-91"><a href="#EndaH2OEstimator-91"><span class="linenos"> 91</span></a>        <span class="n">feature_importance_series</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="EndaH2OEstimator-92"><a href="#EndaH2OEstimator-92"><span class="linenos"> 92</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">varimp</span><span class="p">(</span><span class="n">use_pandas</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator-93"><a href="#EndaH2OEstimator-93"><span class="linenos"> 93</span></a>            <span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s1">&#39;variable&#39;</span><span class="p">,</span> <span class="s1">&#39;percentage&#39;</span><span class="p">]]</span>
+</span><span id="EndaH2OEstimator-94"><a href="#EndaH2OEstimator-94"><span class="linenos"> 94</span></a>            <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;percentage&#39;</span><span class="p">:</span> <span class="s1">&#39;variable_importance_pct&#39;</span><span class="p">})</span>
+</span><span id="EndaH2OEstimator-95"><a href="#EndaH2OEstimator-95"><span class="linenos"> 95</span></a>            <span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;variable&#39;</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator-96"><a href="#EndaH2OEstimator-96"><span class="linenos"> 96</span></a>            <span class="o">.</span><span class="n">rename_axis</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator-97"><a href="#EndaH2OEstimator-97"><span class="linenos"> 97</span></a>            <span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator-98"><a href="#EndaH2OEstimator-98"><span class="linenos"> 98</span></a>            <span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+</span><span id="EndaH2OEstimator-99"><a href="#EndaH2OEstimator-99"><span class="linenos"> 99</span></a>        <span class="p">)</span>
+</span><span id="EndaH2OEstimator-100"><a href="#EndaH2OEstimator-100"><span class="linenos">100</span></a>
+</span><span id="EndaH2OEstimator-101"><a href="#EndaH2OEstimator-101"><span class="linenos">101</span></a>        <span class="k">return</span> <span class="n">feature_importance_series</span>
 </span><span id="EndaH2OEstimator-102"><a href="#EndaH2OEstimator-102"><span class="linenos">102</span></a>
-</span><span id="EndaH2OEstimator-103"><a href="#EndaH2OEstimator-103"><span class="linenos">103</span></a>        <span class="c1"># read the tmp file as binary</span>
-</span><span id="EndaH2OEstimator-104"><a href="#EndaH2OEstimator-104"><span class="linenos">104</span></a>        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-</span><span id="EndaH2OEstimator-105"><a href="#EndaH2OEstimator-105"><span class="linenos">105</span></a>            <span class="n">binary</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-</span><span id="EndaH2OEstimator-106"><a href="#EndaH2OEstimator-106"><span class="linenos">106</span></a>
-</span><span id="EndaH2OEstimator-107"><a href="#EndaH2OEstimator-107"><span class="linenos">107</span></a>        <span class="c1"># cleanup tmp file</span>
-</span><span id="EndaH2OEstimator-108"><a href="#EndaH2OEstimator-108"><span class="linenos">108</span></a>        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
-</span><span id="EndaH2OEstimator-109"><a href="#EndaH2OEstimator-109"><span class="linenos">109</span></a>
-</span><span id="EndaH2OEstimator-110"><a href="#EndaH2OEstimator-110"><span class="linenos">110</span></a>        <span class="k">return</span> <span class="n">binary</span>
+</span><span id="EndaH2OEstimator-103"><a href="#EndaH2OEstimator-103"><span class="linenos">103</span></a>        <span class="c1"># All below is just for model persistence : to comply with pickle and deepcopy.</span>
+</span><span id="EndaH2OEstimator-104"><a href="#EndaH2OEstimator-104"><span class="linenos">104</span></a>
+</span><span id="EndaH2OEstimator-105"><a href="#EndaH2OEstimator-105"><span class="linenos">105</span></a>    <span class="n">__tmp_file_path_1</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+</span><span id="EndaH2OEstimator-106"><a href="#EndaH2OEstimator-106"><span class="linenos">106</span></a>        <span class="n">tempfile</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">(),</span> <span class="s2">&quot;__h2o_estimator_tmp_file_1_136987&quot;</span>
+</span><span id="EndaH2OEstimator-107"><a href="#EndaH2OEstimator-107"><span class="linenos">107</span></a>    <span class="p">)</span>
+</span><span id="EndaH2OEstimator-108"><a href="#EndaH2OEstimator-108"><span class="linenos">108</span></a>    <span class="n">__tmp_file_path_2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+</span><span id="EndaH2OEstimator-109"><a href="#EndaH2OEstimator-109"><span class="linenos">109</span></a>        <span class="n">tempfile</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">(),</span> <span class="s2">&quot;__h2o_estimator_tmp_file_2_136987&quot;</span>
+</span><span id="EndaH2OEstimator-110"><a href="#EndaH2OEstimator-110"><span class="linenos">110</span></a>    <span class="p">)</span>
 </span><span id="EndaH2OEstimator-111"><a href="#EndaH2OEstimator-111"><span class="linenos">111</span></a>
 </span><span id="EndaH2OEstimator-112"><a href="#EndaH2OEstimator-112"><span class="linenos">112</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="EndaH2OEstimator-113"><a href="#EndaH2OEstimator-113"><span class="linenos">113</span></a>    <span class="k">def</span> <span class="nf">__h2o_model_from_binary</span><span class="p">(</span><span class="n">binary</span><span class="p">):</span>
-</span><span id="EndaH2OEstimator-114"><a href="#EndaH2OEstimator-114"><span class="linenos">114</span></a>        <span class="c1"># save binary to tmp file</span>
-</span><span id="EndaH2OEstimator-115"><a href="#EndaH2OEstimator-115"><span class="linenos">115</span></a>        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-</span><span id="EndaH2OEstimator-116"><a href="#EndaH2OEstimator-116"><span class="linenos">116</span></a>            <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">binary</span><span class="p">)</span>
-</span><span id="EndaH2OEstimator-117"><a href="#EndaH2OEstimator-117"><span class="linenos">117</span></a>
-</span><span id="EndaH2OEstimator-118"><a href="#EndaH2OEstimator-118"><span class="linenos">118</span></a>        <span class="c1"># load H2O model from the file</span>
-</span><span id="EndaH2OEstimator-119"><a href="#EndaH2OEstimator-119"><span class="linenos">119</span></a>        <span class="n">h2o_model</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">upload_model</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
-</span><span id="EndaH2OEstimator-120"><a href="#EndaH2OEstimator-120"><span class="linenos">120</span></a>
-</span><span id="EndaH2OEstimator-121"><a href="#EndaH2OEstimator-121"><span class="linenos">121</span></a>        <span class="c1"># cleanup tmp file</span>
-</span><span id="EndaH2OEstimator-122"><a href="#EndaH2OEstimator-122"><span class="linenos">122</span></a>        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
-</span><span id="EndaH2OEstimator-123"><a href="#EndaH2OEstimator-123"><span class="linenos">123</span></a>
-</span><span id="EndaH2OEstimator-124"><a href="#EndaH2OEstimator-124"><span class="linenos">124</span></a>        <span class="k">return</span> <span class="n">h2o_model</span>
-</span><span id="EndaH2OEstimator-125"><a href="#EndaH2OEstimator-125"><span class="linenos">125</span></a>
-</span><span id="EndaH2OEstimator-126"><a href="#EndaH2OEstimator-126"><span class="linenos">126</span></a>    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="EndaH2OEstimator-127"><a href="#EndaH2OEstimator-127"><span class="linenos">127</span></a>        <span class="c1"># for pickle, see https://docs.python.org/3/library/pickle.html#pickle-state</span>
-</span><span id="EndaH2OEstimator-128"><a href="#EndaH2OEstimator-128"><span class="linenos">128</span></a>
-</span><span id="EndaH2OEstimator-129"><a href="#EndaH2OEstimator-129"><span class="linenos">129</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span> <span class="o">=</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__h2o_model_to_binary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
-</span><span id="EndaH2OEstimator-130"><a href="#EndaH2OEstimator-130"><span class="linenos">130</span></a>        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-</span><span id="EndaH2OEstimator-131"><a href="#EndaH2OEstimator-131"><span class="linenos">131</span></a>        <span class="c1"># Remove the un-picklable entry : &#39;model&#39;, but keep the picklable entry: __model_binary</span>
-</span><span id="EndaH2OEstimator-132"><a href="#EndaH2OEstimator-132"><span class="linenos">132</span></a>        <span class="k">del</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
-</span><span id="EndaH2OEstimator-133"><a href="#EndaH2OEstimator-133"><span class="linenos">133</span></a>        <span class="k">return</span> <span class="n">state</span>
+</span><span id="EndaH2OEstimator-113"><a href="#EndaH2OEstimator-113"><span class="linenos">113</span></a>    <span class="k">def</span> <span class="nf">__h2o_model_to_binary</span><span class="p">(</span><span class="n">h2o_model</span><span class="p">):</span>
+</span><span id="EndaH2OEstimator-114"><a href="#EndaH2OEstimator-114"><span class="linenos">114</span></a>        <span class="c1"># save h2o model to tmp file</span>
+</span><span id="EndaH2OEstimator-115"><a href="#EndaH2OEstimator-115"><span class="linenos">115</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="EndaH2OEstimator-116"><a href="#EndaH2OEstimator-116"><span class="linenos">116</span></a>            <span class="n">model_path_from_h2o</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">save_model</span><span class="p">(</span>
+</span><span id="EndaH2OEstimator-117"><a href="#EndaH2OEstimator-117"><span class="linenos">117</span></a>                <span class="n">h2o_model</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span>
+</span><span id="EndaH2OEstimator-118"><a href="#EndaH2OEstimator-118"><span class="linenos">118</span></a>            <span class="p">)</span>
+</span><span id="EndaH2OEstimator-119"><a href="#EndaH2OEstimator-119"><span class="linenos">119</span></a>        <span class="k">except</span> <span class="p">(</span><span class="n">h2o</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">H2OResponseError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exception</span><span class="p">:</span>
+</span><span id="EndaH2OEstimator-120"><a href="#EndaH2OEstimator-120"><span class="linenos">120</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span id="EndaH2OEstimator-121"><a href="#EndaH2OEstimator-121"><span class="linenos">121</span></a>                <span class="s2">&quot;Problem getting the model from h2o server. Train the model first. &quot;</span>
+</span><span id="EndaH2OEstimator-122"><a href="#EndaH2OEstimator-122"><span class="linenos">122</span></a>                <span class="s2">&quot;Cannot access model binary before training (for pickle or deepcopy or other uses).&quot;</span>
+</span><span id="EndaH2OEstimator-123"><a href="#EndaH2OEstimator-123"><span class="linenos">123</span></a>            <span class="p">)</span> <span class="kn">from</span> <span class="nn">exception</span>
+</span><span id="EndaH2OEstimator-124"><a href="#EndaH2OEstimator-124"><span class="linenos">124</span></a>
+</span><span id="EndaH2OEstimator-125"><a href="#EndaH2OEstimator-125"><span class="linenos">125</span></a>        <span class="c1"># model can be saved in __tmp_file_path_1, or in private/__tmp_file_path_1</span>
+</span><span id="EndaH2OEstimator-126"><a href="#EndaH2OEstimator-126"><span class="linenos">126</span></a>        <span class="n">potential_startswith</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="EndaH2OEstimator-127"><a href="#EndaH2OEstimator-127"><span class="linenos">127</span></a>            <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">,</span>
+</span><span id="EndaH2OEstimator-128"><a href="#EndaH2OEstimator-128"><span class="linenos">128</span></a>            <span class="s2">&quot;/private&quot;</span> <span class="o">+</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">,</span>
+</span><span id="EndaH2OEstimator-129"><a href="#EndaH2OEstimator-129"><span class="linenos">129</span></a>        <span class="p">]</span>
+</span><span id="EndaH2OEstimator-130"><a href="#EndaH2OEstimator-130"><span class="linenos">130</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">model_path_from_h2o</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">potential_startswith</span><span class="p">)):</span>
+</span><span id="EndaH2OEstimator-131"><a href="#EndaH2OEstimator-131"><span class="linenos">131</span></a>            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+</span><span id="EndaH2OEstimator-132"><a href="#EndaH2OEstimator-132"><span class="linenos">132</span></a>                <span class="sa">f</span><span class="s2">&quot;Expected model_path_from_h2o=</span><span class="si">{</span><span class="n">model_path_from_h2o</span><span class="si">}</span><span class="s2"> to start with </span><span class="si">{</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="EndaH2OEstimator-133"><a href="#EndaH2OEstimator-133"><span class="linenos">133</span></a>            <span class="p">)</span>
 </span><span id="EndaH2OEstimator-134"><a href="#EndaH2OEstimator-134"><span class="linenos">134</span></a>
-</span><span id="EndaH2OEstimator-135"><a href="#EndaH2OEstimator-135"><span class="linenos">135</span></a>    <span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
-</span><span id="EndaH2OEstimator-136"><a href="#EndaH2OEstimator-136"><span class="linenos">136</span></a>        <span class="c1"># for pickle, see https://docs.python.org/3/library/pickle.html#pickle-state</span>
-</span><span id="EndaH2OEstimator-137"><a href="#EndaH2OEstimator-137"><span class="linenos">137</span></a>
-</span><span id="EndaH2OEstimator-138"><a href="#EndaH2OEstimator-138"><span class="linenos">138</span></a>        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>  <span class="c1"># loads only __model_binary</span>
-</span><span id="EndaH2OEstimator-139"><a href="#EndaH2OEstimator-139"><span class="linenos">139</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__h2o_model_from_binary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span><span class="p">)</span>
-</span><span id="EndaH2OEstimator-140"><a href="#EndaH2OEstimator-140"><span class="linenos">140</span></a>        <span class="c1"># we don&#39;t need to keep the __model_binary</span>
-</span><span id="EndaH2OEstimator-141"><a href="#EndaH2OEstimator-141"><span class="linenos">141</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="EndaH2OEstimator-135"><a href="#EndaH2OEstimator-135"><span class="linenos">135</span></a>        <span class="c1"># last step actually made a folder and a file inside (at path &#39;model_path_from_h2o&#39;)</span>
+</span><span id="EndaH2OEstimator-136"><a href="#EndaH2OEstimator-136"><span class="linenos">136</span></a>        <span class="c1"># but we must keep the file inside to read it later,</span>
+</span><span id="EndaH2OEstimator-137"><a href="#EndaH2OEstimator-137"><span class="linenos">137</span></a>        <span class="c1"># else reading the model later based on the folder does not work despite what H2O docs say</span>
+</span><span id="EndaH2OEstimator-138"><a href="#EndaH2OEstimator-138"><span class="linenos">138</span></a>        <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">model_path_from_h2o</span><span class="p">,</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator-139"><a href="#EndaH2OEstimator-139"><span class="linenos">139</span></a>        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_1</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator-140"><a href="#EndaH2OEstimator-140"><span class="linenos">140</span></a>
+</span><span id="EndaH2OEstimator-141"><a href="#EndaH2OEstimator-141"><span class="linenos">141</span></a>        <span class="c1"># read the tmp file as binary</span>
+</span><span id="EndaH2OEstimator-142"><a href="#EndaH2OEstimator-142"><span class="linenos">142</span></a>        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+</span><span id="EndaH2OEstimator-143"><a href="#EndaH2OEstimator-143"><span class="linenos">143</span></a>            <span class="n">binary</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</span><span id="EndaH2OEstimator-144"><a href="#EndaH2OEstimator-144"><span class="linenos">144</span></a>
+</span><span id="EndaH2OEstimator-145"><a href="#EndaH2OEstimator-145"><span class="linenos">145</span></a>        <span class="c1"># cleanup tmp file</span>
+</span><span id="EndaH2OEstimator-146"><a href="#EndaH2OEstimator-146"><span class="linenos">146</span></a>        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator-147"><a href="#EndaH2OEstimator-147"><span class="linenos">147</span></a>
+</span><span id="EndaH2OEstimator-148"><a href="#EndaH2OEstimator-148"><span class="linenos">148</span></a>        <span class="k">return</span> <span class="n">binary</span>
+</span><span id="EndaH2OEstimator-149"><a href="#EndaH2OEstimator-149"><span class="linenos">149</span></a>
+</span><span id="EndaH2OEstimator-150"><a href="#EndaH2OEstimator-150"><span class="linenos">150</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="EndaH2OEstimator-151"><a href="#EndaH2OEstimator-151"><span class="linenos">151</span></a>    <span class="k">def</span> <span class="nf">__h2o_model_from_binary</span><span class="p">(</span><span class="n">binary</span><span class="p">):</span>
+</span><span id="EndaH2OEstimator-152"><a href="#EndaH2OEstimator-152"><span class="linenos">152</span></a>        <span class="c1"># save binary to tmp file</span>
+</span><span id="EndaH2OEstimator-153"><a href="#EndaH2OEstimator-153"><span class="linenos">153</span></a>        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+</span><span id="EndaH2OEstimator-154"><a href="#EndaH2OEstimator-154"><span class="linenos">154</span></a>            <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">binary</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator-155"><a href="#EndaH2OEstimator-155"><span class="linenos">155</span></a>
+</span><span id="EndaH2OEstimator-156"><a href="#EndaH2OEstimator-156"><span class="linenos">156</span></a>        <span class="c1"># load H2O model from the file</span>
+</span><span id="EndaH2OEstimator-157"><a href="#EndaH2OEstimator-157"><span class="linenos">157</span></a>        <span class="n">h2o_model</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">upload_model</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator-158"><a href="#EndaH2OEstimator-158"><span class="linenos">158</span></a>
+</span><span id="EndaH2OEstimator-159"><a href="#EndaH2OEstimator-159"><span class="linenos">159</span></a>        <span class="c1"># cleanup tmp file</span>
+</span><span id="EndaH2OEstimator-160"><a href="#EndaH2OEstimator-160"><span class="linenos">160</span></a>        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__tmp_file_path_2</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator-161"><a href="#EndaH2OEstimator-161"><span class="linenos">161</span></a>
+</span><span id="EndaH2OEstimator-162"><a href="#EndaH2OEstimator-162"><span class="linenos">162</span></a>        <span class="k">return</span> <span class="n">h2o_model</span>
+</span><span id="EndaH2OEstimator-163"><a href="#EndaH2OEstimator-163"><span class="linenos">163</span></a>
+</span><span id="EndaH2OEstimator-164"><a href="#EndaH2OEstimator-164"><span class="linenos">164</span></a>    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="EndaH2OEstimator-165"><a href="#EndaH2OEstimator-165"><span class="linenos">165</span></a>        <span class="c1"># for pickle, see https://docs.python.org/3/library/pickle.html#pickle-state</span>
+</span><span id="EndaH2OEstimator-166"><a href="#EndaH2OEstimator-166"><span class="linenos">166</span></a>
+</span><span id="EndaH2OEstimator-167"><a href="#EndaH2OEstimator-167"><span class="linenos">167</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span> <span class="o">=</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__h2o_model_to_binary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator-168"><a href="#EndaH2OEstimator-168"><span class="linenos">168</span></a>        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+</span><span id="EndaH2OEstimator-169"><a href="#EndaH2OEstimator-169"><span class="linenos">169</span></a>        <span class="c1"># Remove the un-picklable entry : &#39;model&#39;, but keep the picklable entry: __model_binary</span>
+</span><span id="EndaH2OEstimator-170"><a href="#EndaH2OEstimator-170"><span class="linenos">170</span></a>        <span class="k">del</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
+</span><span id="EndaH2OEstimator-171"><a href="#EndaH2OEstimator-171"><span class="linenos">171</span></a>        <span class="k">return</span> <span class="n">state</span>
+</span><span id="EndaH2OEstimator-172"><a href="#EndaH2OEstimator-172"><span class="linenos">172</span></a>
+</span><span id="EndaH2OEstimator-173"><a href="#EndaH2OEstimator-173"><span class="linenos">173</span></a>    <span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+</span><span id="EndaH2OEstimator-174"><a href="#EndaH2OEstimator-174"><span class="linenos">174</span></a>        <span class="c1"># for pickle, see https://docs.python.org/3/library/pickle.html#pickle-state</span>
+</span><span id="EndaH2OEstimator-175"><a href="#EndaH2OEstimator-175"><span class="linenos">175</span></a>
+</span><span id="EndaH2OEstimator-176"><a href="#EndaH2OEstimator-176"><span class="linenos">176</span></a>        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>  <span class="c1"># loads only __model_binary</span>
+</span><span id="EndaH2OEstimator-177"><a href="#EndaH2OEstimator-177"><span class="linenos">177</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">EndaH2OEstimator</span><span class="o">.</span><span class="n">__h2o_model_from_binary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator-178"><a href="#EndaH2OEstimator-178"><span class="linenos">178</span></a>        <span class="c1"># we don&#39;t need to keep the __model_binary</span>
+</span><span id="EndaH2OEstimator-179"><a href="#EndaH2OEstimator-179"><span class="linenos">179</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span> <span class="o">=</span> <span class="kc">None</span>
 </span></pre></div>
 
 
@@ -373,10 +462,10 @@ objects. So we have methods for that.</p>
 
     </div>
     <a class="headerlink" href="#EndaH2OEstimator.__init__"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="EndaH2OEstimator.__init__-37"><a href="#EndaH2OEstimator.__init__-37"><span class="linenos">37</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h2o_estimator</span><span class="p">):</span>
-</span><span id="EndaH2OEstimator.__init__-38"><a href="#EndaH2OEstimator.__init__-38"><span class="linenos">38</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">h2o_estimator</span>
-</span><span id="EndaH2OEstimator.__init__-39"><a href="#EndaH2OEstimator.__init__-39"><span class="linenos">39</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="EndaH2OEstimator.__init__-40"><a href="#EndaH2OEstimator.__init__-40"><span class="linenos">40</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">training_performance</span> <span class="o">=</span> <span class="kc">None</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="EndaH2OEstimator.__init__-30"><a href="#EndaH2OEstimator.__init__-30"><span class="linenos">30</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h2o_estimator</span><span class="p">):</span>
+</span><span id="EndaH2OEstimator.__init__-31"><a href="#EndaH2OEstimator.__init__-31"><span class="linenos">31</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</span><span id="EndaH2OEstimator.__init__-32"><a href="#EndaH2OEstimator.__init__-32"><span class="linenos">32</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">h2o_estimator</span>
+</span><span id="EndaH2OEstimator.__init__-33"><a href="#EndaH2OEstimator.__init__-33"><span class="linenos">33</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">__model_binary</span> <span class="o">=</span> <span class="kc">None</span>
 </span></pre></div>
 
 
@@ -394,42 +483,45 @@ objects. So we have methods for that.</p>
     
 
                             </div>
-                            <div id="EndaH2OEstimator.training_performance" class="classattr">
-                                <div class="attr variable">
-            <span class="name">training_performance</span>
-
-        
-    </div>
-    <a class="headerlink" href="#EndaH2OEstimator.training_performance"></a>
-    
-    
-
-                            </div>
                             <div id="EndaH2OEstimator.train" class="classattr">
                                         <input id="EndaH2OEstimator.train-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">train</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span>, </span><span class="param"><span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">):</span></span>
+        <span class="name">train</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span>, </span><span class="param"><span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="o">**</span><span class="n">kwargs</span></span><span class="return-annotation">):</span></span>
 
                 <label class="view-source-button" for="EndaH2OEstimator.train-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#EndaH2OEstimator.train"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="EndaH2OEstimator.train-42"><a href="#EndaH2OEstimator.train-42"><span class="linenos">42</span></a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="EndaH2OEstimator.train-43"><a href="#EndaH2OEstimator.train-43"><span class="linenos">43</span></a>        <span class="n">x</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="EndaH2OEstimator.train-44"><a href="#EndaH2OEstimator.train-44"><span class="linenos">44</span></a>            <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="n">target_col</span>
-</span><span id="EndaH2OEstimator.train-45"><a href="#EndaH2OEstimator.train-45"><span class="linenos">45</span></a>        <span class="p">]</span>  <span class="c1"># for H20, x is the list of features</span>
-</span><span id="EndaH2OEstimator.train-46"><a href="#EndaH2OEstimator.train-46"><span class="linenos">46</span></a>        <span class="n">y</span> <span class="o">=</span> <span class="n">target_col</span>  <span class="c1"># for H20, y is the name of the target</span>
-</span><span id="EndaH2OEstimator.train-47"><a href="#EndaH2OEstimator.train-47"><span class="linenos">47</span></a>        <span class="n">training_frame</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">H2OFrame</span><span class="p">(</span>
-</span><span id="EndaH2OEstimator.train-48"><a href="#EndaH2OEstimator.train-48"><span class="linenos">48</span></a>            <span class="n">df</span>
-</span><span id="EndaH2OEstimator.train-49"><a href="#EndaH2OEstimator.train-49"><span class="linenos">49</span></a>        <span class="p">)</span>  <span class="c1"># H20 training frame containing both features and target</span>
-</span><span id="EndaH2OEstimator.train-50"><a href="#EndaH2OEstimator.train-50"><span class="linenos">50</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">training_frame</span><span class="p">)</span>
-</span><span id="EndaH2OEstimator.train-51"><a href="#EndaH2OEstimator.train-51"><span class="linenos">51</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">training_performance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">scoring_history</span><span class="p">()</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="EndaH2OEstimator.train-35"><a href="#EndaH2OEstimator.train-35"><span class="linenos">35</span></a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="EndaH2OEstimator.train-36"><a href="#EndaH2OEstimator.train-36"><span class="linenos">36</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator.train-37"><a href="#EndaH2OEstimator.train-37"><span class="linenos">37</span></a><span class="sd">        Train a h2o-based model from an input dataframe with features and a target column</span>
+</span><span id="EndaH2OEstimator.train-38"><a href="#EndaH2OEstimator.train-38"><span class="linenos">38</span></a><span class="sd">        :param df: the input dataframe</span>
+</span><span id="EndaH2OEstimator.train-39"><a href="#EndaH2OEstimator.train-39"><span class="linenos">39</span></a><span class="sd">        :param target_col: the target column name</span>
+</span><span id="EndaH2OEstimator.train-40"><a href="#EndaH2OEstimator.train-40"><span class="linenos">40</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator.train-41"><a href="#EndaH2OEstimator.train-41"><span class="linenos">41</span></a>        <span class="n">feature_list</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="EndaH2OEstimator.train-42"><a href="#EndaH2OEstimator.train-42"><span class="linenos">42</span></a>            <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="n">target_col</span>
+</span><span id="EndaH2OEstimator.train-43"><a href="#EndaH2OEstimator.train-43"><span class="linenos">43</span></a>        <span class="p">]</span>  <span class="c1"># for H20, x is the list of features</span>
+</span><span id="EndaH2OEstimator.train-44"><a href="#EndaH2OEstimator.train-44"><span class="linenos">44</span></a>        <span class="n">training_frame</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">H2OFrame</span><span class="p">(</span>
+</span><span id="EndaH2OEstimator.train-45"><a href="#EndaH2OEstimator.train-45"><span class="linenos">45</span></a>            <span class="n">df</span>
+</span><span id="EndaH2OEstimator.train-46"><a href="#EndaH2OEstimator.train-46"><span class="linenos">46</span></a>        <span class="p">)</span>  <span class="c1"># H20 training frame containing both features and target</span>
+</span><span id="EndaH2OEstimator.train-47"><a href="#EndaH2OEstimator.train-47"><span class="linenos">47</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">feature_list</span><span class="p">,</span> <span class="n">target_col</span><span class="p">,</span> <span class="n">training_frame</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator.train-48"><a href="#EndaH2OEstimator.train-48"><span class="linenos">48</span></a>
+</span><span id="EndaH2OEstimator.train-49"><a href="#EndaH2OEstimator.train-49"><span class="linenos">49</span></a>        <span class="c1"># store the training</span>
+</span><span id="EndaH2OEstimator.train-50"><a href="#EndaH2OEstimator.train-50"><span class="linenos">50</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_training_df</span> <span class="o">=</span> <span class="n">df</span>
+</span><span id="EndaH2OEstimator.train-51"><a href="#EndaH2OEstimator.train-51"><span class="linenos">51</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_target</span> <span class="o">=</span> <span class="n">target_col</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Trains the estimator using the given data.</p>
+            <div class="docstring"><p>Train a h2o-based model from an input dataframe with features and a target column</p>
+
+<h6 id="parameters">Parameters</h6>
+
+<ul>
+<li><strong>df</strong>:  the input dataframe</li>
+<li><strong>target_col</strong>:  the target column name</li>
+</ul>
 </div>
 
 
@@ -439,30 +531,155 @@ objects. So we have methods for that.</p>
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">predict</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span>, </span><span class="param"><span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">):</span></span>
+        <span class="name">predict</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span>, </span><span class="param"><span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="o">**</span><span class="n">kwargs</span></span><span class="return-annotation">):</span></span>
 
                 <label class="view-source-button" for="EndaH2OEstimator.predict-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#EndaH2OEstimator.predict"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="EndaH2OEstimator.predict-53"><a href="#EndaH2OEstimator.predict-53"><span class="linenos">53</span></a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="EndaH2OEstimator.predict-54"><a href="#EndaH2OEstimator.predict-54"><span class="linenos">54</span></a>        <span class="n">test_data</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">H2OFrame</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>  <span class="c1"># convert to H20 Frame</span>
-</span><span id="EndaH2OEstimator.predict-55"><a href="#EndaH2OEstimator.predict-55"><span class="linenos">55</span></a>        <span class="n">forecast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_data</span><span class="p">)</span>  <span class="c1"># returns an H20Frame named &#39;predict&#39;</span>
-</span><span id="EndaH2OEstimator.predict-56"><a href="#EndaH2OEstimator.predict-56"><span class="linenos">56</span></a>        <span class="k">with</span> <span class="n">h2o</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">threading</span><span class="o">.</span><span class="n">local_context</span><span class="p">(</span><span class="n">polars_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">datatable_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-</span><span id="EndaH2OEstimator.predict-57"><a href="#EndaH2OEstimator.predict-57"><span class="linenos">57</span></a>            <span class="n">forecast</span> <span class="o">=</span> <span class="n">forecast</span><span class="o">.</span><span class="n">as_data_frame</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
-</span><span id="EndaH2OEstimator.predict-58"><a href="#EndaH2OEstimator.predict-58"><span class="linenos">58</span></a>                <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;predict&quot;</span><span class="p">:</span> <span class="n">target_col</span><span class="p">}</span>  <span class="c1"># convert to pandas and rename</span>
-</span><span id="EndaH2OEstimator.predict-59"><a href="#EndaH2OEstimator.predict-59"><span class="linenos">59</span></a>            <span class="p">)</span>
-</span><span id="EndaH2OEstimator.predict-60"><a href="#EndaH2OEstimator.predict-60"><span class="linenos">60</span></a>        <span class="n">forecast</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="p">(</span>
-</span><span id="EndaH2OEstimator.predict-61"><a href="#EndaH2OEstimator.predict-61"><span class="linenos">61</span></a>            <span class="n">df</span><span class="o">.</span><span class="n">index</span>
-</span><span id="EndaH2OEstimator.predict-62"><a href="#EndaH2OEstimator.predict-62"><span class="linenos">62</span></a>        <span class="p">)</span>  <span class="c1"># put back the correct index (typically a pandas.DatetimeIndex)</span>
-</span><span id="EndaH2OEstimator.predict-63"><a href="#EndaH2OEstimator.predict-63"><span class="linenos">63</span></a>        <span class="k">return</span> <span class="n">forecast</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="EndaH2OEstimator.predict-53"><a href="#EndaH2OEstimator.predict-53"><span class="linenos">53</span></a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="EndaH2OEstimator.predict-54"><a href="#EndaH2OEstimator.predict-54"><span class="linenos">54</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator.predict-55"><a href="#EndaH2OEstimator.predict-55"><span class="linenos">55</span></a><span class="sd">        Predict from a h2o-based trained model using an input dataframe with features</span>
+</span><span id="EndaH2OEstimator.predict-56"><a href="#EndaH2OEstimator.predict-56"><span class="linenos">56</span></a><span class="sd">        :param df: the input dataframe</span>
+</span><span id="EndaH2OEstimator.predict-57"><a href="#EndaH2OEstimator.predict-57"><span class="linenos">57</span></a><span class="sd">        :param target_col: the target column name</span>
+</span><span id="EndaH2OEstimator.predict-58"><a href="#EndaH2OEstimator.predict-58"><span class="linenos">58</span></a><span class="sd">        :return: a single-column dataframe with the predicted target</span>
+</span><span id="EndaH2OEstimator.predict-59"><a href="#EndaH2OEstimator.predict-59"><span class="linenos">59</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator.predict-60"><a href="#EndaH2OEstimator.predict-60"><span class="linenos">60</span></a>        <span class="n">test_data</span> <span class="o">=</span> <span class="n">h2o</span><span class="o">.</span><span class="n">H2OFrame</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>  <span class="c1"># convert to H20 Frame</span>
+</span><span id="EndaH2OEstimator.predict-61"><a href="#EndaH2OEstimator.predict-61"><span class="linenos">61</span></a>        <span class="n">forecast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># returns an H20Frame named &#39;predict&#39;</span>
+</span><span id="EndaH2OEstimator.predict-62"><a href="#EndaH2OEstimator.predict-62"><span class="linenos">62</span></a>        <span class="k">with</span> <span class="n">h2o</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">threading</span><span class="o">.</span><span class="n">local_context</span><span class="p">(</span><span class="n">polars_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">datatable_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+</span><span id="EndaH2OEstimator.predict-63"><a href="#EndaH2OEstimator.predict-63"><span class="linenos">63</span></a>            <span class="n">forecast</span> <span class="o">=</span> <span class="n">forecast</span><span class="o">.</span><span class="n">as_data_frame</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+</span><span id="EndaH2OEstimator.predict-64"><a href="#EndaH2OEstimator.predict-64"><span class="linenos">64</span></a>                <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;predict&quot;</span><span class="p">:</span> <span class="n">target_col</span><span class="p">}</span>  <span class="c1"># convert to pandas and rename</span>
+</span><span id="EndaH2OEstimator.predict-65"><a href="#EndaH2OEstimator.predict-65"><span class="linenos">65</span></a>            <span class="p">)</span>
+</span><span id="EndaH2OEstimator.predict-66"><a href="#EndaH2OEstimator.predict-66"><span class="linenos">66</span></a>        <span class="n">forecast</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="EndaH2OEstimator.predict-67"><a href="#EndaH2OEstimator.predict-67"><span class="linenos">67</span></a>            <span class="n">df</span><span class="o">.</span><span class="n">index</span>
+</span><span id="EndaH2OEstimator.predict-68"><a href="#EndaH2OEstimator.predict-68"><span class="linenos">68</span></a>        <span class="p">)</span>  <span class="c1"># put back the correct index (typically a pandas.DatetimeIndex)</span>
+</span><span id="EndaH2OEstimator.predict-69"><a href="#EndaH2OEstimator.predict-69"><span class="linenos">69</span></a>        <span class="k">return</span> <span class="n">forecast</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Predicts and returns a dataframe with just 1 column: target_col_name</p>
+            <div class="docstring"><p>Predict from a h2o-based trained model using an input dataframe with features</p>
+
+<h6 id="parameters">Parameters</h6>
+
+<ul>
+<li><strong>df</strong>:  the input dataframe</li>
+<li><strong>target_col</strong>:  the target column name</li>
+</ul>
+
+<h6 id="returns">Returns</h6>
+
+<blockquote>
+  <p>a single-column dataframe with the predicted target</p>
+</blockquote>
 </div>
 
 
+                            </div>
+                            <div id="EndaH2OEstimator.get_model_name" class="classattr">
+                                        <input id="EndaH2OEstimator.get_model_name-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">get_model_name</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">) -> <span class="nb">str</span>:</span></span>
+
+                <label class="view-source-button" for="EndaH2OEstimator.get_model_name-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#EndaH2OEstimator.get_model_name"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="EndaH2OEstimator.get_model_name-71"><a href="#EndaH2OEstimator.get_model_name-71"><span class="linenos">71</span></a>    <span class="k">def</span> <span class="nf">get_model_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="EndaH2OEstimator.get_model_name-72"><a href="#EndaH2OEstimator.get_model_name-72"><span class="linenos">72</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator.get_model_name-73"><a href="#EndaH2OEstimator.get_model_name-73"><span class="linenos">73</span></a><span class="sd">        Return the H2O model name instead of EndaH2OEstimator</span>
+</span><span id="EndaH2OEstimator.get_model_name-74"><a href="#EndaH2OEstimator.get_model_name-74"><span class="linenos">74</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator.get_model_name-75"><a href="#EndaH2OEstimator.get_model_name-75"><span class="linenos">75</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Return the H2O model name instead of EndaH2OEstimator</p>
+</div>
+
+
+                            </div>
+                            <div id="EndaH2OEstimator.get_model_params" class="classattr">
+                                        <input id="EndaH2OEstimator.get_model_params-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">get_model_params</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">) -> <span class="nb">dict</span>:</span></span>
+
+                <label class="view-source-button" for="EndaH2OEstimator.get_model_params-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#EndaH2OEstimator.get_model_params"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="EndaH2OEstimator.get_model_params-77"><a href="#EndaH2OEstimator.get_model_params-77"><span class="linenos">77</span></a>    <span class="k">def</span> <span class="nf">get_model_params</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span id="EndaH2OEstimator.get_model_params-78"><a href="#EndaH2OEstimator.get_model_params-78"><span class="linenos">78</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator.get_model_params-79"><a href="#EndaH2OEstimator.get_model_params-79"><span class="linenos">79</span></a><span class="sd">        Return a dict with the model name and the model hyperparameters</span>
+</span><span id="EndaH2OEstimator.get_model_params-80"><a href="#EndaH2OEstimator.get_model_params-80"><span class="linenos">80</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator.get_model_params-81"><a href="#EndaH2OEstimator.get_model_params-81"><span class="linenos">81</span></a>        <span class="k">return</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_model_name</span><span class="p">():</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_params</span><span class="p">()}</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Return a dict with the model name and the model hyperparameters</p>
+</div>
+
+
+                            </div>
+                            <div id="EndaH2OEstimator.get_feature_importance" class="classattr">
+                                        <input id="EndaH2OEstimator.get_feature_importance-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">get_feature_importance</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">) -> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">Series</span>:</span></span>
+
+                <label class="view-source-button" for="EndaH2OEstimator.get_feature_importance-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#EndaH2OEstimator.get_feature_importance"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="EndaH2OEstimator.get_feature_importance-83"><a href="#EndaH2OEstimator.get_feature_importance-83"><span class="linenos"> 83</span></a>    <span class="k">def</span> <span class="nf">get_feature_importance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-84"><a href="#EndaH2OEstimator.get_feature_importance-84"><span class="linenos"> 84</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-85"><a href="#EndaH2OEstimator.get_feature_importance-85"><span class="linenos"> 85</span></a><span class="sd">        Return the feature&#39;s importance once a model has been trained.</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-86"><a href="#EndaH2OEstimator.get_feature_importance-86"><span class="linenos"> 86</span></a><span class="sd">        This makes use of built-in method &#39;varimp&#39; of an H2OEstimator,</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-87"><a href="#EndaH2OEstimator.get_feature_importance-87"><span class="linenos"> 87</span></a><span class="sd">        and only returns the percentage column</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-88"><a href="#EndaH2OEstimator.get_feature_importance-88"><span class="linenos"> 88</span></a><span class="sd">        :return: a series that contain the percentage of importance for each variable</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-89"><a href="#EndaH2OEstimator.get_feature_importance-89"><span class="linenos"> 89</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-90"><a href="#EndaH2OEstimator.get_feature_importance-90"><span class="linenos"> 90</span></a>
+</span><span id="EndaH2OEstimator.get_feature_importance-91"><a href="#EndaH2OEstimator.get_feature_importance-91"><span class="linenos"> 91</span></a>        <span class="n">feature_importance_series</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-92"><a href="#EndaH2OEstimator.get_feature_importance-92"><span class="linenos"> 92</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">varimp</span><span class="p">(</span><span class="n">use_pandas</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-93"><a href="#EndaH2OEstimator.get_feature_importance-93"><span class="linenos"> 93</span></a>            <span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s1">&#39;variable&#39;</span><span class="p">,</span> <span class="s1">&#39;percentage&#39;</span><span class="p">]]</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-94"><a href="#EndaH2OEstimator.get_feature_importance-94"><span class="linenos"> 94</span></a>            <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;percentage&#39;</span><span class="p">:</span> <span class="s1">&#39;variable_importance_pct&#39;</span><span class="p">})</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-95"><a href="#EndaH2OEstimator.get_feature_importance-95"><span class="linenos"> 95</span></a>            <span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;variable&#39;</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-96"><a href="#EndaH2OEstimator.get_feature_importance-96"><span class="linenos"> 96</span></a>            <span class="o">.</span><span class="n">rename_axis</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-97"><a href="#EndaH2OEstimator.get_feature_importance-97"><span class="linenos"> 97</span></a>            <span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-98"><a href="#EndaH2OEstimator.get_feature_importance-98"><span class="linenos"> 98</span></a>            <span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-99"><a href="#EndaH2OEstimator.get_feature_importance-99"><span class="linenos"> 99</span></a>        <span class="p">)</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-100"><a href="#EndaH2OEstimator.get_feature_importance-100"><span class="linenos">100</span></a>
+</span><span id="EndaH2OEstimator.get_feature_importance-101"><a href="#EndaH2OEstimator.get_feature_importance-101"><span class="linenos">101</span></a>        <span class="k">return</span> <span class="n">feature_importance_series</span>
+</span><span id="EndaH2OEstimator.get_feature_importance-102"><a href="#EndaH2OEstimator.get_feature_importance-102"><span class="linenos">102</span></a>
+</span><span id="EndaH2OEstimator.get_feature_importance-103"><a href="#EndaH2OEstimator.get_feature_importance-103"><span class="linenos">103</span></a>        <span class="c1"># All below is just for model persistence : to comply with pickle and deepcopy.</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Return the feature's importance once a model has been trained.
+This makes use of built-in method 'varimp' of an H2OEstimator,
+and only returns the percentage column</p>
+
+<h6 id="returns">Returns</h6>
+
+<blockquote>
+  <p>a series that contain the percentage of importance for each variable</p>
+</blockquote>
+</div>
+
+
+                            </div>
+                            <div class="inherited">
+                                <h5>Inherited Members</h5>
+                                <dl>
+                                    <div><dt><a href="../estimators.html#EndaEstimator">enda.estimators.EndaEstimator</a></dt>
+                                <dd id="EndaH2OEstimator.fit" class="function"><a href="../estimators.html#EndaEstimator.fit">fit</a></dd>
+                <dd id="EndaH2OEstimator.get_loss_training" class="function"><a href="../estimators.html#EndaEstimator.get_loss_training">get_loss_training</a></dd>
+
+            </div>
+                                </dl>
                             </div>
                 </section>
     </main>
