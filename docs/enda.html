@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="generator" content="pdoc 14.4.0"/>
+    <meta name="generator" content="pdoc 14.5.1"/>
     <title>enda API documentation</title>
 
     <style>/*! * Bootstrap Reboot v5.0.0 (https://getbootstrap.com/) * Copyright 2011-2021 The Bootstrap Authors * Copyright 2011-2021 Twitter, Inc. * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE) * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md) */*,::after,::before{box-sizing:border-box}@media (prefers-reduced-motion:no-preference){:root{scroll-behavior:smooth}}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#fff;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}hr{margin:1rem 0;color:inherit;background-color:currentColor;border:0;opacity:.25}hr:not([size]){height:1px}h1,h2,h3,h4,h5,h6{margin-top:0;margin-bottom:.5rem;font-weight:500;line-height:1.2}h1{font-size:calc(1.375rem + 1.5vw)}@media (min-width:1200px){h1{font-size:2.5rem}}h2{font-size:calc(1.325rem + .9vw)}@media (min-width:1200px){h2{font-size:2rem}}h3{font-size:calc(1.3rem + .6vw)}@media (min-width:1200px){h3{font-size:1.75rem}}h4{font-size:calc(1.275rem + .3vw)}@media (min-width:1200px){h4{font-size:1.5rem}}h5{font-size:1.25rem}h6{font-size:1rem}p{margin-top:0;margin-bottom:1rem}abbr[data-bs-original-title],abbr[title]{-webkit-text-decoration:underline dotted;text-decoration:underline dotted;cursor:help;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}address{margin-bottom:1rem;font-style:normal;line-height:inherit}ol,ul{padding-left:2rem}dl,ol,ul{margin-top:0;margin-bottom:1rem}ol ol,ol ul,ul ol,ul ul{margin-bottom:0}dt{font-weight:700}dd{margin-bottom:.5rem;margin-left:0}blockquote{margin:0 0 1rem}b,strong{font-weight:bolder}small{font-size:.875em}mark{padding:.2em;background-color:#fcf8e3}sub,sup{position:relative;font-size:.75em;line-height:0;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}a{color:#0d6efd;text-decoration:underline}a:hover{color:#0a58ca}a:not([href]):not([class]),a:not([href]):not([class]):hover{color:inherit;text-decoration:none}code,kbd,pre,samp{font-family:SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:1em;direction:ltr;unicode-bidi:bidi-override}pre{display:block;margin-top:0;margin-bottom:1rem;overflow:auto;font-size:.875em}pre code{font-size:inherit;color:inherit;word-break:normal}code{font-size:.875em;color:#d63384;word-wrap:break-word}a>code{color:inherit}kbd{padding:.2rem .4rem;font-size:.875em;color:#fff;background-color:#212529;border-radius:.2rem}kbd kbd{padding:0;font-size:1em;font-weight:700}figure{margin:0 0 1rem}img,svg{vertical-align:middle}table{caption-side:bottom;border-collapse:collapse}caption{padding-top:.5rem;padding-bottom:.5rem;color:#6c757d;text-align:left}th{text-align:inherit;text-align:-webkit-match-parent}tbody,td,tfoot,th,thead,tr{border-color:inherit;border-style:solid;border-width:0}label{display:inline-block}button{border-radius:0}button:focus:not(:focus-visible){outline:0}button,input,optgroup,select,textarea{margin:0;font-family:inherit;font-size:inherit;line-height:inherit}button,select{text-transform:none}[role=button]{cursor:pointer}select{word-wrap:normal}select:disabled{opacity:1}[list]::-webkit-calendar-picker-indicator{display:none}[type=button],[type=reset],[type=submit],button{-webkit-appearance:button}[type=button]:not(:disabled),[type=reset]:not(:disabled),[type=submit]:not(:disabled),button:not(:disabled){cursor:pointer}::-moz-focus-inner{padding:0;border-style:none}textarea{resize:vertical}fieldset{min-width:0;padding:0;margin:0;border:0}legend{float:left;width:100%;padding:0;margin-bottom:.5rem;font-size:calc(1.275rem + .3vw);line-height:inherit}@media (min-width:1200px){legend{font-size:1.5rem}}legend+*{clear:left}::-webkit-datetime-edit-day-field,::-webkit-datetime-edit-fields-wrapper,::-webkit-datetime-edit-hour-field,::-webkit-datetime-edit-minute,::-webkit-datetime-edit-month-field,::-webkit-datetime-edit-text,::-webkit-datetime-edit-year-field{padding:0}::-webkit-inner-spin-button{height:auto}[type=search]{outline-offset:-2px;-webkit-appearance:textfield}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-color-swatch-wrapper{padding:0}::file-selector-button{font:inherit}::-webkit-file-upload-button{font:inherit;-webkit-appearance:button}output{display:inline-block}iframe{border:0}summary{display:list-item;cursor:pointer}progress{vertical-align:baseline}[hidden]{display:none!important}</style>
@@ -28,10 +28,9 @@
     <li><a href="#what-is-it">What is it?</a></li>
     <li><a href="#main-features">Main Features</a></li>
     <li><a href="#where-to-get-it">Where to get it</a></li>
+    <li><a href="#documentation-and-api">Documentation and API</a></li>
     <li><a href="#how-to-get-started">How to get started?</a></li>
-    <li><a href="#hard-dependencies">Hard dependencies</a></li>
-    <li><a href="#optional-dependencies">Optional dependencies</a></li>
-    <li><a href="#about-numpy-support-for-python-37">About <code>numpy</code> support for python 3.7</a></li>
+    <li><a href="#dependencies">Dependencies</a></li>
     <li><a href="#license">License</a></li>
   </ul></li>
 </ul>
@@ -40,6 +39,7 @@
             <h2>Submodules</h2>
             <ul>
                     <li><a href="enda/backtesting.html">backtesting</a></li>
+                    <li><a href="enda/config.html">config</a></li>
                     <li><a href="enda/contracts.html">contracts</a></li>
                     <li><a href="enda/estimators.html">estimators</a></li>
                     <li><a href="enda/feature_engineering.html">feature_engineering</a></li>
@@ -47,12 +47,10 @@
                     <li><a href="enda/power_predictor.html">power_predictor</a></li>
                     <li><a href="enda/power_stations.html">power_stations</a></li>
                     <li><a href="enda/scoring.html">scoring</a></li>
+                    <li><a href="enda/timeseries.html">timeseries</a></li>
+                    <li><a href="enda/timezone_utils.html">timezone_utils</a></li>
                     <li><a href="enda/tools.html">tools</a></li>
             </ul>
-
-            <h2>API Documentation</h2>
-                <ul class="memberlist">
-    </ul>
 
 
 
@@ -70,111 +68,91 @@ enda    </h1>
 
                         <div class="docstring"><h1 id="enda">enda</h1>
 
-<p><img src="https://img.shields.io/pypi/v/enda?link=https%3A%2F%2Fpypi.org%2Fproject%2Fenda%2F" alt="PyPI" /> <a href="https://python-poetry.org/"><img src="https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json" alt="Poetry" /></a> <a href="https://pycqa.github.io/isort/"><img src="https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336" alt="Imports: isort" /></a> <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black" /></a> <a href="https://github.com/pre-commit/pre-commit"><img src="https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit" alt="pre-commit" /></a></p>
+<p><img src="https://img.shields.io/pypi/v/enda" alt="PyPI" /> <a href="https://python-poetry.org/"><img src="https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json" alt="Poetry" /></a> <a href="https://pycqa.github.io/isort/"><img src="https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336" alt="Imports: isort" /></a> <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black" /></a> <a href="https://github.com/pre-commit/pre-commit"><img src="https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit" alt="pre-commit" /></a></p>
 
 <h2 id="what-is-it">What is it?</h2>
 
-<p><strong>enda</strong> is a Python package that provides tools to manipulate <strong>timeseries</strong> data in conjunction with <strong>contracts</strong> data for analysis and <strong>forecasts</strong>.</p>
+<p><strong>enda</strong> is a Python package that provides tools to manipulate <strong>timeseries</strong> data in conjunction with <strong>contracts</strong> data for analysis and <strong>forecasting</strong>.</p>
 
-<p>Its main goal is to help <a href="https://www.rescoop.eu/">Rescoop.eu</a> members build various applications, such as short-term electricity load and production forecasts, specifically for the <a href="https://www.rescoopvpp.eu/">RescoopVPP</a> project. Hence some tools in this package perform TSO (transmission network operator) and DNO (distribution network operator) data wrangling as well as weather data management. enda is mainly developed by <a href="https://www.enercoop.fr/">Enercoop</a>.</p>
+<p>Initially, it has been developed to help <a href="https://www.rescoop.eu/">Rescoop.eu</a> members build various applications, such as short-term electricity load and production forecasts, specifically for the <a href="https://www.rescoopvpp.eu/">RescoopVPP</a> project. Hence some tools in this package perform TSO (transmission network operator) and DNO (distribution network operator) data wrangling as well as weather data management. enda is mainly developed by <a href="https://www.enercoop.fr/">Enercoop</a>.</p>
 
 <h2 id="main-features">Main Features</h2>
 
 <p>Here are some things <strong>enda</strong> does well:</p>
 
 <ul>
-<li>Provide robust machine learning algorithms for short-term electricty load and production forecasts, developed by Enercoop. The load forecast was originally based on Komi Nagbe's thesis (<a href="http://www.theses.fr/s148364">http://www.theses.fr/s148364</a>).</li>
+<li>Provide robust machine learning algorithms for <strong>short-term electricity load and production forecasts</strong>. enda provides a convenient wrapper around the popular multipurpose machine-learning backends <a href="https://scikit-learn.org/stable/">Scikit</a> and <a href="https://h2o.ai/platform/ai-cloud/make/h2o/">H2O</a>. The load forecast was originally based on Komi Nagbe's thesis (<a href="http://www.theses.fr/s148364">http://www.theses.fr/s148364</a>).</li>
+<li>Manipulate <strong>timeseries</strong> data, such as load curves. enda handles timeseries-specific detection of missing data, like time gaps, frequency changes, extra values, as well as various resampling methods. </li>
+<li>Provide several <strong>backtesting</strong> and <strong>scoring</strong> methods to ensure the quality of the trained algorithm on almost real conditions.</li>
 <li>Manipulate <strong>contracts</strong> data coming from your ERP and turn it into timeseries you can use for analysis, visualisation and machine learning.</li>
-<li>Timeseries-specific detection of missing data, like time gaps and frequency changes.</li>
-<li>Date-time feature engineering robust to timezone hazards.</li>
+<li>Date-time <strong>feature engineering</strong> robust to timezone hazards.</li>
 </ul>
 
 <h2 id="where-to-get-it">Where to get it</h2>
 
-<p>The source code is currently hosted on GitHub at: <a href="https://github.com/enercoop/enda">https://github.com/enercoop/enda</a></p>
+<p>The source code is currently hosted on GitHub at: <a href="https://github.com/enercoop/enda">https://github.com/enercoop/enda</a>. If you wish to run the examples it contains, you can clone enda from the Github repository</p>
 
 <p>Binary installers for the latest released version are available at the <a href="https://pypi.org/project/enda">Python
-Package Index (PyPI)</a> (for now it is not directly on <a href="https://docs.conda.io/en/latest/">Conda</a>).</p>
+Package Index (PyPI)</a> (for now it is not directly on <a href="https://docs.conda.io/en/latest/">Conda</a>). </p>
 
 <div class="pdoc-code codehilite">
-<pre><span></span><code><span class="c1"># PyPI</span>
-pip<span class="w"> </span>install<span class="w"> </span>enda
+<pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>enda
 </code></pre>
 </div>
 
-<p>If you wish to install the dependencies needed to run the examples, you can install <code><a href="">enda</a></code> with the <code>examples</code> extra:</p>
+<p>or using <a href="https://python-poetry.org/">poetry</a>:</p>
 
 <div class="pdoc-code codehilite">
-<pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>enda<span class="o">[</span>examples<span class="o">]</span>
+<pre><span></span><code>poetry<span class="w"> </span>add<span class="w"> </span>enda
 </code></pre>
 </div>
 
-<p>You can install all the optional dependencies with the <code>all</code> extra:</p>
+<h2 id="documentation-and-api">Documentation and API</h2>
 
-<div class="pdoc-code codehilite">
-<pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>enda<span class="o">[</span>all<span class="o">]</span>
-</code></pre>
-</div>
-
-<p>or using poetry:</p>
-
-<div class="pdoc-code codehilite">
-<pre><span></span><code>poetry<span class="w"> </span>add<span class="w"> </span>enda<span class="o">[</span>all<span class="o">]</span>
-</code></pre>
-</div>
+<p>The complete API is available online <a href="https://enercoop.github.io/enda">here</a>.</p>
 
 <h2 id="how-to-get-started">How to get started?</h2>
 
-<p>Check out the guides: <a href="https://github.com/enercoop/enda/tree/main/guides">https://github.com/enercoop/enda/tree/main/guides</a>.</p>
+<p>For a more comprehensive approach to enda, several <a href="https://jupyter.org/">Jupyter notebooks</a> have been proposed in the <a href="https://github.com/enercoop/enda/tree/main/guides">guides</a>.
+Some dependencies are needed to run these examples, that you can easily install with poetry, running <code>poetry install enda[examples]</code></p>
 
-<h2 id="hard-dependencies">Hard dependencies</h2>
+<h2 id="dependencies">Dependencies</h2>
 
-<ul>
-<li><a href="https://pandas.pydata.org/">Pandas - the main dataframe manipulation tool for python, advanced timeseries management included.</a></li>
-<li>Pandas itself has hard dependencies and optional dependencies, checkout <a href="https://pandas.pydata.org/pandas-docs/stable/getting_started/install.html">https://pandas.pydata.org/pandas-docs/stable/getting_started/install.html</a> . Hard dependencies of pandas include: <code>setuptools</code>, <code>NumPy</code>, <code>python-dateutil</code>, <code>pytz</code>.</li>
-</ul>
-
-<h2 id="optional-dependencies">Optional dependencies</h2>
-
-<p>Optional dependencies are used only for specific methods. Enda will give an error if the method called requires a dependency that is not installed.</p>
-
-<p>Enda can work with different machine learning "backends" :</p>
+<h3 id="hard-dependencies">Hard dependencies</h3>
 
 <ul>
+<li><a href="https://pandas.pydata.org/">Pandas</a></li>
 <li><a href="https://scikit-learn.org/stable/">Scikit-learn</a></li>
-<li><a href="https://docs.h2o.ai/">H2O - an efficient machine learning framework</a></li>
+<li><a href="https://docs.h2o.ai/">H2O</a></li>
+<li><a href="https://numpy.org/">Numpy</a></li>
+<li><a href="https://pypi.org/project/statsmodels/">Statsmodels</a></li>
+<li>Libraries that are recommended by the previous packages: <a href="https://pypi.org/project/datatable/">datatable</a>, <a href="https://pypi.org/project/polars/">polars</a>, <a href="https://pypi.org/project/numexpr/">numexpr</a>, <a href="https://pypi.org/project/Unidecode/">unidecode</a></li>
+<li>Libraries meant to get calendar data: <a href="https://pypi.org/project/jours-feries-france/">jours-feries-france</a>, <a href="https://pypi.org/project/vacances-scolaires-france/">vacances-scolaires-france</a></li>
 </ul>
 
-<p>You can also easily implement your own ml-backend by implementing enda's ModelInterface. Checkout <code>enda.ml_backends.sklearn_linreg.py</code> for an example with <code>SKLearnLinearRegression</code>.</p>
+<h3 id="optional-dependencies">Optional dependencies</h3>
 
-<p>Other optional dependencies:</p>
-
-<ul>
-<li><a href="https://pypi.org/project/statsmodels/">statsmodel</a></li>
-</ul>
-
-<p>Furthermore, don't hesitate to install pandas "Recommended dependencies" for speed-ups : <code>numexpr</code> and <code>bottleneck</code>.</p>
-
-<p>If you want to save your trained models, we recommend <code>joblib</code>. See Scikit-learn's recommendations here: <a href="https://scikit-learn.org/stable/modules/model_persistence.html">https://scikit-learn.org/stable/modules/model_persistence.html</a>.</p>
-
-<p>All these dependencies can be installed along <code><a href="">enda</a></code> with the following command:</p>
+<p>If you want to run the examples, you may need extra dependencies. 
+These dependencies can be installed using poetry: </p>
 
 <div class="pdoc-code codehilite">
-<pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>enda<span class="o">[</span>examples<span class="o">]</span>
+<pre><span></span><code>poetry<span class="w"> </span>install<span class="w"> </span>--with<span class="w"> </span>examples
 </code></pre>
 </div>
 
-<p>Or you can install them manually:</p>
+<p>or manually:</p>
 
 <div class="pdoc-code codehilite">
 <pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>numexpr<span class="w"> </span>bottleneck<span class="w"> </span>pandas<span class="w"> </span>enda<span class="w"> </span>jupyter<span class="w"> </span>h2o<span class="w"> </span>scikit-learn<span class="w"> </span>statsmodels<span class="w"> </span>joblib<span class="w"> </span>matplotlib
 </code></pre>
 </div>
 
-<h2 id="about-numpy-support-for-python-37">About <code>numpy</code> support for python 3.7</h2>
+<p>Accordingly, if you wish to develop into enda, we suggest some tools and linters that can be used. </p>
 
-<p>Support for <code>numpy</code> and python 3.7 according to <a href="https://numpy.org/neps/nep-0029-deprecation_policy.html#support-table">https://numpy.org/neps/nep-0029-deprecation_policy.html#support-table</a>
-and <a href="https://github.com/scipy/oldest-supported-numpy">https://github.com/scipy/oldest-supported-numpy</a></p>
+<div class="pdoc-code codehilite">
+<pre><span></span><code>poetry<span class="w"> </span>install<span class="w"> </span>--with<span class="w"> </span>dev
+</code></pre>
+</div>
 
 <h2 id="license">License</h2>
 
@@ -189,25 +167,31 @@ and <a href="https://github.com/scipy/oldest-supported-numpy">https://github.com
 </span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="sd">.. include:: ../README.md</span>
 </span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;1.0.0&quot;</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="c1"># import some subclasses here so users can use for instance :</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="c1"># &#39;enda.Contracts&#39; without knowing the internal structure.</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="c1"># Do not import classes that need a specific packages like &quot;H2OModel&quot;.</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="c1"># import some subclasses here so users can use for instance :</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="c1"># &#39;enda.Contracts&#39; without knowing the internal structure.</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">from</span> <span class="nn">enda.feature_engineering.calendar</span> <span class="kn">import</span> <span class="n">Calendar</span><span class="p">,</span> <span class="n">Holidays</span>  <span class="c1"># noqa</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="kn">from</span> <span class="nn">enda.feature_engineering.datetime_features</span> <span class="kn">import</span> <span class="n">DatetimeFeature</span>  <span class="c1"># noqa</span>
 </span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="kn">from</span> <span class="nn">enda.feature_engineering.calendar</span> <span class="kn">import</span> <span class="n">Calendar</span><span class="p">,</span> <span class="n">Holidays</span>  <span class="c1"># noqa</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="kn">from</span> <span class="nn">enda.feature_engineering.datetime_features</span> <span class="kn">import</span> <span class="n">DatetimeFeature</span>  <span class="c1"># noqa</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="kn">from</span> <span class="nn">enda.ml_backends.h2o_estimator</span> <span class="kn">import</span> <span class="n">EndaH2OEstimator</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="kn">from</span> <span class="nn">enda.ml_backends.sklearn_estimator</span> <span class="kn">import</span> <span class="n">EndaSklearnEstimator</span>
 </span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>
 </span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="kn">from</span> <span class="nn">enda.backtesting</span> <span class="kn">import</span> <span class="n">BackTesting</span>  <span class="c1"># noqa</span>
 </span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="kn">from</span> <span class="nn">enda.contracts</span> <span class="kn">import</span> <span class="n">Contracts</span>  <span class="c1"># noqa</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="kn">from</span> <span class="nn">enda.power_predictor</span> <span class="kn">import</span> <span class="n">PowerPredictor</span>  <span class="c1"># noqa</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="kn">from</span> <span class="nn">enda.power_stations</span> <span class="kn">import</span> <span class="n">PowerStations</span>  <span class="c1"># noqa</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="kn">from</span> <span class="nn">enda.scoring</span> <span class="kn">import</span> <span class="n">Scoring</span>  <span class="c1"># noqa</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="kn">from</span> <span class="nn">enda.tools.portfolio_tools</span> <span class="kn">import</span> <span class="n">PortfolioTools</span>  <span class="c1"># noqa</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="kn">from</span> <span class="nn">enda.tools.resample</span> <span class="kn">import</span> <span class="n">Resample</span>  <span class="c1"># noqa</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="kn">from</span> <span class="nn">enda.tools.timeseries</span> <span class="kn">import</span> <span class="n">TimeSeries</span>  <span class="c1"># noqa</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="kn">from</span> <span class="nn">enda.tools.timezone_utils</span> <span class="kn">import</span> <span class="n">TimezoneUtils</span>  <span class="c1"># noqa</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="kn">from</span> <span class="nn">enda.estimators</span> <span class="kn">import</span> <span class="p">(</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>    <span class="n">EndaEstimator</span><span class="p">,</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>    <span class="n">EndaNormalizedEstimator</span><span class="p">,</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>    <span class="n">EndaEstimatorRecopy</span><span class="p">,</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>    <span class="n">EndaEstimatorWithFallback</span><span class="p">,</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>    <span class="n">EndaStackingEstimator</span><span class="p">)</span>  <span class="c1"># noqa</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="kn">from</span> <span class="nn">enda.power_predictor</span> <span class="kn">import</span> <span class="n">PowerPredictor</span>  <span class="c1"># noqa</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="kn">from</span> <span class="nn">enda.power_stations</span> <span class="kn">import</span> <span class="n">PowerStations</span>  <span class="c1"># noqa</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="kn">from</span> <span class="nn">enda.scoring</span> <span class="kn">import</span> <span class="n">Scoring</span>  <span class="c1"># noqa</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="kn">from</span> <span class="nn">enda.tools.portfolio_tools</span> <span class="kn">import</span> <span class="n">PortfolioTools</span>  <span class="c1"># noqa</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="kn">from</span> <span class="nn">enda.tools.resample</span> <span class="kn">import</span> <span class="n">Resample</span>  <span class="c1"># noqa</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="kn">from</span> <span class="nn">enda.tools.timeseries</span> <span class="kn">import</span> <span class="n">TimeSeries</span>  <span class="c1"># noqa</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="kn">from</span> <span class="nn">enda.tools.timezone_utils</span> <span class="kn">import</span> <span class="n">TimezoneUtils</span>  <span class="c1"># noqa</span>
 </span></pre></div>
 
 
