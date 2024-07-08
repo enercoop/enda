@@ -300,7 +300,8 @@ class Resample:
             is_original_frequency_unique: bool = False,
             index_name: str = None,
             tz_info: Union[str, datetime.tzinfo] = None,
-            expected_initial_freq: Optional[Union[str, pd.Timedelta]] = None
+            expected_initial_freq: Optional[Union[str, pd.Timedelta]] = None,
+            **kwargs
     ):
         """
         Upsample a datetime-indexed dataframe, and interpolate the columns data according to an interpolating method
@@ -314,12 +315,14 @@ class Resample:
                         go from a non-localized timestamp (e.g. dates) to a localized one (e.g. date-times)
         :param expected_initial_freq: the expected initial frequency of the dataframe. This serves to check the
             resampling, and for the particular case of one-row dataframe which must be forward-filled.
+        :param **kwargs: arguments to pass to pandas.interpolate()
         :return: the upsampled timeseries dataframe
         """
 
         if not isinstance(timeseries_df.index, pd.DatetimeIndex):
             raise TypeError("The dataframe index must be a DatetimeIndex")
 
+        initial_dtypes = timeseries_df.dtypes
         timeseries_df = timeseries_df.copy()
 
         # set timezone in case it's been indicated
@@ -363,8 +366,9 @@ class Resample:
 
         original_freq_seconds = enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_seconds(original_freq)
         freq_seconds = enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_seconds(freq)
-        if ((expected_initial_freq is not None) and
-                (enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_seconds(expected_initial_freq) != original_freq_seconds)):
+        if (expected_initial_freq is not None) and (
+                enda.tools.timeseries.TimeSeries.freq_as_approximate_nb_seconds(expected_initial_freq)
+                != original_freq_seconds):
             raise ValueError(f"The initial expected freq of the dataframe index {expected_initial_freq} is not the "
                              f"same as the one actually found in the dataframe index {original_freq}")
 
@@ -373,7 +377,11 @@ class Resample:
             raise ValueError(f"The required frequency {freq} is higher than the original one {original_freq}")
 
         # resample and interpolate
-        timeseries_df = timeseries_df.resample(freq).interpolate(method=method)
+        timeseries_df = timeseries_df.resample(freq).interpolate(method=method, **kwargs)
+
+        # if method is 'ffill' or "bfill" or 'pad'
+        if method in ["ffill", "bfill", "pad"]:
+            timeseries_df = timeseries_df.astype(initial_dtypes)
 
         if forward_fill:
             # this serves to extend the dataframe, and resample using 'ffill' the last element
@@ -467,7 +475,6 @@ class Resample:
             start_time = pd.to_datetime(start_time)
 
             if start_time < timeseries_df.index.min():
-
                 # add an extra row which is the same as the first one, but date is changed
                 extra_row = timeseries_df.loc[[timeseries_df.index.min()], :].iloc[0].to_frame().T
                 extra_row.index = [start_time]

@@ -472,7 +472,7 @@ class TestResample(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(result_df, expected_df)
 
-    def test_upsample_and_interpolate_seconds(self):
+    def test_upsample_and_interpolate_types(self):
         """
         Test upsample_and_interpolate with a 30 minutes timestamp and strings as column and forward fill
         """
@@ -492,7 +492,7 @@ class TestResample(unittest.TestCase):
                 inclusive="left"
             )
             .to_frame()
-            .assign(value=[1., 1, 2, 2])
+            .assign(value=[1, 1, 2, 2])
             .assign(value_str=["val", "val", "val", "val"])
             .set_index("time")
         )
@@ -500,7 +500,7 @@ class TestResample(unittest.TestCase):
 
         pd.testing.assert_frame_equal(result_df, expected_df)
 
-        # test with a linear interpolation: string values are not linearly interpolated
+        # test with a linear interpolation: string values are not linearly interpolated, it makes a np.nan
         result_df = enda.tools.resample.Resample.upsample_and_interpolate(self.thirty_seconds_df,
                                                                           freq="15s",
                                                                           tz_info="Europe/Paris",
