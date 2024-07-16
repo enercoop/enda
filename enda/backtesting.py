@@ -187,7 +187,7 @@ class BackTesting:
             estimator: EndaEstimator,
             df: pd.DataFrame,
             target_col: str,
-            scores: Optional[Union[list[str], dict[str, str]]] = None,
+            scores: Optional[Union[list[str], dict[str, Callable]]] = None,
             process_forecast_specs: Optional[Tuple[Callable, dict]] = None,
             retrain_estimator: bool = True,
             post_iter_hook: Optional[Callable] = None,
