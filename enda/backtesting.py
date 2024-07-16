@@ -187,9 +187,10 @@ class BackTesting:
             estimator: EndaEstimator,
             df: pd.DataFrame,
             target_col: str,
-            scores: Optional[Union[list[str], dict[str, str]]] = None,
+            scores: Optional[Union[list[str], dict[str, Callable]]] = None,
             process_forecast_specs: Optional[Tuple[Callable, dict]] = None,
             retrain_estimator: bool = True,
+            post_iter_hook: Optional[Callable] = None,
             verbose: bool = False,
             **kwargs
     ) -> dict[str, pd.DataFrame]:
@@ -218,6 +219,8 @@ class BackTesting:
         :param retrain_estimator: boolean, if True (default), perform a real backtesting during which an
             estimator is retrained before being used to perform a forecast. If False, the estimator must be
             already trained, and this function only serves to perform successive forecasts on test sets.
+        :param post_iter_hook: A function to be called at the end of each iteration of the backtest process.
+                               For example, it allows to clean the memory after each iteration when using h2o estimator.
         :param kwargs: extra argument to pass to the chosen split method yield_train_test_regular_split() or
             yield_train_test_periodic_split(), such as n_splits, test_size, gap_size, min_train_size,
             min_last_test_size_pct...
@@ -293,6 +296,9 @@ class BackTesting:
                 logger.info(f"Partial scores: \n{scores_df.to_string()}")
 
             scoring_result_list.append(scores_df)
+
+            if post_iter_hook is not None:
+                post_iter_hook()
 
         result_dict = {"score": pd.concat(scoring_result_list).reset_index(drop=True),
                        "forecast": pd.concat(all_forecasts_list)}

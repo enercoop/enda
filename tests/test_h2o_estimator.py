@@ -213,13 +213,13 @@ class TestH2OEstimator(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             # not yet trained estimator
-            h2o_lin.get_loss_training(score_list=['rmse', 'mae', 'r2'])
+            h2o_lin.get_loss_training(scores=['rmse', 'mae', 'r2'])
 
         # train the estimator
         h2o_lin.train(self.training_df, target_col=self.target_col)
 
         # get the loss training
-        loss_training = h2o_lin.get_loss_training(score_list=['rmse', 'mae', 'r2'])
+        loss_training = h2o_lin.get_loss_training(scores=['rmse', 'mae', 'r2'])
 
         # expected output
         expected_output = pd.Series(
