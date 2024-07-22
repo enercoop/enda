@@ -5,6 +5,8 @@
 # import some subclasses here so users can use for instance :
 # 'enda.Contracts' without knowing the internal structure.
 
+from enda.config import get_logger, set_logger
+
 from enda.feature_engineering.calendar import Calendar, Holidays  # noqa
 from enda.feature_engineering.datetime_features import DatetimeFeature  # noqa
 
