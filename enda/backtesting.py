@@ -291,6 +291,7 @@ class BackTesting:
                 }
             )
             scores_df = pd.concat([scores_df, start_end_times_df], axis=1)
+            scores_df = scores_df.assign(backtest_iter=backtest_iter)
 
             if verbose:
                 logger.info(f"Partial scores: \n{scores_df.to_string()}")
