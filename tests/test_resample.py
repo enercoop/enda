@@ -695,17 +695,51 @@ class TestResample(unittest.TestCase):
                 self.imperfect_df, freq="6H"
             )
 
-        # test with a single row df
-        with self.assertRaises(ValueError):
-            enda.tools.resample.Resample.upsample_and_divide_evenly(
-                self.single_row_df, freq="1D"
-            )
-
         # error with monthly data
         with self.assertRaises(ValueError):
             enda.tools.resample.Resample.upsample_and_divide_evenly(
                 self.monthly_df, freq="1D"
             )
+
+    def test_upsample_and_divide_evenly_empty_dataframe(self):
+        """
+        Test upsample_and_divide_evenly with an empty dataframe
+        """
+
+        # test with an empty dataframe, and another time zone
+        result_df = enda.tools.resample.Resample.upsample_and_divide_evenly(self.empty_df,
+                                                                          freq="10min",
+                                                                          tz_info="Europe/London")
+        expected_df = self.empty_df.copy()
+        expected_df.index = expected_df.index.tz_localize("Europe/London")
+        expected_df.index.freq = "10min"
+
+        pd.testing.assert_frame_equal(result_df, expected_df)
+
+    def test_upsample_and_divide_evenly_single_row(self):
+        """
+        Test upsample_and_divide_evenly with a single row dataframe
+        """
+
+        # test with a one-rowed dataframe
+        result_df = enda.tools.resample.Resample.upsample_and_divide_evenly(self.single_row_df,
+                                                                          expected_initial_freq="30min",
+                                                                          freq="10min")
+        expected_df = (
+            pd.date_range(
+                start=pd.to_datetime("2023-01-01 00:00:00").tz_localize("Europe/Paris"),
+                end=pd.to_datetime("2023-01-01 00:30:00").tz_localize("Europe/Paris"),
+                freq="10min",
+                name="time",
+                inclusive="left"
+            )
+            .to_frame()
+            .assign(value=[1.0, 1.0, 1.0])
+            .set_index("time")
+        )
+        expected_df.index.freq = '10min'
+        pd.testing.assert_frame_equal(result_df, expected_df)
+
 
     def test_upsample_monthly_data_and_divide_evenly(self):
         """

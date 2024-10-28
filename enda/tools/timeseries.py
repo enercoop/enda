@@ -646,6 +646,10 @@ class TimeSeries:
         if skip_duplicate_timestamps:
             dti = dti.drop_duplicates()
 
+        # special case of a one-row dataframe
+        if len(dti) == 1:
+            return True
+
         # easy case: check the exact differences in duration between timestamps / dates
         if variable_duration_freq_included is False:
             return len(TimeSeries.find_gap_distribution(dti)) == 1

@@ -134,6 +134,8 @@ class Resample:
             freq: Union[str, pd.Timedelta],
             index_name: str = None,
             tz_info: Union[str, datetime.tzinfo] = None,
+            expected_initial_freq: Optional[Union[str, pd.Timedelta]] = None,
+
     ) -> pd.DataFrame:
         """
         Upsample a datetime-indexed pd.DataFrame to a provided frequency and divide the values so that the sum
@@ -152,19 +154,13 @@ class Resample:
         :param index_name: a name to give to the new index. For instance going from 'date' to 'time'.
         :param tz_info: the target time zone in case the index is resampled in another timezone / or if we want to
                         go from a non-localized timestamp (e.g. dates) to a localized one (e.g. date-times)
+        :param expected_initial_freq: the expected initial frequency of the dataframe. This serves for the particular
+        case of one-row dataframe.
         :return: the upsampled timeseries dataframe
         """
 
         if not isinstance(timeseries_df.index, pd.DatetimeIndex):
             raise TypeError("The dataframe index must be a DatetimeIndex")
-
-        # check it's not a one-row dataframe, because it cannot be upsampled.
-        # Consider using forward_fill and give a gap_timedelta to achieve the objective.
-        if enda.tools.timeseries.TimeSeries.find_nb_records(timeseries_df.index) <= 1:
-            raise ValueError(
-                "Cannot upsample an empty or single-record time series; because its initial"
-                " frequency cannot be determined. Consider using 'forward_fill_last_record prior."
-            )
 
         # get to copy
         timeseries_df = timeseries_df.copy()
@@ -176,9 +172,19 @@ class Resample:
             )
 
         # get frequency from the initial dataframe
-        original_freq = enda.tools.timeseries.TimeSeries.find_most_common_frequency(
-            timeseries_df.index
-        )
+        if enda.tools.timeseries.TimeSeries.find_nb_records(timeseries_df.index) > 1:
+            original_freq = enda.tools.timeseries.TimeSeries.find_most_common_frequency(
+                timeseries_df.index
+            )
+
+        # special case of a one-row dataframe
+        elif enda.tools.timeseries.TimeSeries.find_nb_records(timeseries_df.index) == 1:
+            original_freq = expected_initial_freq
+
+        # special case of empty dataframe
+        else :
+            timeseries_df.index.freq = freq
+            return timeseries_df
 
         # if it's not a regular frequency, this function cannot work
         if (not enda.tools.timeseries.TimeSeries.is_regular_freq(original_freq)) or (
