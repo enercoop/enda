@@ -216,11 +216,11 @@ class TimeSeries:
             unit_freq_str,
         ) = TimeSeries.split_amount_and_unit_from_freq(timedelta_str)
 
-        if unit_freq_str in ["D", 'd', "B", "b"]:
+        if unit_freq_str in ["D", "d", "B", "b"]:
             return enda.tools.timezone_utils.TimezoneUtils.add_interval_to_date_object(
-                    date, relativedelta(days=numeric_part_int)
-                )
-        if unit_freq_str in ["W", 'w']:
+                date, relativedelta(days=numeric_part_int)
+            )
+        if unit_freq_str in ["W", "w"]:
             return enda.tools.timezone_utils.TimezoneUtils.add_interval_to_date_object(
                 date, relativedelta(weeks=numeric_part_int)
             )
@@ -268,11 +268,11 @@ class TimeSeries:
             unit_freq_str,
         ) = TimeSeries.split_amount_and_unit_from_freq(timedelta_str)
 
-        if unit_freq_str in ["D", 'd', "B", "b"]:
+        if unit_freq_str in ["D", "d", "B", "b"]:
             return enda.tools.timezone_utils.TimezoneUtils.add_interval_to_date_object(
-                    date, relativedelta(days=-numeric_part_int)
-                )
-        if unit_freq_str in ["W", 'w']:
+                date, relativedelta(days=-numeric_part_int)
+            )
+        if unit_freq_str in ["W", "w"]:
             return enda.tools.timezone_utils.TimezoneUtils.add_interval_to_date_object(
                 date, relativedelta(weeks=-numeric_part_int)
             )
@@ -547,9 +547,7 @@ class TimeSeries:
     @enda.tools.decorators.handle_series_as_datetimeindex(
         arg_name="dti", return_input_type=False
     )
-    def collapse_to_periods(
-        dti: pd.DatetimeIndex, freq: [str, pd.Timedelta]
-    ) -> list[
+    def collapse_to_periods(dti: pd.DatetimeIndex, freq: [str, pd.Timedelta]) -> list[
         tuple[
             Union[pd.Timestamp, datetime.date, datetime.datetime],
             Union[pd.Timestamp, datetime.date, datetime.datetime],
@@ -644,6 +642,7 @@ class TimeSeries:
         """
 
         if skip_duplicate_timestamps:
+
             dti = dti.drop_duplicates()
 
         # special case of a one-row dataframe

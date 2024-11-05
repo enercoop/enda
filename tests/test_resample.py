@@ -114,13 +114,17 @@ class TestResample(unittest.TestCase):
 
         # single-row dataframe
         self.single_row_df = pd.DataFrame(
-            {"time": [pd.Timestamp("2023-01-01").tz_localize(("Europe/Paris"))],
-             "value": [3]
-             }).set_index("time")
+            {
+                "time": [pd.Timestamp("2023-01-01").tz_localize(("Europe/Paris"))],
+                "value": [3],
+            }
+        ).set_index("time")
 
         # empty dataframe
-        schema = {'time': np.datetime64, "value": int}
-        self.empty_df = pd.DataFrame(columns=schema.keys()).astype(schema).set_index("time")
+        schema = {"time": np.datetime64, "value": int}
+        self.empty_df = (
+            pd.DataFrame(columns=schema.keys()).astype(schema).set_index("time")
+        )
 
     def test_downsample(self):
         """
@@ -129,6 +133,7 @@ class TestResample(unittest.TestCase):
 
         # test that we can't downsample to a smaller period
         with self.assertRaises(RuntimeError):
+
             enda.tools.resample.Resample.downsample(self.perfect_df, freq="6H")
 
         # test down-sampling to a 1D (24H) frequency, 'sum as agg_function, and change of index name
@@ -280,7 +285,7 @@ class TestResample(unittest.TestCase):
             self.single_row_df, freq="Y", agg_functions="mean"
         )
         expected_df = pd.DataFrame(
-            [[pd.to_datetime("2023-12-31").tz_localize("Europe/Paris"), 3.]],
+            [[pd.to_datetime("2023-12-31").tz_localize("Europe/Paris"), 3.0]],
             columns=["time", "value"],
         ).set_index(["time"])
         expected_df.index.freq = "Y"
@@ -478,18 +483,20 @@ class TestResample(unittest.TestCase):
         """
 
         # test with a 30 minutes timestamp and strings as column and forward fill
-        result_df = enda.tools.resample.Resample.upsample_and_interpolate(self.thirty_seconds_df,
-                                                                          freq="15s",
-                                                                          tz_info="Europe/Paris",
-                                                                          forward_fill=True,
-                                                                          method="ffill")
+        result_df = enda.tools.resample.Resample.upsample_and_interpolate(
+            self.thirty_seconds_df,
+            freq="15s",
+            tz_info="Europe/Paris",
+            forward_fill=True,
+            method="ffill",
+        )
         expected_df = (
             pd.date_range(
                 start=pd.to_datetime("2023-01-01 00:00:00").tz_localize("Europe/Paris"),
                 end=pd.to_datetime("2023-01-01 00:01:00").tz_localize("Europe/Paris"),
                 freq="15S",
                 name="time",
-                inclusive="left"
+                inclusive="left",
             )
             .to_frame()
             .assign(value=[1, 1, 2, 2])
@@ -501,21 +508,23 @@ class TestResample(unittest.TestCase):
         pd.testing.assert_frame_equal(result_df, expected_df)
 
         # test with a linear interpolation: string values are not linearly interpolated, it makes a np.nan
-        result_df = enda.tools.resample.Resample.upsample_and_interpolate(self.thirty_seconds_df,
-                                                                          freq="15s",
-                                                                          tz_info="Europe/Paris",
-                                                                          forward_fill=True,
-                                                                          method="index")
+        result_df = enda.tools.resample.Resample.upsample_and_interpolate(
+            self.thirty_seconds_df,
+            freq="15s",
+            tz_info="Europe/Paris",
+            forward_fill=True,
+            method="index",
+        )
         expected_df = (
             pd.date_range(
                 start=pd.to_datetime("2023-01-01 00:00:00").tz_localize("Europe/Paris"),
                 end=pd.to_datetime("2023-01-01 00:01:00").tz_localize("Europe/Paris"),
                 freq="15S",
                 name="time",
-                inclusive="left"
+                inclusive="left",
             )
             .to_frame()
-            .assign(value=[1., 1.5, 2, 2])
+            .assign(value=[1.0, 1.5, 2, 2])
             .assign(value_str=["val", np.nan, "val", "val"])
             .set_index("time")
         )
@@ -528,9 +537,9 @@ class TestResample(unittest.TestCase):
         """
 
         # test with an empty dataframe, and another time zone
-        result_df = enda.tools.resample.Resample.upsample_and_interpolate(self.empty_df,
-                                                                          freq="10min",
-                                                                          tz_info="Europe/London")
+        result_df = enda.tools.resample.Resample.upsample_and_interpolate(
+            self.empty_df, freq="10min", tz_info="Europe/London"
+        )
         expected_df = self.empty_df.copy()
         expected_df.index = expected_df.index.tz_localize("Europe/London")
         expected_df.index.freq = "10min"
@@ -543,23 +552,25 @@ class TestResample(unittest.TestCase):
         """
 
         # test with a one-rowed dataframe
-        result_df = enda.tools.resample.Resample.upsample_and_interpolate(self.single_row_df,
-                                                                          expected_initial_freq="30min",
-                                                                          forward_fill=True,
-                                                                          freq="10min")
+        result_df = enda.tools.resample.Resample.upsample_and_interpolate(
+            self.single_row_df,
+            expected_initial_freq="30min",
+            forward_fill=True,
+            freq="10min",
+        )
         expected_df = (
             pd.date_range(
                 start=pd.to_datetime("2023-01-01 00:00:00").tz_localize("Europe/Paris"),
                 end=pd.to_datetime("2023-01-01 00:30:00").tz_localize("Europe/Paris"),
                 freq="10min",
                 name="time",
-                inclusive="left"
+                inclusive="left",
             )
             .to_frame()
             .assign(value=[3, 3, 3])
             .set_index("time")
         )
-        expected_df.index.freq = '10min'
+        expected_df.index.freq = "10min"
         pd.testing.assert_frame_equal(result_df, expected_df)
 
         # test with a single row and not forward-fill, and another time zone
@@ -569,7 +580,9 @@ class TestResample(unittest.TestCase):
         )
         expected_df = self.single_row_df.copy()
         expected_df.index = expected_df.index.tz_convert("Europe/London")
-        expected_df = expected_df.resample("W").last()  # only way to set a frequency for a one-row dataframe in pandas
+        expected_df = expected_df.resample(
+            "W"
+        ).last()  # only way to set a frequency for a one-row dataframe in pandas
         pd.testing.assert_frame_equal(result_df, expected_df)
 
     def test_upsample_and_interpolate_errors(self):
@@ -598,7 +611,7 @@ class TestResample(unittest.TestCase):
         # test if expected initial freq is given and not equal to the inferred freq
         with self.assertRaises(ValueError):
             enda.tools.resample.Resample.upsample_and_interpolate(
-                self.perfect_df, freq="6H", expected_initial_freq='2D'
+                self.perfect_df, freq="6H", expected_initial_freq="2D"
             )
 
     def test_upsample_and_divide_evenly(self):
@@ -707,9 +720,9 @@ class TestResample(unittest.TestCase):
         """
 
         # test with an empty dataframe, and another time zone
-        result_df = enda.tools.resample.Resample.upsample_and_divide_evenly(self.empty_df,
-                                                                          freq="10min",
-                                                                          tz_info="Europe/London")
+        result_df = enda.tools.resample.Resample.upsample_and_divide_evenly(
+            self.empty_df, freq="10min", tz_info="Europe/London"
+        )
         expected_df = self.empty_df.copy()
         expected_df.index = expected_df.index.tz_localize("Europe/London")
         expected_df.index.freq = "10min"
@@ -722,24 +735,23 @@ class TestResample(unittest.TestCase):
         """
 
         # test with a one-rowed dataframe
-        result_df = enda.tools.resample.Resample.upsample_and_divide_evenly(self.single_row_df,
-                                                                          expected_initial_freq="30min",
-                                                                          freq="10min")
+        result_df = enda.tools.resample.Resample.upsample_and_divide_evenly(
+            self.single_row_df, expected_initial_freq="30min", freq="10min"
+        )
         expected_df = (
             pd.date_range(
                 start=pd.to_datetime("2023-01-01 00:00:00").tz_localize("Europe/Paris"),
                 end=pd.to_datetime("2023-01-01 00:30:00").tz_localize("Europe/Paris"),
                 freq="10min",
                 name="time",
-                inclusive="left"
+                inclusive="left",
             )
             .to_frame()
             .assign(value=[1.0, 1.0, 1.0])
             .set_index("time")
         )
-        expected_df.index.freq = '10min'
+        expected_df.index.freq = "10min"
         pd.testing.assert_frame_equal(result_df, expected_df)
-
 
     def test_upsample_monthly_data_and_divide_evenly(self):
         """
@@ -780,15 +792,17 @@ class TestResample(unittest.TestCase):
 
         expected_output_df = pd.DataFrame(
             data=[value1 for _ in range(len(index_1))]
-                 + [value2 for _ in range(len(index_2))]
-                 + [value3 for _ in range(len(index_3))],
+            + [value2 for _ in range(len(index_2))]
+            + [value3 for _ in range(len(index_3))],
             columns=["value"],
             index=list(index_1) + list(index_2) + list(index_3),
         ).asfreq("30min")
         expected_output_df.index.name = "time"
 
-        output_df = enda.tools.resample.Resample.upsample_monthly_data_and_divide_evenly(
-            timeseries_df=input_df, freq="30min"
+        output_df = (
+            enda.tools.resample.Resample.upsample_monthly_data_and_divide_evenly(
+                timeseries_df=input_df, freq="30min"
+            )
         )
 
         pd.testing.assert_frame_equal(output_df, expected_output_df)
@@ -876,13 +890,15 @@ class TestResample(unittest.TestCase):
         pd.testing.assert_frame_equal(expected_df, result_df)
 
         # test with an empty dataframe (and right dtypes)
-        result_df = enda.tools.resample.Resample.forward_fill_final_record(self.empty_df, gap_timedelta="2H")
+        result_df = enda.tools.resample.Resample.forward_fill_final_record(
+            self.empty_df, gap_timedelta="2H"
+        )
         pd.testing.assert_frame_equal(self.empty_df, result_df)
 
         # test with a one-rowed dataframe
-        result_df = enda.tools.resample.Resample.forward_fill_final_record(self.single_row_df,
-                                                                           gap_timedelta="30min",
-                                                                           freq="10min")
+        result_df = enda.tools.resample.Resample.forward_fill_final_record(
+            self.single_row_df, gap_timedelta="30min", freq="10min"
+        )
 
         expected_df = (
             pd.date_range(
@@ -890,7 +906,7 @@ class TestResample(unittest.TestCase):
                 end=pd.to_datetime("2023-01-01 00:30:00").tz_localize("Europe/Paris"),
                 freq="10min",
                 name="time",
-                inclusive="left"
+                inclusive="left",
             )
             .to_frame()
             .assign(value=[3, 3, 3])
