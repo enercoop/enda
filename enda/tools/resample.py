@@ -1,14 +1,15 @@
 """This module contains functions for resampling timeseries"""
 
 import datetime
-from dateutil.relativedelta import relativedelta
-import pandas as pd
-from typing import Optional, Union
 import warnings
+from typing import Optional, Union
 
+import pandas as pd
+from dateutil.relativedelta import relativedelta
+
+import enda.tools.decorators
 import enda.tools.timeseries
 import enda.tools.timezone_utils
-import enda.tools.decorators
 
 
 class Resample:
