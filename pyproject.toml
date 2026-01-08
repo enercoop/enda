@@ -1,35 +1,34 @@
-[tool.poetry]
+[project]
 name = "enda"
-version = "1.0.4"
+version = "1.0.5"
 description = "Tools to manipulate energy time-series and contracts, and to perform forecasts."
-authors = ["Enercoop <team-data@enercoop.org>"]
+authors = [{name = "Enercoop", email = "team-data@enercoop.org"}]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/enercoop/enda"
 classifiers = [
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Operating System :: OS Independent",
+]
+requires-python = "~=3.9"
+dependencies = [
+  "pandas >=1.4.0,<2.0.0",
+  "numpy ~=1.18",
+  "datatable ~=1.1",
+  "h2o ~=3.38",
+  "jours-feries-france ~=0.7.0",
+  "polars ~=0.20",
+  "scikit-learn ~=1.0",
+  "statsmodels <=0.13.5",
+  "unidecode ~=1.3",
+  "vacances-scolaires-france ~=0.11",
 ]
 
 [tool.poetry.build]
 generate-setup-file = true
 
-[tool.poetry.urls]
+[project.urls]
 "Bug Tracker" = "https://github.com/enercoop/enda/issues"
-
-[tool.poetry.dependencies]
-python = "^3.9.0"
-pandas = ">=1.4.0,<2.0.0"
-numpy = "^1.18"
-datatable = "^1.1.0"
-h2o = "^3.38.0.1"
-jours-feries-france = "^0.7.0"
-polars = "^0.20.0"
-scikit-learn = "^1.0.2"
-statsmodels = "<=0.13.5"
-unidecode = "^1.3.4"
-vacances-scolaires-france = "^0.10.0"
 
 [tool.poetry.group.dev]
 optional = true
@@ -58,7 +57,7 @@ matplotlib = {version = "^3.5.3"}
 numexpr = {version = "^2.8.4"}
 seaborn = {version = "^0.12.2"}
 
-[tool.poetry.extras]
+[project.optional-dependencies]
 dev = [
   "black",
   "coverage",
