@@ -99,21 +99,11 @@ poetry publish -r test-pypi
 Check that the package is there : https://test.pypi.org/project/enda/#history .
 
 Try to install and use this test package. Go to another directory, and create/activate a virtualenv.
-Testing the package requires some extra checks compared to the real situation, because not all dependencies have a package installed on TestPypI.
-If we want dependencies installed, they have to be installed through pip. 
-
-Next is a possible list of command to run before trying to install enda from TestPyPI: 
+Use the next commands to install enda from TestPyPI and include dependencies from PyPI:
 
 ```
-pip install vacances_scolaires_france==0.10.0
-pip install unidecode==1.3.4
-pip install statsmodels==0.13.5
-pip install polars==0.20.0 
-pip install pandas==1.4.1
-pip install jours-feries-france==0.7.0
-pip install h2o==3.36.1.1
-pip install datatable==1.1.0 
-pip install scikit-learn==1.5.0
+ENDA_NEW_VERSION='1.X.Y'  # Example to be updated to the version only available in test.pypi.org
+pip install --extra-index-url https://test.pypi.org/simple/ enda==${ENDA_NEW_VERSION}
 ```
 
 #### Test with poetry 
